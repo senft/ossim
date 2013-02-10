@@ -1,6 +1,3 @@
-OMNETPP_CONFIGFILE=/home/giang/workspace/422-omnet-inet-donet/omnetpp-4.2.2/Makefile.inc
-#OMNETPP_CONFIGFILE=/home/giang/workspace/ebitsim-inet-omnet42/omnetpp-4.2.1/Makefile.inc
-
 all: checkmakefiles
 	cd src && $(MAKE)
 

@@ -2,7 +2,7 @@
 # OMNeT++/OMNEST Makefile for so
 #
 # This file was generated with the command:
-#  opp_makemake -f --deep -I../../inet/src/networklayer/common -I../../inet/src/networklayer/rsvp_te -I../../inet/src/networklayer/icmpv6 -I../../inet/src/transport/tcp -I../../inet/src/networklayer/mpls -I../../inet/src/networklayer/ted -I../../inet/src/networklayer/contract -I../../inet/src/util -I../../inet/src/transport/contract -I../../inet/src/linklayer/mfcore -I../../inet/src/networklayer/ldp -I../../inet/src/applications/udpapp -I../../inet/src/networklayer/ipv4 -I../../inet/src/base -I../../inet/src/util/headerserializers -I../../inet/src/networklayer/ipv6 -I../../inet/src/transport/sctp -I../../inet/src/world -I../../inet/src/applications/pingapp -I../../inet/src/linklayer/contract -I../../inet/src/networklayer/arp -I../../inet/src/transport/udp -L../../inet/out/$(CONFIGNAME)/src -linet -KINET_PROJ=../../inet
+#  opp_makemake -f --deep -I../../inet/src/networklayer/ipv4 -I../../inet/src/networklayer/common -I../../inet/src/networklayer/rsvp_te -I../../inet/src/networklayer/icmpv6 -I../../inet/src/transport/tcp -I../../inet/src/base -I../../inet/src/networklayer/mpls -I../../inet/src/util/headerserializers -I../../inet/src/networklayer/ted -I../../inet/src/networklayer/contract -I../../inet/src/util -I../../inet/src/transport/contract -I../../inet/src/transport/sctp -I../../inet/src/networklayer/ipv6 -I../../inet/src/linklayer/mfcore -I../../inet/src/world -I../../inet/src/applications/pingapp -I../../inet/src/linklayer/contract -I../../inet/src/networklayer/arp -I../../inet/src/networklayer/ldp -I../../inet/src/transport/udp -I../../inet/src/applications/udpapp -L../../inet/out/$(CONFIGNAME)/src -linet -KINET_PROJ=../../inet
 #
 
 # Name of target to be created (-o option)
@@ -15,28 +15,28 @@ USERIF_LIBS = $(ALL_ENV_LIBS) # that is, $(TKENV_LIBS) $(CMDENV_LIBS)
 
 # C++ include paths (with -I)
 INCLUDE_PATH = \
+    -I../../inet/src/networklayer/ipv4 \
     -I../../inet/src/networklayer/common \
     -I../../inet/src/networklayer/rsvp_te \
     -I../../inet/src/networklayer/icmpv6 \
     -I../../inet/src/transport/tcp \
+    -I../../inet/src/base \
     -I../../inet/src/networklayer/mpls \
+    -I../../inet/src/util/headerserializers \
     -I../../inet/src/networklayer/ted \
     -I../../inet/src/networklayer/contract \
     -I../../inet/src/util \
     -I../../inet/src/transport/contract \
-    -I../../inet/src/linklayer/mfcore \
-    -I../../inet/src/networklayer/ldp \
-    -I../../inet/src/applications/udpapp \
-    -I../../inet/src/networklayer/ipv4 \
-    -I../../inet/src/base \
-    -I../../inet/src/util/headerserializers \
-    -I../../inet/src/networklayer/ipv6 \
     -I../../inet/src/transport/sctp \
+    -I../../inet/src/networklayer/ipv6 \
+    -I../../inet/src/linklayer/mfcore \
     -I../../inet/src/world \
     -I../../inet/src/applications/pingapp \
     -I../../inet/src/linklayer/contract \
     -I../../inet/src/networklayer/arp \
+    -I../../inet/src/networklayer/ldp \
     -I../../inet/src/transport/udp \
+    -I../../inet/src/applications/udpapp \
     -I. \
     -Icommon \
     -Iglobal \
@@ -72,53 +72,53 @@ OBJS = \
     $O/common/CommBase.o \
     $O/common/Dispatcher.o \
     $O/global/ActivePeerTable.o \
-    $O/global/ActivePeerInfo.o \
-    $O/global/AppSettingDonet.o \
     $O/global/AppSetting.o \
-    $O/global/churn/UniformChurn.o \
-    $O/global/churn/StaticChurn.o \
-    $O/global/churn/ExponentialChurnModel.o \
-    $O/global/churn/PoissonChurnModel.o \
+    $O/global/AppSettingDonet.o \
+    $O/global/ActivePeerInfo.o \
     $O/global/churn/VelosoChurnModel.o \
+    $O/global/churn/PoissonChurnModel.o \
+    $O/global/churn/ExponentialChurnModel.o \
+    $O/global/churn/StaticChurn.o \
+    $O/global/churn/UniformChurn.o \
     $O/global/logger/Logger.o \
     $O/global/observer/MeshOverlayObserver.o \
     $O/global/statistic/GlobalStatistic.o \
     $O/global/statistic/Statistic.o \
     $O/membership/MCache.o \
-    $O/membership/Contact.o \
     $O/membership/MembershipBase.o \
+    $O/membership/Contact.o \
     $O/membership/MessageLogger.o \
     $O/membership/dummy/DummyMembership.o \
-    $O/membership/newscast/NewscastStatistic.o \
     $O/membership/newscast/NewscastSource.o \
+    $O/membership/newscast/NewscastCache.o \
     $O/membership/newscast/GossipProtocol.o \
-    $O/membership/newscast/GossipProtocolWithUserData.o \
     $O/membership/newscast/GossipUserData.o \
     $O/membership/newscast/NewscastCacheEntry.o \
-    $O/membership/newscast/NewscastCache.o \
     $O/membership/newscast/NewscastPeer.o \
     $O/membership/newscast/NewscastBase.o \
+    $O/membership/newscast/NewscastStatistic.o \
+    $O/membership/newscast/GossipProtocolWithUserData.o \
     $O/membership/oracle/OracleMembership.o \
     $O/membership/scamp/ScampSource.o \
     $O/membership/scamp/ScampBase.o \
     $O/membership/scamp/ScampPeer.o \
-    $O/mesh/BufferMap.o \
     $O/mesh/NeighborInfo.o \
+    $O/mesh/BufferMap.o \
     $O/mesh/PartnerList.o \
     $O/mesh/coolstreaming/CoolstreamingPeer.o \
-    $O/mesh/coolstreaming/CoolstreamingPartner.o \
     $O/mesh/coolstreaming/CoolstreamingBase.o \
+    $O/mesh/coolstreaming/CoolstreamingPartner.o \
     $O/mesh/coolstreaming/CoolstreamingSource.o \
-    $O/mesh/donet/DonetBase.o \
-    $O/mesh/donet/DonetPeer.o \
     $O/mesh/donet/DonetSource.o \
-    $O/payload/VideoBuffer.o \
-    $O/payload/Player.o \
-    $O/payload/VideoBufferListener.o \
-    $O/payload/Forwarder.o \
+    $O/mesh/donet/DonetPeer.o \
+    $O/mesh/donet/DonetBase.o \
     $O/payload/ChunkGenerator.o \
-    $O/common/PeerStreamingPacket_m.o \
+    $O/payload/VideoBuffer.o \
+    $O/payload/Forwarder.o \
+    $O/payload/VideoBufferListener.o \
+    $O/payload/Player.o \
     $O/common/DpControlInfo_m.o \
+    $O/common/PeerStreamingPacket_m.o \
     $O/membership/GossipMembershipPacket_m.o \
     $O/membership/newscast/NewscastPacket_m.o \
     $O/mesh/MeshPeerStreamingPacket_m.o \
@@ -128,8 +128,8 @@ OBJS = \
 
 # Message files
 MSGFILES = \
-    common/PeerStreamingPacket.msg \
     common/DpControlInfo.msg \
+    common/PeerStreamingPacket.msg \
     membership/GossipMembershipPacket.msg \
     membership/newscast/NewscastPacket.msg \
     mesh/MeshPeerStreamingPacket.msg \
@@ -361,10 +361,16 @@ $O/global/statistic/GlobalStatistic.o: global/statistic/GlobalStatistic.cc \
 	$(INET_PROJ)/src/base/ModuleAccess.h \
 	$(INET_PROJ)/src/base/NotificationBoard.h \
 	$(INET_PROJ)/src/base/NotifierConsts.h \
+	$(INET_PROJ)/src/linklayer/contract/MACAddress.h \
+	$(INET_PROJ)/src/networklayer/common/IInterfaceTable.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceEntry.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceToken.h \
 	$(INET_PROJ)/src/networklayer/contract/IPAddress.h \
 	$(INET_PROJ)/src/networklayer/contract/IPv6Address.h \
 	$(INET_PROJ)/src/networklayer/contract/IPvXAddress.h \
 	common/AppCommon.h \
+	global/ActivePeerInfo.h \
+	global/ActivePeerTable.h \
 	global/churn/IChurnGenerator.h \
 	global/statistic/GlobalStatistic.h
 $O/global/statistic/Statistic.o: global/statistic/Statistic.cc \
@@ -986,11 +992,17 @@ $O/payload/ChunkGenerator.o: payload/ChunkGenerator.cc \
 	$(INET_PROJ)/src/base/ModuleAccess.h \
 	$(INET_PROJ)/src/base/NotificationBoard.h \
 	$(INET_PROJ)/src/base/NotifierConsts.h \
+	$(INET_PROJ)/src/linklayer/contract/MACAddress.h \
+	$(INET_PROJ)/src/networklayer/common/IInterfaceTable.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceEntry.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceToken.h \
 	$(INET_PROJ)/src/networklayer/contract/IPAddress.h \
 	$(INET_PROJ)/src/networklayer/contract/IPv6Address.h \
 	$(INET_PROJ)/src/networklayer/contract/IPvXAddress.h \
 	common/AppCommon.h \
 	common/PeerStreamingPacket_m.h \
+	global/ActivePeerInfo.h \
+	global/ActivePeerTable.h \
 	global/AppSetting.h \
 	global/AppSettingDonet.h \
 	global/churn/IChurnGenerator.h \
@@ -1036,11 +1048,17 @@ $O/payload/Player.o: payload/Player.cc \
 	$(INET_PROJ)/src/base/ModuleAccess.h \
 	$(INET_PROJ)/src/base/NotificationBoard.h \
 	$(INET_PROJ)/src/base/NotifierConsts.h \
+	$(INET_PROJ)/src/linklayer/contract/MACAddress.h \
+	$(INET_PROJ)/src/networklayer/common/IInterfaceTable.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceEntry.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceToken.h \
 	$(INET_PROJ)/src/networklayer/contract/IPAddress.h \
 	$(INET_PROJ)/src/networklayer/contract/IPv6Address.h \
 	$(INET_PROJ)/src/networklayer/contract/IPvXAddress.h \
 	common/AppCommon.h \
 	common/PeerStreamingPacket_m.h \
+	global/ActivePeerInfo.h \
+	global/ActivePeerTable.h \
 	global/AppSetting.h \
 	global/AppSettingDonet.h \
 	global/churn/IChurnGenerator.h \
@@ -1057,11 +1075,17 @@ $O/payload/VideoBuffer.o: payload/VideoBuffer.cc \
 	$(INET_PROJ)/src/base/ModuleAccess.h \
 	$(INET_PROJ)/src/base/NotificationBoard.h \
 	$(INET_PROJ)/src/base/NotifierConsts.h \
+	$(INET_PROJ)/src/linklayer/contract/MACAddress.h \
+	$(INET_PROJ)/src/networklayer/common/IInterfaceTable.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceEntry.h \
+	$(INET_PROJ)/src/networklayer/common/InterfaceToken.h \
 	$(INET_PROJ)/src/networklayer/contract/IPAddress.h \
 	$(INET_PROJ)/src/networklayer/contract/IPv6Address.h \
 	$(INET_PROJ)/src/networklayer/contract/IPvXAddress.h \
 	common/AppCommon.h \
 	common/PeerStreamingPacket_m.h \
+	global/ActivePeerInfo.h \
+	global/ActivePeerTable.h \
 	global/AppSetting.h \
 	global/AppSettingDonet.h \
 	global/churn/IChurnGenerator.h \
