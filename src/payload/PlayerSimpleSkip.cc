@@ -13,21 +13,21 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#include "Player.h"
+#include "PlayerSimpleSkip.h"
 
-Define_Module(Player);
+Define_Module(PlayerSimpleSkip);
 
-Player::Player() {
+PlayerSimpleSkip::PlayerSimpleSkip() {
     // TODO Auto-generated constructor stub
 }
 
-Player::~Player()
+PlayerSimpleSkip::~PlayerSimpleSkip()
 {
     if (timer_nextChunk != NULL) { delete cancelEvent(timer_nextChunk); timer_nextChunk = NULL; }
     if (timer_playerStart) cancelAndDelete(timer_playerStart);
 }
 
-void Player::initialize(int stage)
+void PlayerSimpleSkip::initialize(int stage)
 {
     if (stage == 0)
     {
@@ -91,9 +91,10 @@ void Player::initialize(int stage)
     WATCH(m_appSetting);
     WATCH(m_chunkSize);
     WATCH(m_interval_newChunk);
+
 }
 
-void Player::activate(void)
+void PlayerSimpleSkip::activate(void)
 {
     if (m_state != PLAYER_STATE_IDLE)
         throw cException("Wrong Player state %d while expecting %d", m_state, PLAYER_STATE_IDLE);
@@ -103,12 +104,12 @@ void Player::activate(void)
 
 }
 
-void Player::finish()
+void PlayerSimpleSkip::finish()
 {
 
 }
 
-void Player::handleMessage(cMessage *msg)
+void PlayerSimpleSkip::handleMessage(cMessage *msg)
 {
     if (!msg->isSelfMessage())
     {
@@ -119,7 +120,7 @@ void Player::handleMessage(cMessage *msg)
     handleTimerMessage(msg);
 }
 
-void Player::handleTimerMessage(cMessage *msg)
+void PlayerSimpleSkip::handleTimerMessage(cMessage *msg)
 {
     if (msg == timer_playerStart)
     {
@@ -159,6 +160,14 @@ void Player::handleTimerMessage(cMessage *msg)
     {
         if (m_videoBuffer->inBuffer(m_id_nextChunk))
         {
+           ++m_id_nextChunk;
+           scheduleAt(simTime() + m_videoBuffer->getChunkInterval(), timer_nextChunk);
+
+           ++m_countChunkHit;
+
+           // -- State remains
+
+           /*
             switch (m_state)
             {
             case PLAYER_STATE_PLAYING: // Chunk HIT
@@ -206,9 +215,15 @@ void Player::handleTimerMessage(cMessage *msg)
                 throw cException("Unexpected state %d", m_state);
             }
             }
+            */
         }
         else // expected chunk is NOT in buffer
         {
+           ++m_id_nextChunk;
+           scheduleAt(simTime() + m_videoBuffer->getChunkInterval(), timer_nextChunk);
+
+           ++m_countChunkMiss;
+           /*
             switch (m_state)
             {
             case PLAYER_STATE_PLAYING: // Chunk MISS
@@ -280,8 +295,10 @@ void Player::handleTimerMessage(cMessage *msg)
                 throw cException("Unexpected state %d", m_state);
             }
             }
-        }
-    }
+            */
+        } // else ~ chunk not in buffer
+
+    } // timer_nextChunk
 
 //    if (msg == timer_nextChunk)
 //    {
@@ -325,7 +342,7 @@ void Player::handleTimerMessage(cMessage *msg)
 //    }
 }
 
-void Player::startPlayer()
+void PlayerSimpleSkip::startPlayer()
 {
     Enter_Method("startPlayer");
     scheduleAt(simTime(), timer_nextChunk);
@@ -338,17 +355,17 @@ void Player::startPlayer()
 
 }
 
-SEQUENCE_NUMBER_T Player::getCurrentPlaybackPoint(void)
+SEQUENCE_NUMBER_T PlayerSimpleSkip::getCurrentPlaybackPoint(void)
 {
     return m_id_nextChunk;
 }
 
-bool Player::playerStarted(void)
+bool PlayerSimpleSkip::playerStarted(void)
 {
     return m_playerStarted;
 }
 
-bool Player::shouldResumePlaying(SEQUENCE_NUMBER_T seq_num)
+bool PlayerSimpleSkip::shouldResumePlaying(SEQUENCE_NUMBER_T seq_num)
 {
     // !!! Asuming that the seq_num is a valid value within the range [id_start, id_end]
 

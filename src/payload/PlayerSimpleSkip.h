@@ -1,11 +1,12 @@
-#ifndef PLAYER_H_
-#define PLAYER_H_
+#ifndef PLAYERSIMPLESKIP_H_
+#define PLAYERSIMPLESKIP_H_
+
+#include "PlayerBase.h"
 
 #include "VideoBuffer.h"
 #include "VideoChunkPacket_m.h"
 #include "AppSettingDonet.h"
 #include "GlobalStatistic.h"
-//#include "DonetPeer.h"
 
 #define PLAYER_STATE_IDLE       0
 #define PLAYER_STATE_BUFFERING  1
@@ -15,10 +16,10 @@
 #define EVENT_CHUNK_NOT_IN_BUFFER   0
 #define EVENT_CHUNK_IN_BUFFER       1
 
-class Player : public cSimpleModule {
+class PlayerSimpleSkip : public PlayerBase {
 public:
-    Player();
-    virtual ~Player();
+    PlayerSimpleSkip();
+    virtual ~PlayerSimpleSkip();
 
 protected:
     virtual int numInitStages() const { return 4; }
@@ -42,7 +43,6 @@ private:
 
 protected:
     // Pointer to other modules
-    //DonetPeer *m_
 
     // -- State variable
     bool m_playerStarted;
@@ -79,7 +79,6 @@ protected:
 
     simsignal_t sig_rebuffering;
     simsignal_t sig_stall;
-
 };
 
 #endif /* PLAYER_H_ */

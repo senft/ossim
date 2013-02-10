@@ -60,6 +60,8 @@ public:
      */
     virtual void addAddress(const IPvXAddress &address);
 
+    void addAddress(const IPvXAddress &addr, double upBw, int nChunk);
+
     /**
      * Adds a Neighbor's address to the table. Note that once added, addresses
      * cannot be modified; you must delete and re-add them instead.
@@ -81,7 +83,8 @@ public:
 
     //virtual void updateNeighborInfo(NeighborInfo *);
 
-    NeighborInfo* getNeighborInfo(const IPvXAddress &address) const;
+   bool hasAddress(const IPvXAddress & address) const;
+    const NeighborInfo & getNeighborInfo(const IPvXAddress &address) const;
 
     /*
      *
@@ -95,6 +98,7 @@ public:
     void clearAllSendBm(void);
     void updateBoundSendBm(SEQUENCE_NUMBER_T head, SEQUENCE_NUMBER_T start, SEQUENCE_NUMBER_T end) const;
     void updateBoundSendBm(SEQUENCE_NUMBER_T start, SEQUENCE_NUMBER_T end) const;
+    void resetNChunkScheduled();
 
     void clearAllTimeBudget(void);
 
@@ -107,7 +111,8 @@ public:
     void printSendBm(const IPvXAddress &address);
 
 private:
-    typedef std::map<IPvXAddress, NeighborInfo *> AddressList;
+    //typedef std::map<IPvXAddress, NeighborInfo *> AddressList;
+    typedef std::map<IPvXAddress, NeighborInfo> AddressList;
     mutable AddressList m_map;
     int m_bufferSize;
 

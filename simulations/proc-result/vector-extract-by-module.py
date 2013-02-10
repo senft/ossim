@@ -20,13 +20,15 @@
 //
 // Authors: Stephan Krause
 //
+// Modified by Giang Nguyen
+//
 """
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as sp
 from optparse import OptionParser 
-from matplotlib.font_manager import fontManager, FontProperties
+#from matplotlib.font_manager import fontManager, FontProperties
 from string import maketrans
 import re
 
@@ -46,6 +48,7 @@ parser.add_option("-l", "--legend-position", type="int", default=0, dest="lpos",
 parser.add_option("-s", "--scale", type="float", default=1, help="Scale y values by a factor of SCALE")
 parser.add_option("-r", "--range", type="int", nargs=2, metavar="START END", help="Restrict x axis to buckets in the range (START:END)")
 parser.add_option("-o", "--outfile", help="Instead of displaying the plot, write a gnuplot-readable file to OUTFILE.dat and a gnuplot script to OUTFILE.plot. Requires --range option.")
+parser.add_option("-m", "--module", type="string", dest="module", help="Module must be non-negative")
 (options, args) = parser.parse_args()
 
 if len(args) < 2: 
@@ -69,6 +72,8 @@ if options.outfile and not options.range:
 
 if options.fdef:
     options.fill = True
+
+#print "%s" % (options.module)
 
 valuemap = {}
 
@@ -106,15 +111,16 @@ for infilename in args[1:]:
                 vars = vars.translate(maketrans('',''), '$"')
 
             # find vector number
+            # arg[0] :: vector name (including the string ':vector') (e.g., aptSize:vector)
             if line.startswith("vector"):
                 if line.find(args[0]) > -1:
-                    vecnum = line.split(" ", 3)[1]
-                    # by Giang
-                    print "%s" % (vecnum)
-                    vars=confname + "-" + vars;
-                    if vars not in valuemap:
-                        valuemap[vars]={}
-                    parseHeader = False
+                    #if line.find(options.module) > -1:
+                       vecnum = line.split(" ", 3)[1]
+                       print "%s" % (vecnum)
+                       vars=confname + "-" + vars;
+                       if vars not in valuemap:
+                           valuemap[vars]={}
+                       parseHeader = False
         else:
             # header parsing finished, search for the appropriate vectors
             splitline = line.split("\t")
@@ -156,11 +162,11 @@ if len(valuemap) == 0:
     exit(-1)
 
 # Prepare plot
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_xlabel("Time")
-ax.set_ylabel(args[0])
-ax.grid(True)
+#fig = plt.figure()
+#ax = fig.add_subplot(111)
+#ax.set_xlabel("Time")
+#ax.set_ylabel(args[0])
+#ax.grid(True)
 
 if options.outfile:
     outarray = np.arange(options.range[0], options.range[1]+1)
@@ -197,12 +203,12 @@ for run in sorted(valuemap.keys()):
         
     if options.outfile:
         outarray = np.vstack((outarray, outcol))
-    else:
+    #else:
         # Plot row
-        if options.ci == 0:
-            ax.plot(sorted(row.keys()), sortedDictValues(row), label=run, marker='+')
-        else:
-            ax.errorbar(sorted(row.keys()), sortedDictValues(row),  sortedDictValues(ci), label=run, ecolor='k', marker='o', barsabove=True)
+        #if options.ci == 0:
+            #ax.plot(sorted(row.keys()), sortedDictValues(row), label=run, marker='+')
+        #else:
+            #ax.errorbar(sorted(row.keys()), sortedDictValues(row),  sortedDictValues(ci), label=run, ecolor='k', marker='o', barsabove=True)
 
 if options.outfile:
     # Write data to gnuplot readable file
@@ -240,9 +246,9 @@ if options.outfile:
     outfile.truncate()
     outfile.write("\n")
 
-else:
+#else:
     # Display plot
-    font=FontProperties(size='small')
-    leg=ax.legend(loc=options.lpos, shadow=True, prop=font)
-    plt.show()
+    #font=FontProperties(size='small')
+    #leg=ax.legend(loc=options.lpos, shadow=True, prop=font)
+    #plt.show()
 

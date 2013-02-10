@@ -20,6 +20,8 @@
 //
 // Authors: Stephan Krause
 //
+// Modified: Giang Nguyen
+//
 """
 
 import matplotlib.pyplot as plt
@@ -46,6 +48,7 @@ parser.add_option("-l", "--legend-position", type="int", default=0, dest="lpos",
 parser.add_option("-s", "--scale", type="float", default=1, help="Scale y values by a factor of SCALE")
 parser.add_option("-r", "--range", type="int", nargs=2, metavar="START END", help="Restrict x axis to buckets in the range (START:END)")
 parser.add_option("-o", "--outfile", help="Instead of displaying the plot, write a gnuplot-readable file to OUTFILE.dat and a gnuplot script to OUTFILE.plot. Requires --range option.")
+parser.add_option("-m", "--module", type="string", dest="module", help="Module must be non-negative")
 (options, args) = parser.parse_args()
 
 if len(args) < 2: 
@@ -108,13 +111,14 @@ for infilename in args[1:]:
             # find vector number
             if line.startswith("vector"):
                 if line.find(args[0]) > -1:
-                    vecnum = line.split(" ", 3)[1]
-                    # by Giang
-                    print "%s" % (vecnum)
-                    vars=confname + "-" + vars;
-                    if vars not in valuemap:
-                        valuemap[vars]={}
-                    parseHeader = False
+                    if line.find(options.module) > -1:
+                        vecnum = line.split(" ", 3)[1]
+                        # by Giang
+                        print "%s - %s" % (options.module, vecnum)
+                        vars=confname + "-" + vars;
+                        if vars not in valuemap:
+                           valuemap[vars]={}
+                        parseHeader = False
         else:
             # header parsing finished, search for the appropriate vectors
             splitline = line.split("\t")

@@ -131,7 +131,8 @@ void DonetBase::sendBufferMap(void)
 
     // 3. Browse through the local NeighborList
     //    & Send the BufferMap Packet to all of the neighbors in the list
-    map<IPvXAddress, NeighborInfo *>::iterator iter;
+    //map<IPvXAddress, NeighborInfo *>::iterator iter;
+    map<IPvXAddress, NeighborInfo>::iterator iter;
     for (iter = m_partnerList->m_map.begin(); iter != m_partnerList->m_map.end(); ++iter)
     {
         // send the packet to this neighbor
@@ -397,6 +398,8 @@ void DonetBase::considerAcceptPartner(PendingPartnershipRequest requester)
         //m_partnerList->addAddress(requester.address, requester.upBW);
         addPartner(requester.address, requester.upBW);
 
+        EV << "Accepted pRequest from " << requester.address << endl;
+
         // -- Report to Active Peer Table to update the information
         EV << "Increment number of partner " << endl;
         m_apTable->incrementNPartner(getNodeAddress());
@@ -432,9 +435,10 @@ void DonetBase::handleTimerReport(void)
    m_gstat->writePartnerList2File(getNodeAddress(), m_partnerList->getAddressList());
 }
 
-void DonetBase::addPartner(IPvXAddress remote, double bw)
+void DonetBase::addPartner(IPvXAddress remote, double upbw)
 {
-   m_partnerList->addAddress(remote, bw);
+   m_partnerList->addAddress(remote, upbw);
+//   m_partnerList->addAddress(remote, upbw, 0);
    m_gstat->writePartnership2File(getNodeAddress(), remote);
 }
 
