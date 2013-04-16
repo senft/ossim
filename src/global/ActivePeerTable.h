@@ -1,9 +1,33 @@
-/*
- * ActivePeerTable.h
- *
- *  Created on: Mar 30, 2012
- *      Author: giang
- */
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// ActivePeerTable.h
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
 
 //TODO: it might be nicer to implement this table as a vector instead of a set (for easier accessing elements using indices)
 
@@ -18,7 +42,8 @@
 #include "IInterfaceTable.h"
 #include "NotificationBoard.h"
 
-#include "GlobalStatistic.h"
+//#include "GlobalStatistic.h"
+#include "StatisticBase.h"
 #include "ActivePeerInfo.h"
 
 #define PARTNER_ASSIGNMENT_IMMEDIATE 0
@@ -65,13 +90,21 @@ public:
 //    void addPeerAddress(const IPvXAddress &address);
 //    void addSourceAddress(const IPvXAddress &address);
 
-    void addPeerAddress(const IPvXAddress &address, int maxNOP=0);
-    void addSourceAddress(const IPvXAddress &address, int maxNOP=0);
+    void addAddress(const IPvXAddress &address);
+    void removeAddress(const IPvXAddress &address);
 
-    void incrementNPartner(const IPvXAddress &addr);
-    void decrementNPartner(const IPvXAddress &addr);
+// -- will be removed
+//    void addPeerAddress(const IPvXAddress &address, int maxNOP=0);
+//    void addSourceAddress(const IPvXAddress &address, int maxNOP=0);
+//    void removePeerAddress(const IPvXAddress &address);
+
+// -- will be moved to Dummy module
+//    void incrementNPartner(const IPvXAddress &addr);
+//    void decrementNPartner(const IPvXAddress &addr);
 
 //    virtual bool deletePeerAddress(const IPvXAddress *address);
+
+// -- keep or not?
     bool deletePeerAddress(const IPvXAddress &address);
 
     void printActivePeerInfo(const IPvXAddress &address);
@@ -97,19 +130,17 @@ protected:
     typedef std::vector<IPvXAddress> AddressSet;
     //mutable AddressSet activePeerList;
 
-    GlobalStatistic *m_gstat;
+    //GlobalStatistic *m_gstat;
+    //StatisticBase *m_gstat;
 
     std::string m_name;
 
     // New stuff from this point
-    //map<IPvXAddress, ActivePeerInfo*> m_activePeerList;
-    //typedef map<IPvXAddress, int> Type_ActiveList;
-    //typedef map<IPvXAddress, ActivePeerInfo*> Type_ActiveList;
     typedef map<IPvXAddress, Struct_ActivePeerInfo> Type_ActiveList;
     Type_ActiveList m_activePeerList;
     vector<IPvXAddress> m_tempList;
-//    int m_max_reported_nPartner;
-    //map<IPvXAddress, ActivePeerInfo*> m_activePeerList;
+    // int m_max_reported_nPartner;
+    // map<IPvXAddress, ActivePeerInfo*> m_activePeerList;
 
     IPvXAddress m_sourceAddress;
 

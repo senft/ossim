@@ -1,14 +1,38 @@
-/*
- * ActivePeerTable.cc
- *
- *  Created on: Mar 30, 2012
- *      Author: giang
- */
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// ActivePeerTable.cc
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
 
 #include "ActivePeerTable.h"
 #include <algorithm>
 
-Define_Module(ActivePeerTable);
+Define_Module(ActivePeerTable)
 
 void ActivePeerTable::updateDisplayString()
 {
@@ -40,8 +64,9 @@ void ActivePeerTable::initialize(int stage)
         }
         else if (stage==3)
         {
-            cModule *temp = simulation.getModuleByPath("globalStatistic");
-            m_gstat = check_and_cast<GlobalStatistic *>(temp);
+            //cModule *temp = simulation.getModuleByPath("globalStatistic");
+            //m_gstat = check_and_cast<GlobalStatistic *>(temp);
+            //m_gstat = check_and_cast<StatisticBase *>(temp);
             EV << "Binding to globalStatistic is completed successfully" << endl;
 
             // The message used for reporting the size of the APT periodically
@@ -204,18 +229,17 @@ int ActivePeerTable::getNumActivePeer() const
  * cannot be modified; you must delete and re-add them instead.
  */
 //void ActivePeerTable::addPeerAddress(const IPvXAddress *address)
+//void ActivePeerTable::addPeerAddress(const IPvXAddress &address)
+//{
+//    Enter_Method("addPeerAddress()");
+
+//   Struct_ActivePeerInfo info;
+//    m_activePeerList[address] = info;
+//    //m_activePeerList[address] = 1;
+//    emit(sig_size, m_activePeerList.size());
+//}
+
 /*
-void ActivePeerTable::addPeerAddress(const IPvXAddress &address)
-{
-    Enter_Method("addPeerAddress()");
-
-   Struct_ActivePeerInfo info;
-    m_activePeerList[address] = info;
-    //m_activePeerList[address] = 1;
-    emit(sig_size, m_activePeerList.size());
-}
-*/
-
 void ActivePeerTable::addPeerAddress(const IPvXAddress &address, int maxNOP)
 {
     Enter_Method("addPeerAddress()");
@@ -231,6 +255,34 @@ void ActivePeerTable::addPeerAddress(const IPvXAddress &address, int maxNOP)
 //    emit(sig_size, m_activePeerList.size());
 //   emit(sig_size, 1);
 }
+*/
+
+void ActivePeerTable::addAddress(const IPvXAddress &address)
+{
+    Enter_Method("addAddress()");
+
+    Struct_ActivePeerInfo info;
+//      info.m_maxNOP = maxNOP;
+//      info.m_current_nPartner = 1;
+      info.m_joinTime = simTime().dbl();
+
+    m_activePeerList.insert(pair<IPvXAddress, Struct_ActivePeerInfo>(address, info));
+}
+
+void ActivePeerTable::removeAddress(const IPvXAddress &address)
+{
+   Enter_Method("removePeerAddress");
+
+   m_activePeerList.erase(address);
+}
+/*
+void ActivePeerTable::removePeerAddress(const IPvXAddress &address)
+{
+   Enter_Method("removePeerAddress");
+
+   m_activePeerList.erase(address);
+}
+*/
 
 /*
 void ActivePeerTable::addSourceAddress(const IPvXAddress &address)
@@ -245,6 +297,7 @@ void ActivePeerTable::addSourceAddress(const IPvXAddress &address)
 }
 */
 
+/*
 void ActivePeerTable::addSourceAddress(const IPvXAddress &address, int maxNOP)
 {
    Enter_Method("addSourceAddress()");
@@ -261,7 +314,9 @@ void ActivePeerTable::addSourceAddress(const IPvXAddress &address, int maxNOP)
    //m_activePeerList[address] = info;
     emit(sig_size, m_activePeerList.size());
 }
+*/
 
+/*
 void ActivePeerTable::incrementNPartner(const IPvXAddress &addr)
 {
    Enter_Method("incrementNPartner()");
@@ -280,12 +335,15 @@ void ActivePeerTable::incrementNPartner(const IPvXAddress &addr)
    EV << "***********************************************************************************" << endl;
    EV << "***********************************************************************************" << endl;
 }
+*/
 
+/*
 void ActivePeerTable::decrementNPartner(const IPvXAddress &addr)
 {
   //m_activePeerList[addr] -= 1;
    m_activePeerList[addr].m_current_nPartner -= 1;
 }
+*/
 
 /**
  * Deletes the given peer address from the table.
@@ -297,21 +355,6 @@ bool ActivePeerTable::deletePeerAddress(const IPvXAddress &address)
 {
     Enter_Method("deletePeerAddress()");
 
-    // -- With list
-//    if (!isActivePeer(address))
-//        return false;
-//    AddressSet::iterator it;
-//    for (it = activePeerList.begin(); it != activePeerList.end(); it++)
-//    {
-//        if (*it == address)
-//        {
-//            activePeerList.erase(it);
-//            break;
-//        }
-//    }
-//    return true;
-
-    // -- With map
     //map<IPvXAddress, ActivePeerInfo*>::iterator iter;
     Type_ActiveList::iterator iter;
     iter = m_activePeerList.find(address);
@@ -322,8 +365,8 @@ bool ActivePeerTable::deletePeerAddress(const IPvXAddress &address)
     //delete iter->second;
     m_activePeerList.erase(iter);
     return true;
-
 }
+
 
 /**
  * Utility function: Returns a vector of /N/ addresses of the active nodes.
@@ -490,11 +533,12 @@ IPvXAddress ActivePeerTable::getARandPeer(IPvXAddress address)
       if (iter->first == address)
          continue;
 
-      for (int i = iter->second.m_current_nPartner; i < iter->second.m_maxNOP; ++i)
-      {
-         m_tempList.push_back(iter->first);
-         EV << "Address: " << iter->first << endl;
-      }
+      m_tempList.push_back(iter->first);
+//      for (int i = iter->second.m_current_nPartner; i < iter->second.m_maxNOP; ++i)
+//      {
+//         m_tempList.push_back(iter->first);
+//         EV << "Address: " << iter->first << endl;
+//      }
    }
    EV << "**********************************************************************" << endl;
    EV << "**********************************************************************" << endl;
@@ -530,7 +574,7 @@ void ActivePeerTable::printActivePeerInfo(const IPvXAddress &address)
       return;
    }
 
-   EV << "Peer " << iter->first << "has " << iter->second.m_current_nPartner << " partners" << endl;
+   //EV << "Peer " << iter->first << "has " << iter->second.m_current_nPartner << " partners" << endl;
 }
 
 /**

@@ -1,9 +1,34 @@
-/*
- * NeighborInfo.h
- *
- *  Created on: May 3, 2012
- *      Author: giang
- */
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// NeighborInfo.h
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
+
 
 #ifndef NEIGHBORINFO_H_
 #define NEIGHBORINFO_H_
@@ -47,17 +72,39 @@ public:
     inline void setTimeBudget(double time) { m_timeBudget = time; }
     inline double getTimeBudget(void) { return m_timeBudget; }
 
+    // -- "current" chunk record
     inline void setCountChunkReceived(long int n) { m_count_chunkReceived = n; }
     inline long int getCountChunkReceived(void) { return m_count_chunkReceived; }
 
     inline void setCountChunkSent(long int n) { m_count_chunkSent = n; }
     inline long int getCountChunkSent(void) { return m_count_chunkSent; }
 
+    // -- "previous" chunk record
+    inline void setCountPrevChunkSent(long int n) { m_count_prev_chunkSent = n; }
+    inline long int getCountPrevChunkSent(void) { return m_count_prev_chunkSent; }
+
+    inline void setCountPrevChunkReceived(long int n) { m_count_prev_chunkReceived = n; }
+    inline long int getCountPrevChunkReceived(void) { return m_count_prev_chunkReceived; }
+
+    // -- average chunk record since joining
     inline void setAverageChunkSent(double c) { m_average_chunkSent = c; }
     inline double getAverageChunkSent(void) { return m_average_chunkSent; }
 
     inline void setAverageChunkReceived(double c) { m_average_chunkReceived = c; }
     inline double getAverageChunkReceived(void) { return m_average_chunkReceived; }
+
+    inline void setAverageChunkExchanged(double c) { m_average_chunkExchanged = c; }
+    inline double getAverageChunkExchanged(void) { return m_average_chunkExchanged; }
+
+    // -- average chunk record per interval
+    inline void setAverageChunkSentPerInterval(double c) { m_average_chunkSent_interval = c; }
+    inline double getAverageChunkSentPerInterval() { return m_average_chunkSent_interval; }
+
+    inline void setAverageChunkReceivedPerInterval(double c) { m_average_chunkReceived_interval = c; }
+    inline double getAverageChunkReceivedPerInterval() { return m_average_chunkReceived_interval; }
+
+    inline void setAverageChunkExchangedPerInterval(double c) { m_average_chunkExchanged_interval = c; }
+    inline double getAverageChunkExchangedPerInterval() { return m_average_chunkExchanged_interval; }
 
     // ----------------------------------------------------------------------------------------------
 
@@ -74,12 +121,14 @@ public:
     bool isSendBmModified(void);
 
     void resetVectorAvailableTime(SEQUENCE_NUMBER_T vb_start, SEQUENCE_NUMBER_T win_start, double chunkInterval);
-    void updateChunkAvailTime(SEQUENCE_NUMBER_T seq_num, double time);
+    //void updateChunkAvailTime(SEQUENCE_NUMBER_T seq_num, double time);
+    bool updateChunkAvailTime(SEQUENCE_NUMBER_T seq_num, double time);
     double getChunkAvailTime(SEQUENCE_NUMBER_T seq_num);
 
     // -- For debugging --
     void printRecvBm(void);
     void printSendBm(void);
+    void printVectorAvailableTime(void);
 
 // Data member
 private:
@@ -114,13 +163,24 @@ private:
 
     // -- For partnership refinement
     // Number of chunks delivered in both direction between two partners
-    long int m_count_chunkSent;     // sent to that partner
-    long int m_count_chunkReceived; // received from that partner
-    double m_average_chunkSent;     // per unit time
-    double m_average_chunkReceived;  // per unit time
+    long int m_count_chunkSent;     // (current) number of chunks sent to that partner
+    long int m_count_chunkReceived; // (current) number of chunks received from that partner
+
+    long int m_count_prev_chunkSent;      // number of chunks sent to partner in previous sampling
+    long int m_count_prev_chunkReceived;  // number of chunks received from partner in previous sampling
+
+    // -- per unit time since joining
+    double m_average_chunkSent;
+    double m_average_chunkReceived;
+    double m_average_chunkExchanged;
+
+    double m_average_chunkSent_interval;        // during the previous interval
+    double m_average_chunkReceived_interval;    // during the previous interval
+    double m_average_chunkExchanged_interval;   // during the previous interval
 
     // -- Available time to transmit a specific chunk
     std::vector<double> m_availTime;
+
     // -- The sequence number of the first element of the list
     SEQUENCE_NUMBER_T m_winStart;
 };

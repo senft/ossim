@@ -1,17 +1,36 @@
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// NewscastBase.cc
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Thorsten Jacobi;
+// Code Reviewers: Giang;
+// -----------------------------------------------------------------------------
+//
+
+// @author Thorsten Jacobi
+// @brief Base class of the newscast implementation
 
 #include "NewscastBase.h"
 
@@ -23,91 +42,59 @@
 
 #include "NewscastAgentInterface.h"
 
-NewscastBase::NewscastBase(){
+NewscastBase::NewscastBase()
+{
     m_ownValue = NULL;
     m_Active = false;
-
-/*
-    NewscastCache* test = new NewscastCache;
-    NewscastCache* test2;
-
-    std::string st = "test";
-    IPvXAddress addr; addr.set("192.156.2.1");
-    simtime_t timy = simTime() + rand();
-    GossipUserData* data = new GossipUserData();
-
-    test->setEntry(st, addr, timy, data);
-    test2 = (NewscastCache*) test->dup();
-
-    EV << "deleting" << endl;
-    delete test2;
-
-    EV << "string=" << st << endl;
-    EV << "address=" << addr.str() << endl;
-    EV << "time=" << timy << endl;
-    EV << "data=" << data->getSizeInBits() << endl;
-
-    EV << "test1_" << test->getSize() << endl;
-    if (test->getSize()>0){
-        EV << "test1_" << test->getEntry(0)->getAgent() << endl;
-        EV << "test2_" << test->getEntry(0)->getAddress().str() << endl;
-        EV << "test3_" << test->getEntry(0)->getTimestamp() << endl;
-        EV << "test4_" << test->getEntry(0)->getValue()->getSizeInBits() << endl;
-    }*/
 }
 
-NewscastBase::~NewscastBase() {
-    EV << "~NewscastBase()" << endl;
+NewscastBase::~NewscastBase()
+{
     if (timer_JoinNetwork)   delete cancelEvent(timer_JoinNetwork);
     if (timer_ExchangeCache) delete cancelEvent(timer_ExchangeCache);
 
-    if (m_cache) delete m_cache;
     if (m_ownValue) delete m_ownValue;
 
-    localAgents.clear(); // only empty the list ... dont delete listeners!
+    localAgents.clear(); // only empty the list ... do not delete them!
 }
 
-void NewscastBase::finish(){
+void NewscastBase::finish()
+{
     if (m_statistics)
-        m_statistics->writeCacheConnections(m_localAddress, m_cache->getAllAddresses());
+        m_statistics->writeCacheConnections(m_localAddress, m_cache.getAllAddresses());
 }
 
-void NewscastBase::initialize(int stage) {
-
+void NewscastBase::initialize(int stage)
+{
     if (stage != 4) return;
 
-    EV << "init" << endl;
     // get the name for the agent from the parent module
     m_ownName = getParentModule()->getParentModule()->getFullName();
 
     bindToGlobalModule(); // connect to global modules
     findNodeAddress(); // find and store own address
 
-    // create a new cache
-    m_cache = new NewscastCache((int)par("cacheSize"));
-EV << "NewscastBase::initialize:1" << endl;
+
+    EV << "NewscastBase::initialize " << m_localAddress << endl;
+    // set cache size
+    m_cache.setMaxSize((int)par("cacheSize"));
+
     // create the messages used for timer actions
     timer_ExchangeCache = new cMessage("Newscast: ExchangeCacheTimer");
     timer_JoinNetwork   = new cMessage("Newscast: JoinNetworkTimer");
-EV << "NewscastBase::initialize:2" << endl;
+
     // schedule a timer to join the netwrok
     //scheduleAt(simTime() + m_churn->getArrivalTime() , timer_JoinNetwork);
-    scheduleAt( uniform(0,10) , timer_JoinNetwork);
-
-EV << "NewscastBase::initialize:3" << endl;
+    scheduleAt( uniform(0,5) , timer_JoinNetwork);
 }
 
-void NewscastBase::handleMessage(cMessage *msg){
-    EV << "[NewscastBase] handleMessage" << endl;
+void NewscastBase::handleMessage(cMessage *msg)
+{
+    if (msg == timer_JoinNetwork){  // join the network
 
-    if (msg == timer_JoinNetwork){
-
-        EV << "[NewscastBase] Join Network Timer!" << endl;
         joinNetwork();
 
-    }else if (msg == timer_ExchangeCache){  // intervall for cache-exchange reached ...
-
-        EV << "[NewscastBase] Timer!" << endl;
+    }else if (msg == timer_ExchangeCache){  // regular cache-exchange ...
 
         if (checkBootstrapNeeded()) // do we need a bootstrap?
             doBootstrap();
@@ -123,20 +110,21 @@ void NewscastBase::handleMessage(cMessage *msg){
     }
 }
 
-void NewscastBase::handlePacket(cPacket* pkt){
-EV << "NewscastBase::handlePacket" << endl;
+void NewscastBase::handlePacket(cPacket* pkt)
+{
     // -- Extract the IP and port of the responder
     DpControlInfo *controlInfo = check_and_cast<DpControlInfo *>(pkt->getControlInfo());
 
     // cast the "unknown" packet to our own packet-class
     NewscastPacket* np = check_and_cast<NewscastPacket*>(pkt);
 
-    switch (np->getPacketType()){
+    switch (np->getPacketType())
+    {
         case NEWSCAST_REQUEST:
-            EV << "GOT REQUEST" << endl;
+        {
             // have we joined the network?
             if (!m_Active){
-                EV << "BUT WE ARE NOT ACTIVE!" << endl;
+                EV << "Got NEWSCAST_REQUEST but we are not active ... @" << m_ownName << endl;
             }else{
                 // send our cache as a reply
                 sendCacheExchangeReply(controlInfo->getSrcAddr());
@@ -145,32 +133,38 @@ EV << "NewscastBase::handlePacket" << endl;
                 receivedCache(controlInfo->getSrcAddr(), &np->getCache());
 
                 // merge the received cache
-                m_cache->merge(&np->getCache());
+                m_cache.merge(&np->getCache());
+
+                // display the current cache
                 EV << "myCache: " << m_ownName << endl;
-                m_cache->printCache();
+                m_cache.printCache();
             }
             break;
+        }
         case NEWSCAST_REPLY:
-            EV << "GOT REPLY" << endl;
-
-            // calculate something?
+        {
+            // inform listeners that we received a cache
             receivedCache(controlInfo->getSrcAddr(), &np->getCache());
 
             // merge the received cache
-            m_cache->merge(&np->getCache());
+            m_cache.merge(&np->getCache());
+
+            // display the current cache
             EV << "myCache: " << m_ownName << endl;
-            m_cache->printCache();
+            m_cache.printCache();
             break;
+        }
         default:
-            EV << "[NewscastBase] GOT UNKNOWN PACKET!" << endl;
+        {
             break;
+        }
     }
 
-    delete pkt; // QUESTION: do i have to do this?
+    delete pkt;
 }
 
-void NewscastBase::sendCacheExchangeRequest(IPvXAddress addr) {
-EV << "NewscastBase::sendCacheExchangeRequest" << endl;
+void NewscastBase::sendCacheExchangeRequest(IPvXAddress addr)
+{
     // create new request packet
     NewscastRequestPacket* pkt = new NewscastRequestPacket();
 
@@ -178,17 +172,15 @@ EV << "NewscastBase::sendCacheExchangeRequest" << endl;
     updateOwnCache();
 
     // add a duplicate of our cache to the packet
-    pkt->setCache( *((NewscastCache*) m_cache->dup()) );
-    pkt->addBitLength(m_cache->getEstimatedSizeInBits());
-
-    //m_cache->printCache();
+    pkt->setCache( m_cache.dup() );
+    pkt->addBitLength(m_cache.getEstimatedSizeInBits());
 
     // send the packet to the destination
     sendPacketTo(pkt, addr);
 }
 
-void NewscastBase::sendCacheExchangeReply(IPvXAddress addr) {
-    EV << "NewscastBase::sendCacheExchangeReply" << endl;
+void NewscastBase::sendCacheExchangeReply(IPvXAddress addr)
+{
     // create new reply packet
     NewscastReplyPacket*  pkt = new NewscastReplyPacket();
 
@@ -196,15 +188,15 @@ void NewscastBase::sendCacheExchangeReply(IPvXAddress addr) {
     updateOwnCache();
 
     // add a duplicate of our cache to the packet
-    pkt->setCache( *((NewscastCache*) m_cache->dup()) );
-    pkt->addBitLength(m_cache->getEstimatedSizeInBits());
+    pkt->setCache( m_cache.dup() );
+    pkt->addBitLength(m_cache.getEstimatedSizeInBits());
 
     // send the packet to the destination
     sendPacketTo(pkt, addr);
 }
 
-void NewscastBase::sendPacketTo(cPacket* pkt, IPvXAddress addr){
-    EV << "NewscastBase::sendPacketTo" << endl;
+void NewscastBase::sendPacketTo(cPacket* pkt, IPvXAddress addr)
+{
     // generate a control info and set the sender and receiver
     DpControlInfo *ctrl = new DpControlInfo();
         ctrl->setSrcAddr(m_localAddress);
@@ -219,37 +211,35 @@ void NewscastBase::sendPacketTo(cPacket* pkt, IPvXAddress addr){
     send(pkt, "dpOut");
 }
 
-bool NewscastBase::checkBootstrapNeeded(){
-    EV << "NewscastBase::checkBootstrapNeeded" << endl;
+bool NewscastBase::checkBootstrapNeeded()
+{
     // if there are more than one entry in the cache we are fine
-    if (m_cache->getSize() > 1)
+    if (m_cache.getSize() > 1)
         return false;
 
     // if there is one entry in the cache which isnt ours we are fine too
-    if ((m_cache->getSize() > 0) && (!m_cache->getEntry(0)->getAddress().equals(m_localAddress))) // just one entry ... but isnt ours -> we are fine
+    if ((m_cache.getSize() > 0) && (!m_cache.getEntry(0).getAddress().equals(m_localAddress))) // just one entry ... but isnt ours -> we are fine
         return false;
 
     // we need a bootstrap ...
     return true;
 }
 
-void NewscastBase::doBootstrap(IPvXAddress hint){
-    EV << "NewscastBase::doBootstrap" << endl;
-    // check if we can get a peer from the table
-    if (m_apTable->getNumActivePeer() == 0) // no active peers in the network?! this shouldnt happen ...
+void NewscastBase::doBootstrap(IPvXAddress hint)
+{
+    if (m_apTable->getNumActivePeer() == 0) // no active peers in the network? -> return
         return;
-    EV << "NewscastBase::doBootstrap" << 1 << endl;
+
     // get a random address
     IPvXAddress addr = ((hint.isUnspecified()) ? m_apTable->getARandPeer() : hint);
-    EV << "NewscastBase::doBootstrap" << 2 << endl;
+
     // if this address is ours and there is only one entry we cant do anything :(
     if (addr.equals(m_localAddress) && (m_apTable->getNumActivePeer() == 1))
         return;
-    EV << "NewscastBase::doBootstrap" << 3 << endl;
+
     // getting random addresses until we find one that isnt ours
     while(addr.equals(m_localAddress))
         addr = m_apTable->getARandPeer();
-    EV << "NewscastBase::doBootstrap" << 4 << endl;
 
     // output address
     if (m_statistics)
@@ -257,18 +247,18 @@ void NewscastBase::doBootstrap(IPvXAddress hint){
 
     // send a cache-exchange-request to the address
     sendCacheExchangeRequest(addr);
-    EV << "NewscastBase::doBootstrap" << 5 << endl;
 }
 
-void NewscastBase::doCacheExchange(){
-    EV << "NewscastBase::doCacheExchange" << endl;
-    // we have no entry in the cache :(
-    if (m_cache->getSize() == 0)
+void NewscastBase::doCacheExchange()
+{
+    // we have no entry in the cache so we cant query any peer
+    if (m_cache.getSize() == 0)
         return;
 
     // find a random address from our cache ...
     IPvXAddress addr = getRandomPeer(m_localAddress);
 
+    // if the address is not valid quit now
     if (addr.isUnspecified())
         return;
 
@@ -339,9 +329,8 @@ IPvXAddress NewscastBase::getNodeAddress(void)
 /*
  * called whenever a cache from a peer has been received
  */
-void NewscastBase::receivedCache(IPvXAddress from, NewscastCache* cache){
-    EV << "NewscastBase::receivedCache" << endl;
-
+void NewscastBase::receivedCache(IPvXAddress from, NewscastCache* cache)
+{
     AgentList::iterator it;
     for (it = localAgents.begin(); it != localAgents.end(); it++){
         (*it)->onCacheReceived(from, cache);
@@ -351,17 +340,17 @@ void NewscastBase::receivedCache(IPvXAddress from, NewscastCache* cache){
 /*
  * inserts the entries of all local agents in our cache
  */
-void NewscastBase::updateOwnCache(){
-    EV << "NewscastBase::updateOwnCache" << endl;
-
+void NewscastBase::updateOwnCache()
+{
     if (m_ownName.size() > 0)
-        m_cache->setEntry(m_ownName, m_localAddress, simTime(), m_ownValue);
+        m_cache.setEntry(m_ownName, m_localAddress, simTime(), m_ownValue);
 
     // query local Agents
     AgentList::iterator it;
-    for (it = localAgents.begin(); it != localAgents.end(); it++){
+    for (it = localAgents.begin(); it != localAgents.end(); it++)
+    {
         if ((*it)->getAgentName().size() > 0)
-            m_cache->setEntry((*it)->getAgentName(), m_localAddress, simTime(), (*it)->getOwnData());
+            m_cache.setEntry((*it)->getAgentName(), m_localAddress, simTime(), (*it)->getOwnData());
     }
 }
 
@@ -369,42 +358,45 @@ void NewscastBase::updateOwnCache(){
 /*
  * adds an agent to this instance
  */
-void NewscastBase::addAgent(NewscastAgentInterface* agent){
+void NewscastBase::addAgent(NewscastAgentInterface* agent)
+{
     removeAgent(agent);
     localAgents.push_back(agent);
 }
 /*
  * removes an agent from this instance
  */
-void NewscastBase::removeAgent(NewscastAgentInterface* agent){
+void NewscastBase::removeAgent(NewscastAgentInterface* agent)
+{
     AgentList::iterator it;
-    for (it = localAgents.begin(); it != localAgents.end(); it++){
-        if (*it == agent)
+    for (it = localAgents.begin(); it != localAgents.end(); it++)
+    {
+        if (*it == agent){
             localAgents.erase(it);
+            it = localAgents.begin();
+        }
     }
 }
 
 
 
 // Interface: GossipProtocolWithUserData -->
-void NewscastBase::setOwnData(GossipUserData* data){
+void NewscastBase::setOwnData(GossipUserData* data)
+{
     if (m_ownValue)
         delete m_ownValue;
     m_ownValue = data->dup();
 }
-GossipUserData* NewscastBase::getPeerData(IPvXAddress addr){
-    NewscastCacheEntry* entry = m_cache->getEntry(addr);
-
-    if (entry == NULL)
-        return NULL;
-
-    return entry->getValue();
+GossipUserData* NewscastBase::getPeerData(IPvXAddress addr)
+{
+    return m_cache.getEntry(addr).getValue();
 }
 // <-- Interface: GossipProtocolWithUserData
 
 // Interface: GossipProtocol -->
-bool NewscastBase::joinNetwork(IPvXAddress bootstrap){
-    m_apTable->addPeerAddress(m_localAddress);
+bool NewscastBase::joinNetwork(IPvXAddress bootstrap)
+{
+    m_apTable->addAddress(m_localAddress);
     m_Active = true;
 
     doBootstrap(bootstrap);
@@ -412,34 +404,39 @@ bool NewscastBase::joinNetwork(IPvXAddress bootstrap){
 
     return true;
 }
-void NewscastBase::leaveNetwork(){
-    cancelEvent(timer_ExchangeCache);
-    m_Active = false;
-    m_apTable->deletePeerAddress(m_localAddress);
-}
-IPvXAddress NewscastBase::getRandomPeer(){
-    NewscastCacheEntry* entry = m_cache->getRandomEntry();
-    return (entry == NULL) ? NULL : entry->getAddress();
-}
-IPvXAddress NewscastBase::getRandomPeer(IPvXAddress notThisAddress){
+
+//void NewscastBase::leaveNetwork(){
+//    cancelEvent(timer_ExchangeCache);
+//    m_Active = false;
+//    m_apTable->deletePeerAddress(m_localAddress);
+//}
+
+//IPvXAddress NewscastBase::getRandomPeer(){
+//    NewscastCacheEntry entry = m_cache.getRandomEntry();
+//    return entry.getAddress();
+//}
+
+IPvXAddress NewscastBase::getRandomPeer(IPvXAddress notThisAddress)
+{
     // no entries in cache :(
-    if (m_cache->getSize() == 0)
-        return NULL;
+    if (m_cache.getSize() == 0)
+        return "0.0.0.0";
 
     // find a random address from our cache ...
-    IPvXAddress addr = m_cache->getRandomEntry()->getAddress();
+    IPvXAddress addr = m_cache.getRandomEntry().getAddress();
 
     // if this address is the one to be ignored and there is only one entry we cant do anything :(
-    if (addr.equals(notThisAddress) && (m_cache->getSize() == 1))
-        return NULL;
+    if (addr.equals(notThisAddress) && (m_cache.getSize() == 1))
+        return "0.0.0.0";
 
     // loop until we find one that isnt ours ...
     while(addr.equals(notThisAddress))
-        addr = m_cache->getRandomEntry()->getAddress();
+        addr = m_cache.getRandomEntry().getAddress();
 
     return addr;
 }
-std::vector<IPvXAddress> NewscastBase::getKnownPeers(){
-    return m_cache->getAllAddresses();
+std::vector<IPvXAddress> NewscastBase::getKnownPeers()
+{
+    return m_cache.getAllAddresses();
 }
 // <-- Interface: GossipProtocol

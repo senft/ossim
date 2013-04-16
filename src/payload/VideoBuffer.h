@@ -1,17 +1,34 @@
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// VideoBuffer.h
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
+
 
 #ifndef VIDEOBUFFER_H_
 #define VIDEOBUFFER_H_
@@ -20,12 +37,15 @@
 #define __VIDEOBUFFER_CROSSCHECK__ true
 #define __VIDEO_BUFFER_DEBUG__ false
 
-#include <queue>
-#include "MeshPeerStreamingPacket_m.h"
+//#include <queue>
+//#include "MeshPeerStreamingPacket_m.h"
+//#include "StatisticBase.h"
+//#include "GlobalStatistic.h"
+
 #include "VideoChunkPacket_m.h"
 #include "AppCommon.h"
 #include "BufferMap.h"
-#include "GlobalStatistic.h"
+#include "StreamingStatistic.h"
 
 // listening support ->
 #include "VideoBufferListener.h"
@@ -33,16 +53,15 @@
 
 
 typedef struct __STRM_BUF_ELEM {
-    __STRM_BUF_ELEM() : m_chunk(NULL) {};
+    __STRM_BUF_ELEM() : m_chunk(NULL) {}
     //MeshVideoChunkPacket *m_chunk;
     VideoChunkPacket *m_chunk;
     SEQUENCE_NUMBER_T m_recved_time;
 } STREAM_BUFFER_ELEMENT_T;
 
-class VideoBuffer : public cSimpleModule {
-//class VideoBuffer {
+class VideoBuffer : public cSimpleModule
+{
 public:
-//    VideoBuffer(int size);
     VideoBuffer();
     virtual ~VideoBuffer();
 
@@ -64,7 +83,6 @@ public:
 
     inline SEQUENCE_NUMBER_T getBufferStartSeqNum(void) { return m_bufferStart_seqNum; }
     inline void setBufferStartSeqNum(SEQUENCE_NUMBER_T val) { m_bufferStart_seqNum = val; }
-
 
     inline SEQUENCE_NUMBER_T getBufferEndSeqNum(void) { return m_bufferEnd_seqNum; }
     inline void setBufferEndSeqNum(SEQUENCE_NUMBER_T val) { m_bufferEnd_seqNum = val; }
@@ -93,7 +111,6 @@ public:
     bool isInBuffer(SEQUENCE_NUMBER_T seq_num);
     bool inBuffer(SEQUENCE_NUMBER_T seq_num);
     SIM_TIME_T getReceivedTime(SEQUENCE_NUMBER_T seq_num);
-//    MeshVideoChunkPacket *getChunk(SEQUENCE_NUMBER_T seq_num);
     STREAM_BUFFER_ELEMENT_T & getBufferElement(SEQUENCE_NUMBER_T seq_num);
     void captureVideoBuffer(BufferMap *bm);
     void fillBufferMapPacket(MeshBufferMapPacket *bmPkt);
@@ -105,7 +122,6 @@ public:
     void initializeRangeVideoBuffer(SEQUENCE_NUMBER_T seq);
 
 //    double getDeadline(SEQUENCE_NUMBER_T seq_num) const;
-
 
     // Debug
     void printStatus();
@@ -119,9 +135,6 @@ private:
     // -- Pointers to external modules
 //    AppSettingDonet *m_appSetting;
 
-    // old version which uses queue
-    //    std::queue<STREAM_BUFFER_ELEMENT_T> m_streamBuffer;
-
     std::vector<STREAM_BUFFER_ELEMENT_T> m_streamBuffer;
     // sequence numbers
     SEQUENCE_NUMBER_T m_bufferStart_seqNum; // staring sequence number of the buffer
@@ -133,7 +146,8 @@ private:
 //    int param_videoStreamBitRate;
 //    int param_chunkSize;
 
-    GlobalStatistic *m_gstat;
+    //GlobalStatistic *m_gstat;
+    StreamingStatistic *m_gstat;
 
     int m_bufferSize_chunk;
 

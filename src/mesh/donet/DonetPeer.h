@@ -1,3 +1,34 @@
+//
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// DonetPeer.h
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
+
 #ifndef DONETPEER_H_
 #define DONETPEER_H_
 
@@ -19,6 +50,13 @@
 struct SchedulingWindow
 {
    SEQUENCE_NUMBER_T end, head, start;
+};
+
+struct DataExchange
+{
+   double m_time;
+   double m_throughput; // overall throughput since partnership establishment
+   double m_throughput_interval; // throughput between the two most recent sampling
 };
 
 class DonetPeer : public DonetBase
@@ -44,11 +82,13 @@ private:
 //    void readChannelRate(void);
 
     void cancelAndDeleteAllTimer();
+    void cancelAllTimer();
 
     // *************************************************************************
     // *************************************************************************
     // -- Partnership
     void handleTimerJoin(void);
+    void handleTimerLeave();
     void handleTimerFindMorePartner(void);
     void handleTimerTimeoutWaitingAccept();
     void handleTimerPartnershipRefinement(void);
@@ -62,7 +102,10 @@ private:
 
     void processTimeoutJoinRequestAccept(cMessage *msg);
 
-    void updateDataExchangeRecord(void);
+    void updateDataExchangeRecord(double samplingInterval);
+
+    void handleTimerReportStatistic();
+    void handleTimerReportActive();
 
     // !!! obsolete !!!
 //    void join();
@@ -100,9 +143,10 @@ private:
     void printListOfRequestedChunk(void);
     bool inScarityState(void);
 
+    MeshPartnershipLeavePacket* generatePartnershipRequestLeavePacket();
 
-    bool shouldStartPlayer(void);
-    void startPlayer(void);
+//    bool shouldStartPlayer(void);
+//    void startPlayer(void);
 
 private:
 // -----------------------------------------------------------------------------
@@ -110,18 +154,20 @@ private:
 // -----------------------------------------------------------------------------
     cMessage *timer_getJoinTime;
     cMessage *timer_join;
+    cMessage *timer_leave;
     cMessage *timer_chunkScheduling;
     cMessage *timer_findMorePartner;
     cMessage *timer_startPlayer;
     cMessage *timer_timeout_joinReqAccept;
+    cMessage *timer_reportStatistic;
+    cMessage *timer_reportActive;
 
     //cMessage *timer_timeout_waiting_accept;
     //cMessage *timer_timeout_waiting_ack;
     cMessage *timer_timeout_waiting_response;
-//    cMessage *timer_rejoin;
     cMessage *timer_partnershipRefinement;
 
-    cMessage *timer_partnerListCleanup;
+    //cMessage *timer_partnerListCleanup;
 
 // -----------------------------------------------------------------------------
 //                               Parameters
@@ -139,6 +185,8 @@ private:
     double  param_interval_waitingPartnershipResponse;
     double  param_interval_partnershipRefinement;
     double  param_interval_partnerlistCleanup;
+    double  param_interval_reportStatistic;
+    static double  param_interval_reportActive;
 
     //double  param_baseValue_requestGreedyFactor;
     //double  param_aggressiveValue_requestGreedyFactor
@@ -165,8 +213,9 @@ private:
     IChurnGenerator *m_churn;
 
     // -- Pointer to external modules
-    //Player *m_player; // TODO: should be obsolete!!!
     PlayerBase *m_player;
+//    StreamingStatistic *m_gstat;
+
 
     // State variables
     bool m_scheduling_started;
@@ -200,19 +249,28 @@ private:
     long int m_prevNChunkReceived;
     int m_downloadRate_chunk;
 
+    // -- For reporting statistics
+    long int m_count_prev_chunkHit, m_count_prev_chunkMiss;
+
+
+    // --------------------------- Optimization --------------------------------
+    std::vector<IPvXAddress> m_blacklist;
+
     // -------------------------------- Signals --------------------------------
 
     // -- For ranges of received buffer maps, and current playback point
-    simsignal_t sig_currentPlaybackPoint;
-    simsignal_t sig_minStart;
-    simsignal_t sig_maxStart;
-    simsignal_t sig_minHead;
-    simsignal_t sig_maxHead;
-    simsignal_t sig_bufferStart;
-    simsignal_t sig_bufferHead;
+       simsignal_t sig_currentPlaybackPoint;
+       simsignal_t sig_minStart;
+       simsignal_t sig_maxStart;
+       simsignal_t sig_minHead;
+       simsignal_t sig_maxHead;
+       simsignal_t sig_bufferStart;
+       simsignal_t sig_bufferHead;
 
-    simsignal_t sig_localCI;
-    simsignal_t sig_myci;
+       simsignal_t sig_schedWin_start;
+       simsignal_t sig_schedWin_end;
+
+       simsignal_t sig_localCI;
 
     // -- Chunks
        simsignal_t sig_chunkRequestSeqNum;
@@ -247,4 +305,4 @@ private:
 
 };
 
-#endif
+#endif // DONETPEER_H_

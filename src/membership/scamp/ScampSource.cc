@@ -1,20 +1,40 @@
-//#include "VideoSource.h"
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// ScampSource.cc
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
 
 #include <algorithm>
 #include <cstring>
 #include <cstdio>
-#include "UDPControlInfo_m.h"
-//#include "UDPPacket.h"
-//#include <IPAddressResolver.h>
-//#include <csimulation.h>
-
 #include "ScampSource.h"
 
-#include "PeerStreamingPacket_m.h"
-#include "MeshPeerStreamingPacket_m.h"
-#include "GossipMembershipPacket_m.h"
-
-Define_Module(ScampSource);
+Define_Module(ScampSource)
 
 ScampSource::ScampSource()
 {
@@ -25,6 +45,7 @@ ScampSource::~ScampSource()
     // -- Cancel and delete timer messages
     if (timer_isolationCheck)   delete cancelEvent(timer_isolationCheck);
     if (timer_sendAppMessage)   delete cancelEvent(timer_sendAppMessage);
+    if (timer_reportPvSize) cancelAndDelete(timer_reportPvSize);
 }
 
 void ScampSource::initialize(int stage)
@@ -38,6 +59,7 @@ void ScampSource::initialize(int stage)
         // -- Timers
         timer_isolationCheck    = new cMessage("GOSSIP_ISOLATION_CHECK");
         timer_sendAppMessage    = new cMessage("GOSSIP_SEND_APP_MESSAGE");
+        timer_reportPvSize      = new cMessage("TIMER_REPORT_PVSIZE");
 
         //timer_reportPvSize      = new cMessage("GOSSIP_REPORT_PV_SIZE");
 
@@ -45,18 +67,22 @@ void ScampSource::initialize(int stage)
 //        m_heartbeatMsg = new GossipHeartbeatPacket("GOSSIP_HEARTBEAT");
 
         // -- Binding to external modules
-        bindToGlobalModule();
         bindToParentModule();
+        bindToGlobalModule();
+        bindToStatisticModule();
 
         // -- Reading values for parameters
         readParameter();
         findNodeAddress();
 
+        param_time_reportPvSize = par("time_reportPvSize");
+        scheduleAt(simTime() + param_time_reportPvSize, timer_reportPvSize);
+
         m_simDuration = getSimDuration();
 
         // -- Add the IP address of the video source to the Active Peer Table
         // -- (so that other peers could have at least one address in the list to contact to)
-        m_apTable->addPeerAddress(getNodeAddress());
+        m_apTable->addAddress(getNodeAddress());
 
         // -- Declare itself that it is active now
         m_active = true;
@@ -69,12 +95,18 @@ void ScampSource::initialize(int stage)
 //        scheduleAt(m_simDuration - 0.01, timer_reportPvSize);
         //scheduleAt(SimTime() + param_appMessageInterval, timer_sendAppMessage);
 
+        // -- Signals
+        sig_pvSize = registerSignal("Signal_pvSize");
 
         // m_apTable->printActivePeerTable();
 
+        // ---------------------------------------------------------------------
+        // --- WATCH
+        // ---------------------------------------------------------------------
         WATCH(m_localPort);
         WATCH(m_apTable);
         WATCH(m_simDuration);
+        WATCH(m_c);
     }
 }
 
@@ -97,15 +129,20 @@ void ScampSource::handleTimerMessage(cMessage *msg)
     {
         // -- re-subscribe to the gossip overlay
         // subscribe();
-        checkIsolation();
+        //checkIsolation();
 
         // -- Schedule for the next isolation check
-        scheduleAt(simTime() + param_isoCheckInterval, timer_isolationCheck);
+        //scheduleAt(simTime() + param_isoCheckInterval, timer_isolationCheck);
     }
     else if (msg == timer_sendAppMessage)
     {
-        sendGossipAppMessage();
-        scheduleAt(simTime() + param_appMessageInterval, timer_sendAppMessage);
+//        sendGossipAppMessage();
+//        scheduleAt(simTime() + param_appMessageInterval, timer_sendAppMessage);
+    }
+    else if (msg == timer_reportPvSize)
+    {
+       m_gstat->reportPvSize(m_partialView.getViewSize());
+       emit(sig_pvSize, m_partialView.getViewSize());
     }
 //    else if (msg == timer_reportPvSize)
 //    {

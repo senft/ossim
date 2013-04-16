@@ -1,3 +1,34 @@
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// DonetBase.cc
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
+
 #include "DonetBase.h"
 #include "DpControlInfo_m.h"
 
@@ -159,6 +190,9 @@ void DonetBase::bindToMeshModule(void)
     m_forwarder = check_and_cast<Forwarder *>(temp);
     EV << "Binding to Forwarder is completed successfully" << endl;
 
+    temp = getParentModule()->getModuleByRelativePath("membership");
+    m_memManager = check_and_cast<MembershipBase *>(temp);
+    EV << "Binding to MembershipManager is completed successfully" << endl;
 }
 
 void DonetBase::bindToGlobalModule(void)
@@ -179,6 +213,15 @@ void DonetBase::bindToGlobalModule(void)
     m_logger = check_and_cast<Logger *>(temp);
     EV << "Binding to Logger is completed successfully" << endl;
 
+}
+
+void DonetBase::bindtoStatisticModule()
+{
+   Enter_Method("bindToStatisticModule()");
+
+   cModule *temp = simulation.getModuleByPath("globalStatistic");
+   m_gstat = check_and_cast<DonetStatistic *>(temp);
+   EV << "Binding to globalStatistic is completed successfully" << endl;
 }
 
 void DonetBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
@@ -266,7 +309,7 @@ void DonetBase::reportStatus()
 {
     Partnership p;
         p.address           = getNodeAddress();
-        p.arrivalTime       = m_arrivalTime;
+        //p.arrivalTime       = m_arrivalTime;
         p.joinTime          = m_joinTime;
         p.nPartner          = m_partnerList->getSize();
         p.video_startTime   = m_video_startTime;
@@ -340,7 +383,8 @@ void DonetBase::processPartnershipRequest(cPacket *pkt)
 
            // -- Report to Active Peer Table to update the information
            EV << "Increment number of partner " << endl;
-           m_apTable->incrementNPartner(getNodeAddress());
+           //m_apTable->incrementNPartner(getNodeAddress());
+           m_memManager->incrementNPartner(getNodeAddress());
 
            MeshPartnershipAcceptPacket *acceptPkt = generatePartnershipRequestAcceptPacket();
            sendToDispatcher(acceptPkt, m_localPort, requester.address, requester.port);
@@ -369,12 +413,14 @@ void DonetBase::processPartnershipRequest(cPacket *pkt)
     }
     case MESH_JOIN_STATE_IDLE:
     {
-        throw cException("JOIN_REQUEST is not expected for unjoined (MESH_JOIN_STATE_IDLE) nodes");
+       // TODO
+        //throw cException("JOIN_REQUEST is not expected for unjoined (MESH_JOIN_STATE_IDLE) nodes");
         break;
     }
     case MESH_JOIN_STATE_IDLE_WAITING:
     {
-        throw cException("JOIN_REQUEST is not expected for unjoined (MESH_JOIN_STATE_IDLE_WAITING) nodes");
+       // TODO
+        //throw cException("JOIN_REQUEST is not expected for unjoined (MESH_JOIN_STATE_IDLE_WAITING) nodes");
         break;
     }
     default:
@@ -385,6 +431,30 @@ void DonetBase::processPartnershipRequest(cPacket *pkt)
     } // switch()
 
 }
+
+//void DonetBase::processPartnerLeave(cPacket *pkt)
+//{
+//   Enter_Method("processPartnerLeave()");
+
+//   EV << endl << "-------- Process partner leave ---------------" << endl;
+
+//   // -- Get the identifier (IP:port) and upBw of the requester
+//   IPvXAddress leaveAddress;
+//   int leavePort;
+//   //MeshPartnershipLeavePacket *memPkt = check_and_cast<MeshPartnershipLeavePacket *>(pkt);
+//      getSender(pkt, leaveAddress, leavePort);
+
+//   EV << "Requester: " << endl
+//      << "-- Address:\t\t"         << leaveAddress << endl;
+
+//   EV << "Partner list before removing partner: " << endl;
+//   m_partnerList->print();
+
+//   m_partnerList->m_map.erase(m_partnerList->m_map.find(leaveAddress));
+
+//   EV << "Partner list after removing partner: " << endl;
+//   m_partnerList->print();
+//}
 
 void DonetBase::considerAcceptPartner(PendingPartnershipRequest requester)
 {
@@ -402,7 +472,8 @@ void DonetBase::considerAcceptPartner(PendingPartnershipRequest requester)
 
         // -- Report to Active Peer Table to update the information
         EV << "Increment number of partner " << endl;
-        m_apTable->incrementNPartner(getNodeAddress());
+        //m_apTable->incrementNPartner(getNodeAddress());
+        m_memManager->incrementNPartner(getNodeAddress());
 
         // -- Store the peer as a candidate
         // m_candidate = requester;
@@ -430,10 +501,10 @@ void DonetBase::considerAcceptPartner(PendingPartnershipRequest requester)
  *
  *******************************************************************************
  */
-void DonetBase::handleTimerReport(void)
-{
-   m_gstat->writePartnerList2File(getNodeAddress(), m_partnerList->getAddressList());
-}
+//void DonetBase::handleTimerReport(void)
+//{
+//   m_gstat->writePartnerList2File(getNodeAddress(), m_partnerList->getAddressList());
+//}
 
 void DonetBase::addPartner(IPvXAddress remote, double upbw)
 {
@@ -442,4 +513,24 @@ void DonetBase::addPartner(IPvXAddress remote, double upbw)
    m_gstat->writePartnership2File(getNodeAddress(), remote);
 }
 
+void DonetBase::processPartnershipLeave(cPacket *pkt)
+{
+   Enter_Method("processPartnershipLeave()");
+   EV << endl << "-------- Process partnership Leave --------------------------------" << endl;
 
+   // -- Get the identifier (IP:port) and upBw of the requester
+   IPvXAddress leavingAddress = IPvXAddress("10.0.0.9");;
+   int senderPort = 0;
+   getSender(pkt, leavingAddress, senderPort);
+   //MeshChunkRequestPacket *reqPkt = check_and_cast<MeshChunkRequestPacket *>(pkt);
+
+   EV << "Leave request received from " << leavingAddress << endl;
+
+   EV << "Partner list before removing partner: " << endl;
+   m_partnerList->print();
+
+   m_partnerList->deleteAddress(leavingAddress);
+
+   EV << "Partner list after removing partner: " << endl;
+   m_partnerList->print();
+}
