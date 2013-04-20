@@ -1,17 +1,39 @@
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// CoolstreamingBase.h
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Thorsten Jacobi;
+// Code Reviewers: Giang;
+// -----------------------------------------------------------------------------
+//
+
+
+// @author Thorsten Jacobi
+// @brief base class for source and peer of newscast
+// @ingroup mesh
+// @ingroup coolstreaming
 
 #ifndef CoolstreamingBase_H_
 #define CoolstreamingBase_H_
@@ -56,57 +78,83 @@ public:
     CoolstreamingBase();
     virtual ~CoolstreamingBase();
 
-    virtual void handleMessage(cMessage *msg);
+    void handleMessage(cMessage *msg);
 
+    // @brief checks if a address is a partner
     bool isPartner(IPvXAddress addr);
+    // @brief finds the pointer to a partner for a given address
     CoolstreamingPartner* findPartner(IPvXAddress addr);
+
+//protected:
+//    virtual int numInitStages() const { return 4; }
+
+//    virtual void initialize(int stage);
+//    virtual void finish();
+
 protected:
+    // @brief handles the intiation of this base class
     void initBase();
 
     virtual void processPacket(cPacket *pkt);
     virtual void handleTimerMessage(cMessage *msg);
 
     int param_SubstreamCount;
-    int param_maxNOC;
+
+    // @brief pointer to the gossip layer
     GossipProtocol* m_Gossiper;
 
-
+    // DEBUG ->
+    bool debugOutput;
+    std::ofstream m_outFileDebug;
+    // <- DEBUG
 
     // partnership managment ->
 protected:
-
-    unsigned int param_minNOP;
+    // @brief maximum number of partners
     unsigned int param_maxNOP;
+    // @brief timeout for inactive partners
     double param_PartnerTimeout;
-    double param_CheckPartnersIntervall;
-    double param_BufferMapIntervall;
+    // @brief interval to check the current number of partners
+    double param_CheckPartnersInterval;
+    // @brief interval  to send the buffermap to partners
+    double param_BufferMapInterval;
 
+    // @brief list of current partners
     std::vector<CoolstreamingPartner*> partners;
 
     cMessage* timer_CheckPartners;
     cMessage* timer_BufferMap;
 
+    // @brief intervall function for checking partners
     virtual void checkPartners();
+    // @brief removes inactive partners from list
     void removeTimeoutedPartners();
 
+    // @brief returns a pointer to the parent/partner of a substream
+    CoolstreamingPartner* getParent(int substream);
+
 private:
+    // @brief handles partnership request/accept/revoke
     void processPartnershipPacket(CoolstreamingPacket *pkt);
-    void addPartner(IPvXAddress addr);
+    // @brief adds an address as a partner
+    CoolstreamingPartner* addPartner(IPvXAddress addr);
+protected:
+    // @brief removes a partner by address
     void removePartner(IPvXAddress addr);
     // <- partnership
-
-
-
-
 
 protected:
 
     // Buffer Map-Handling
+    // @brief sends the current buffermap to a given partner
     void sendBufferMap(CoolstreamingPartner* dest);
+    // @brief processes a received buffermap
     void processBufferMapPacket(CoolstreamingBufferMapPacket* pkt);
 
     // Chunk handling
+    // @brief send a chunk identified by number to a partner
     void sendChunk(CoolstreamingPartner* dest, int number);
+    // @brief gets called whenever a new chunk is received and sends it to his children
     virtual void onNewChunk(int sequenceNumber);
 
 
@@ -116,6 +164,11 @@ protected:
     double getDownloadBw();
     double getUploadBw();
 
+    // @brief gets the latest sequence number with at least 5 connected chunks (checking from end of buffer to start)
+    int getLatestSequenceNumber(int substream);
+    // @brief gets the latest sequence number of connected chunks from the beginning of the buffer
+    int getLatestSequenceNumberB(int substream);
+
     // -- Overloading functions
     void bindToGlobalModule(void);
     void bindToMeshModule(void);
@@ -123,15 +176,9 @@ protected:
 protected:
     int m_localPort, m_destPort;
 
-    // -- Parameters
-    // -- Partnership size
-
-    //int param_maxNOP;
-    int param_offsetNOP;
     double param_upBw;
     double param_downBw; // Download bandwidth is not neccessary!
 
-    int param_bufferMapSize_second;
     int param_videoStreamBitRate;
     int param_chunkSize;
 
@@ -140,11 +187,6 @@ protected:
     // -- Variables for settings
     int m_videoStreamChunkRate;     /* in [chunks/second] */
     int m_bufferMapSize_chunk;      /* in [chunks] */
-    int m_BufferMapPacketSize_bit;  /* in [bits]   */
-
-    // -- Timer messages
-    cMessage *timer_sendBufferMap;
-    cMessage *timer_sendReport;
 
     // -- Pointers to /global/ modules
     AppSettingDonet         *m_appSetting;
@@ -153,43 +195,9 @@ protected:
     Logger                  *m_logger;
 
     // -- Pointers to /local/ modules
-    PartnerList *m_partnerList;
     VideoBuffer *m_videoBuffer;
     Forwarder   *m_forwarder;
-
-    // --- Additional variables for debugging purposes
-    double m_arrivalTime;
-    double m_joinTime;
-    double m_video_startTime;
-    SEQUENCE_NUMBER_T m_head_videoStart;
-    SEQUENCE_NUMBER_T m_begin_videoStart;
-    int m_threshold_videoStart;
-    long m_nChunkRequestReceived;
-    long m_nChunkSent;
-    long m_nBufferMapRecv;
-
-    // -- Join process
-    IPvXAddress m_address_candidate;
-    double      m_upBw_candidate;
-
-    // -- For join request & response
-    // IP addresses of nodes to send JOIN_REQ to will be stored here
-    //vector<IPvXAddress> m_list_joinRequestedNode;
-    // IP addresses of nodes to send JOIN_ACCEPT to will be stored here
-    //vector<IPvXAddress> m_list_joinAcceptedNode;
-    // IP addresses of nodes which sent JOIN_REQ to this node
-    vector<PendingPartnershipRequest> m_list_partnershipRequestingNode;
-    PendingPartnershipRequest m_candidate;
-
-    bool m_state_joined;
-    short m_joinState;
-
-    Mesh_Join_State m_state;
-
-    simsignal_t sig_pRejectSent;
-    simsignal_t sig_pRequestRecv;
-    simsignal_t sig_pRequestRecv_whileWaiting;
-
+    MembershipBase *m_memManager;
 };
 
 #endif /* CoolstreamingBase_H_ */

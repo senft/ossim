@@ -30,7 +30,7 @@ EXEC_FILE=$EXEC_SRC_PATH/$PROJECT_NAME
 
 # Specify the Network and the configuration file
 NETWORK=Donet_Homo_oneRouter_Network
-CONFIG_FILE=DonetNetworkConfig.ini
+CONFIG_FILE=Donet.ini
 
 # Delete all files in the results/ folder
 # rm $RESULT_PATH/*.*
@@ -58,4 +58,4 @@ opp_runall -j1 \
 	  -n $EXEC_SIM_PATH:$EXEC_SRC_PATH:$INET_SRC_PATH \
 	  -l $INET_SRC_PATH/inet 
 
-
+#opp_runall -j3 ../../src/so -r 0..2 -c Donet_Homo_oneRouter_Network ../DonetNetworkConfig.ini -n ../:../../src:../../../inet -l ../../../inet/src

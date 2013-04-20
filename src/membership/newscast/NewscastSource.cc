@@ -1,50 +1,53 @@
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// NewscastSource.cc
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Thorsten Jacobi;
+// Code Reviewers: Giang;
+// -----------------------------------------------------------------------------
+//
+
 /*
- * NewscastSource.cc
- *
  *      Author: Thorsten Jacobi
  */
 
+// @author Thorsten Jacobi
+// @brief the implementation of the newscast source, inherits NewscastBase
+
 #include "NewscastSource.h"
-
 #include "regmacros.h"
-Define_Module(NewscastSource);
 
+Define_Module(NewscastSource)
 
-#include "GossipUserData.h"
-class SpecialObject : public GossipUserData {
-public:
-    int a;
-    int b;
-    int c;
-    int d;
-
-
-
-    SpecialObject();
-
-    ~SpecialObject();
-
-    GossipUserData* dup() const{
-        return new SpecialObject();
-    }
-
-    long getSizeInBits(){
-        return ((sizeof(a)+sizeof(b)+sizeof(c)+sizeof(d))*8);
-    }
-};
-
-SpecialObject::SpecialObject() : GossipUserData(){
-
-}
-SpecialObject::~SpecialObject(){
-
-}
-
-NewscastSource::NewscastSource() {
+NewscastSource::NewscastSource()
+{
     //ownValue = new SpecialObject(); // TODO: remove
 }
 
-NewscastSource::~NewscastSource() {
+NewscastSource::~NewscastSource()
+{
     // TODO Auto-generated destructor stub
 }
 

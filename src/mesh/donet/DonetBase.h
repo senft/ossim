@@ -1,3 +1,34 @@
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
+//
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// DonetBase.h
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
+
 #ifndef DONETBASE_H_
 #define DONETBASE_H_
 
@@ -6,18 +37,21 @@
 #include "PartnerList.h"
 #include "VideoBuffer.h"
 #include "Forwarder.h"
+#include "MembershipBase.h"
 #include "ActivePeerTable.h"
 #include "AppSettingDonet.h"
 #include "IChurnGenerator.h"
 #include "MeshOverlayObserver.h"
 #include "Logger.h"
+#include "DonetStatistic.h"
 
 #include "IPvXAddress.h"
 #include <fstream>
 
 //class Logger;
 
-enum Mesh_Join_State {
+enum Mesh_Join_State
+{
     MESH_JOIN_STATE_IDLE            = 0,
     MESH_JOIN_STATE_IDLE_WAITING    = 1,
     MESH_JOIN_STATE_ACTIVE          = 2,
@@ -49,19 +83,22 @@ protected:
     // -- Overloading functions
     void bindToGlobalModule(void);
     void bindToMeshModule(void);
+    void bindtoStatisticModule(void);
 
     // *************************************************************************
     // *************************************************************************
     // -- Partner Management
     void processPartnershipRequest(cPacket *pkt);
+//    void processPartnerLeave(cPacket *pkt);
     void considerAcceptPartner(PendingPartnershipRequest requester);
     bool canAcceptMorePartner(void);
     void addPartner(IPvXAddress remote, double bw);
+    void processPartnershipLeave(cPacket *pkt);
 
     // Timer
     void handleTimerTimeoutWaitingAccept();
     void handleTimerTimeoutWaitingAck();
-    void handleTimerReport(void);
+//    void handleTimerReport(void);
 
     // -- BufferMap
     void sendBufferMap(void);
@@ -92,6 +129,8 @@ protected:
     int param_chunkSize;
 
     double param_interval_bufferMap;
+    double param_interval_partnerlistCleanup;
+    double param_threshold_idleDuration_buffermap;
 
     // -- Variables for settings
     int m_videoStreamChunkRate;     /* in [chunks/second] */
@@ -100,21 +139,26 @@ protected:
 
     // -- Timer messages
     cMessage *timer_sendBufferMap;
-    cMessage *timer_sendReport;
+//    cMessage *timer_sendReport;
+    cMessage *timer_partnerListCleanup;
 
     // -- Pointers to /global/ modules
     AppSettingDonet         *m_appSetting;
     IChurnGenerator         *m_churn;
     MeshOverlayObserver     *m_meshOverlayObserver;
     Logger                  *m_logger;
+    DonetStatistic          *m_gstat;
 
     // -- Pointers to /local/ modules
     PartnerList *m_partnerList;
     VideoBuffer *m_videoBuffer;
     Forwarder   *m_forwarder;
+    MembershipBase *m_memManager;
+
 
     // --- Additional variables for debugging purposes
-    double m_arrivalTime;
+//    double m_arrivalTime;
+//    double m_departureTime;
     double m_joinTime;
     double m_video_startTime;
     SEQUENCE_NUMBER_T m_head_videoStart;

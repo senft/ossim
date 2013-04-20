@@ -1,17 +1,34 @@
+//  
+// =============================================================================
+// OSSIM : A Generic Simulation Framework for Overlay Streaming
+// =============================================================================
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-// 
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
+//
+// OSSIM is free software: you can redistribute it and/or modify it under the 
+// terms of the GNU General Public License as published by the Free Software 
+// Foundation, either version 3 of the License, or (at your option) any later 
+// version.
+//
+// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with 
+// this program. If not, see <http://www.gnu.org/licenses/>.
+
+// -----------------------------------------------------------------------------
+// ScampBase.cc
+// -----------------------------------------------------------------------------
+// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
+//
+// Contributors: Giang;
+// Code Reviewers: -;
+// -----------------------------------------------------------------------------
+//
+
 
 #include "ScampBase.h"
 #include "Contact.h"
@@ -85,6 +102,15 @@ void ScampBase::bindToParentModule(void)
     if (m_dispatcher == NULL) throw cException("m_dispatcher == NULL is invalid");
 }
 
+void ScampBase::bindToStatisticModule()
+{
+   Enter_Method("bindToStatisticModule");
+
+   cModule *temp = simulation.getModuleByPath("globalStatistic");
+   m_gstat = check_and_cast<ScampStatistic *>(temp);
+   EV << "Binding to globalStatistic is completed successfully" << endl;
+}
+
 void ScampBase::processGossipPacket(cPacket *pkt)
 {
     GossipMembershipPacket *gossipPkt = dynamic_cast<GossipMembershipPacket *>(pkt);
@@ -127,7 +153,8 @@ void ScampBase::processGossipPacket(cPacket *pkt)
     {
         EV << "I received an ACK for the subscription packet!" << endl;
 
-        delete pkt; pkt = NULL;
+        handleAckPacket(pkt);
+        //delete pkt; pkt = NULL;
 
         break;
     }
@@ -205,6 +232,8 @@ void ScampBase::handleNewSubscription(cPacket *pkt)
         // -- Forward other c copies of the Packet
         for (int i = 0; i < m_c; ++i)
         {
+           EV << "hi there ************************************************" << endl;
+
             Contact aRandomContact = m_partialView.getOneRandomContact();
             IPvXAddress destAddress = IPvXAddress(aRandomContact.getAddress());
             int destPort = aRandomContact.getPort();
@@ -240,7 +269,7 @@ void ScampBase::handleForwardedSubscription(cPacket *pkt)
     float probability = 1.0 + m_partialView.getViewSize();
     probability = 1.0 / probability;
 
-    float random = (float)rand() / (float)RAND_MAX;
+    double random = dblrand();
     if (m_partialView.isEmpty()) probability = 1.0;
     //probability = probability * 100.0;
     //int random = (rand() % 100);
@@ -304,7 +333,7 @@ void ScampBase::subscribe(void)
         } while (addressRandPeer == myAddress);
     }
 
-    // -- Add this 'contact' to node's own PartialView
+    // -- Add this 'contact' to node's own PartialView as the first entry
     m_partialView.addContact(addressRandPeer, m_destPort);
 
     GossipSubscriptionPacket *gossip_sub_pkt = new GossipSubscriptionPacket("GOSSIP_SUBSCRIPTION_NEW");
@@ -470,10 +499,10 @@ double ScampBase::getSimDuration(void)
 
 void ScampBase::handleAckPacket(cPacket *pkt)
 {
-    switch(m_state)
-    {
-    case SCAMP_STATE_JOINING:
-    {
+//    switch(m_state)
+//    {
+//    case SCAMP_STATE_JOINING:
+//    {
         // -- Extract the IP and port of the responder
         DpControlInfo *controlInfo = check_and_cast<DpControlInfo *>(pkt->getControlInfo());
 
@@ -486,7 +515,7 @@ void ScampBase::handleAckPacket(cPacket *pkt)
         if (m_active == false)
         {
             m_active = true;
-            m_apTable->addPeerAddress(this->getNodeAddress());
+            m_apTable->addAddress(this->getNodeAddress());
 
             // -- Start the timer for isolation check
             scheduleAt(simTime() + param_isoCheckInterval, timer_isolationCheck);
@@ -495,15 +524,15 @@ void ScampBase::handleAckPacket(cPacket *pkt)
         }
 
         // -- Update state
-        m_state = SCAMP_STATE_JOINED;
+//        m_state = SCAMP_STATE_JOINED;
 
-        break;
-    }
-    default:
-    {
-        throw cException("Invalid message or unsuitable state machine");
-    }
-    }
+//        break;
+//    }
+//    default:
+//    {
+//        throw cException("Invalid message or unsuitable state machine");
+//    }
+//    } // switch
 
     delete pkt;
 }
@@ -514,7 +543,7 @@ void ScampBase::handleAckPacket(cPacket *pkt)
 //   return m_apTable->getARandPeer();
 //}
 
-IPvXAddress ScampBase::getARandPeer(IPvXAddress address)
+IPvXAddress ScampBase::getRandomPeer(IPvXAddress address)
 {
    // Dummy implementation
    // TODO: implementation should be placed here
@@ -525,14 +554,16 @@ void ScampBase::addPeerAddress(const IPvXAddress &address, int maxNOP)
 {
    // Dummy implementation
    // TODO: implementation should be placed here
-   m_apTable->addPeerAddress(address, maxNOP);
+   //m_apTable->addAddress(address, maxNOP);
+   m_apTable->addAddress(address);
 }
 
 void ScampBase::addSourceAddress(const IPvXAddress &address, int maxNOP)
 {
    // Dummy implementation
    // TODO: implementation should be placed here
-   m_apTable->addSourceAddress(address, maxNOP);
+   //m_apTable->addSourceAddress(address, maxNOP);
+   m_apTable->addAddress(address);
 }
 
 bool ScampBase::deletePeerAddress(const IPvXAddress &address)
