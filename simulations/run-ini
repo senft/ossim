@@ -1,0 +1,2 @@
+#!/bin/sh
+../src/so -r 0 -n .:../src:../../inet/examples:../../inet/src -l ../../inet/src/inet $@

@@ -1,3 +1,4 @@
+so
 Makefile.generated
 out/
 out/gcc-debug/.last-copts
@@ -29,3 +30,4 @@ src/Makefile.copy
 src/so
 src/mesh/MeshPeerStreamingPacket_m.cc
 src/mesh/MeshPeerStreamingPacket_m.h
+src/.clang_complete
