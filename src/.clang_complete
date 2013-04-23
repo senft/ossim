@@ -23,6 +23,7 @@
 -I../../inet/src/applications/udpapp
 -I.
 -Icommon
+-Icommon/CommBase.h
 -Iglobal
 -Iglobal/churn
 -Iglobal/logger
@@ -38,6 +39,7 @@
 -Imesh/donet
 -Ipayload
 -Itree
+-Itree/mtreebone
 -I/home/jln/Downloads/omnetpp4/omnetpp/src/omnetpp-4.2.2/include
 -DHAVE_SWAPCONTEXT
 -DHAVE_PCAP
