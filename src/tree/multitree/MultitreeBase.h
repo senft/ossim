@@ -5,6 +5,8 @@
 #include "AppCommon.h"
 #include "AppSettingDonet.h"
 #include "IPvXAddress.h"
+#include "ActivePeerTable.h"
+#include "DonetStatistic.h"
 
 #include "TreePeerStreamingPacket_m.h" // really neccessary? ... Not in Donet simulation
 
@@ -31,8 +33,11 @@ public:
 
 	bool hasBWLeft(void);
 
+	virtual int numInitStages() const { return 4; }
 protected:
-	AppSettingDonet *m_appSetting;
+    DonetStatistic          *m_gstat;
+	ActivePeerTable			*m_apTable;
+	AppSettingDonet 		*m_appSetting;
 	TreeJoinState m_state;
 
     int m_localPort, m_destPort;

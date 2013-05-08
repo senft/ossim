@@ -26,6 +26,8 @@ private:
 
 	string parents[];
 
+    IChurnGenerator *m_churn;
+
 	cMessage *timer_getJoinTime;
 	cMessage *timer_join;
 	cMessage *timer_leave;

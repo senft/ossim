@@ -10,8 +10,15 @@ MultitreeBase::~MultitreeBase(){
 
 void MultitreeBase::initialize(int stage)
 {
-    m_localPort = getLocalPort();
-    m_destPort = getDestPort();
+	if(stage == 3)
+	{
+		m_localPort = getLocalPort();
+		m_destPort = getDestPort();
+
+		findNodeAddress();
+		// TODO: This should happen not until the node is connected to the tree (else we get un-connected trees)
+		m_apTable->addAddress(getNodeAddress());
+	}
 }
 
 
@@ -71,6 +78,9 @@ void MultitreeBase::bindToGlobalModule(void)
 
     cModule *temp = simulation.getModuleByPath("appSetting");
     m_appSetting = check_and_cast<AppSettingDonet *>(temp);
+
+    temp = simulation.getModuleByPath("activePeerTable");
+    m_apTable = check_and_cast<ActivePeerTable *>(temp);
 }
 
 

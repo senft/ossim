@@ -9,13 +9,13 @@ import so.tree.multitree.MultitreePeerNode;
 import so.tree.multitree.MultitreeSourceNode;
 
 import so.global.statistic.IStreamingStatistic;
-import so.global.churn.IChurnModel;
 
 
 network Multitree_Network extends BasicNetwork
 {
     parameters:
         int nNodePerRouter;
+        string churnModel = default("UniformChurn");
         string statisticModule = default("MultitreeStatistic");
         @display("bgb=472,295");
 
@@ -51,6 +51,9 @@ network Multitree_Network extends BasicNetwork
         }
         globalStatistic: <statisticModule> like IStreamingStatistic {
             @display("p=77,195;i=device/disk");
+        }
+        churnModerator: <churnModel> like IChurnModel {
+            @display("p=77,171");
         }
 
     connections:
