@@ -23,6 +23,7 @@
 -I../../inet/src/applications/udpapp
 -I.
 -Icommon
+-Icommon/CommBase.h
 -Iglobal
 -Iglobal/churn
 -Iglobal/logger
