@@ -78,9 +78,8 @@ void MultitreeBase::bindToGlobalModule(void)
 
     cModule *temp = simulation.getModuleByPath("appSetting");
     m_appSetting = check_and_cast<AppSettingDonet *>(temp);
+}
 
-    temp = simulation.getModuleByPath("activePeerTable");
-    m_apTable = check_and_cast<ActivePeerTable *>(temp);
 }
 
 

@@ -36,7 +36,6 @@ public:
 	virtual int numInitStages() const { return 4; }
 protected:
     DonetStatistic          *m_gstat;
-	ActivePeerTable			*m_apTable;
 	AppSettingDonet 		*m_appSetting;
 	TreeJoinState m_state;
 
