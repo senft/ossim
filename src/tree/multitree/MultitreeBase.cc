@@ -80,6 +80,10 @@ void MultitreeBase::bindToGlobalModule(void)
     m_appSetting = check_and_cast<AppSettingDonet *>(temp);
 }
 
+void MultitreeBase::bindToTreeModule(void)
+{
+    cModule *temp = getParentModule()->getModuleByRelativePath("forwarder");
+    m_forwarder = check_and_cast<Forwarder *>(temp);
 }
 
 
@@ -96,7 +100,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		IPvXAddress senderAddress;
 		int senderPort;
 		getSender(pkt, senderAddress, senderPort);
-
 		
 		int numRequestedStripes = treePkt->getStripesArraySize();
 

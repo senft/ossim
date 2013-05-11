@@ -16,6 +16,10 @@ protected:
 private:
     //void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
+	
+    void bindToGlobalModule(void);
+    void bindToTreeModule(void);
+
 	void cancelAndDeleteTimer(void);
 };
 

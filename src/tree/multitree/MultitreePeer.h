@@ -17,6 +17,7 @@ private:
     void handleTimerMessage(cMessage *msg);
 
     void bindToGlobalModule(void);
+    void bindToTreeModule(void);
 
 	void handleTimerJoin(void);
 	void handleTimerLeave(void);

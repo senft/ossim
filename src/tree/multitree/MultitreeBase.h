@@ -7,6 +7,7 @@
 #include "IPvXAddress.h"
 #include "ActivePeerTable.h"
 #include "DonetStatistic.h"
+#include "Forwarder.h"
 
 #include "TreePeerStreamingPacket_m.h" // really neccessary? ... Not in Donet simulation
 
@@ -37,16 +38,17 @@ public:
 	virtual int numInitStages() const { return 4; }
 protected:
     DonetStatistic          *m_gstat;
+    Forwarder				*m_forwarder;
 	AppSettingDonet 		*m_appSetting;
 	TreeJoinState m_state;
 
     int m_localPort, m_destPort;
 
     void bindToGlobalModule(void);
+    void bindToTreeModule(void);
     void bindToStatisticModule(void);
 
 private:
-
 	void processConnectRequest(cPacket *pkt);
 	void processConnectConfirm(cPacket *pkt);
 	void processDisconnectRequest(cPacket *pkt);
@@ -55,6 +57,5 @@ private:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 };
-
 
 #endif

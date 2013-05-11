@@ -17,6 +17,7 @@ void MultitreePeer::initialize(int stage)
 		return;
 
     bindToGlobalModule();
+    bindToTreeModule();
     bindToStatisticModule();
 
     m_state = TREE_JOIN_STATE_IDLE;
@@ -138,4 +139,9 @@ void MultitreePeer::bindToGlobalModule(void)
     cModule *temp = simulation.getModuleByPath("churnModerator");
     m_churn = check_and_cast<IChurnGenerator *>(temp);
     EV << "Binding to churnModerator is completed successfully" << endl;
+}
+
+void MultitreePeer::bindToTreeModule(void)
+{
+	MultitreeBase::bindToTreeModule();
 }
