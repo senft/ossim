@@ -106,21 +106,28 @@ void MultitreePeer::cancelAndDeleteTimer(void)
 {
 	if(timer_getJoinTime != NULL)
 	{
-		cancelEvent(timer_getJoinTime);
+		delete cancelEvent(timer_getJoinTime);
 		timer_getJoinTime = NULL;
 	}
 
 	if(timer_join != NULL)
 	{
-		cancelEvent(timer_join);
+		delete cancelEvent(timer_join);
 		timer_join = NULL;
 	}
 	
 	if(timer_leave != NULL)
 	{
-		cancelEvent(timer_leave);
+		delete cancelEvent(timer_leave);
 		timer_leave = NULL;
 	}
+}
+
+void MultitreePeer::cancelAllTimer(void)
+{
+	cancelEvent(timer_getJoinTime);
+	cancelEvent(timer_join);
+	cancelEvent(timer_leave);
 }
 
 void MultitreePeer::bindToGlobalModule(void)

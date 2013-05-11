@@ -21,6 +21,7 @@ private:
 	void handleTimerJoin(void);
 	void handleTimerLeave(void);
 
+	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
 
 	cMessage *timer_getJoinTime;

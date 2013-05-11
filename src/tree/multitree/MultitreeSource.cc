@@ -17,3 +17,6 @@ void MultitreeSource::initialize(int stage){
 void MultitreeSource::finish(void){}
 
 void MultitreeSource::handleTimerMessage(cMessage *msg){}
+void MultitreeSource::cancelAndDeleteTimer(void)
+{
+}

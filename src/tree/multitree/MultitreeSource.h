@@ -16,6 +16,7 @@ protected:
 private:
     //void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
+	void cancelAndDeleteTimer(void);
 };
 
 #endif
