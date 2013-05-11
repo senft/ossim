@@ -164,6 +164,8 @@ void MultitreeBase::processConnectConfirm(cPacket* pkt)
 {
 	if(m_state != TREE_JOIN_STATE_IDLE_WAITING)
 		return;
+
+	m_state = TREE_JOIN_STATE_ACTIVE;
 }
 
 void MultitreeBase::processDisconnectRequest(cPacket* pkt)
