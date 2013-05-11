@@ -20,6 +20,8 @@ simulations/proc-result/*.eps
 simulations/proc-result/*.plot
 simulations/so-sim.out
 simulations/.tkenvrc
+simulations/.tkenvlog
+.tkenvrc
 so.config.backup
 so.creator.backup
 so.creator.user.backup
@@ -27,6 +29,7 @@ so.creator.user.old
 so.files.backup
 so.includes.backup
 src/Makefile.copy
+src/Makefile
 src/so
 src/mesh/MeshPeerStreamingPacket_m.cc
 src/mesh/MeshPeerStreamingPacket_m.h
