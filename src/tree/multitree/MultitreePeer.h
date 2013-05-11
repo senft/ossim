@@ -14,7 +14,6 @@ protected:
     virtual void finish(void);
 
 private:
-    void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
 
     void bindToGlobalModule(void);
@@ -23,10 +22,6 @@ private:
 	void handleTimerLeave(void);
 
 	void cancelAndDeleteTimer(void);
-
-	string parents[];
-
-    IChurnGenerator *m_churn;
 
 	cMessage *timer_getJoinTime;
 	cMessage *timer_join;

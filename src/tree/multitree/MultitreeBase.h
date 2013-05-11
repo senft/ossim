@@ -25,11 +25,12 @@ public:
 	MultitreeBase();
 	virtual ~MultitreeBase();
 
-	void initialize(int stage);
+	virtual void initialize(int stage);
 
     virtual void handleMessage(cMessage *msg);
-    void processPacket(cPacket *pkt);
     virtual void handleTimerMessage(cMessage *msg) = 0;
+
+    void processPacket(cPacket *pkt);
 
 	bool hasBWLeft(void);
 

@@ -13,7 +13,8 @@ protected:
     virtual void initialize(int stage);
     virtual void finish();
 
-    void processPacket(cPacket *pkt);
+private:
+    //void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
 };
 
