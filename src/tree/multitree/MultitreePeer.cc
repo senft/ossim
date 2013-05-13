@@ -6,7 +6,7 @@ MultitreePeer::MultitreePeer(){}
 
 MultitreePeer::~MultitreePeer()
 {
-	cancelAndDeleteTimer();
+	finish();
 }
 
 void MultitreePeer::initialize(int stage)
@@ -38,8 +38,6 @@ void MultitreePeer::initialize(int stage)
 
 void MultitreePeer::handleTimerMessage(cMessage *msg)
 {
-    Enter_Method("handleTimerMessage()");
-
     if (msg == timer_getJoinTime)
     {
 		double arrivalTime = m_churn->getArrivalTime();
@@ -79,9 +77,8 @@ void MultitreePeer::handleTimerJoin()
 	//reqPkt->setStripes(1, 3);
 	//reqPkt->setStripes(2, 6);
 	IPvXAddress addrPeer = m_apTable->getARandPeer(getNodeAddress());
-	EV << "SENDING TO: " << addrPeer.str() << " on port " << m_destPort << endl;
+
     sendToDispatcher(reqPkt, m_localPort, addrPeer, m_destPort);
-	
 	m_state = TREE_JOIN_STATE_IDLE_WAITING;
 }
 
@@ -135,10 +132,6 @@ void MultitreePeer::bindToGlobalModule(void)
 {
 	MultitreeBase::bindToGlobalModule();
 
-    // -- Churn
-    cModule *temp = simulation.getModuleByPath("churnModerator");
-    m_churn = check_and_cast<IChurnGenerator *>(temp);
-    EV << "Binding to churnModerator is completed successfully" << endl;
 }
 
 void MultitreePeer::bindToTreeModule(void)

@@ -51,14 +51,15 @@ protected:
     void bindToTreeModule(void);
     void bindToStatisticModule(void);
 
+	void getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort);
+	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
+	const IPvXAddress& getSender(const cPacket *pkt) const;
+
 private:
 	void processConnectRequest(cPacket *pkt);
 	void processConnectConfirm(cPacket *pkt);
 	void processDisconnectRequest(cPacket *pkt);
 
-	void getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort);
-	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
-	const IPvXAddress& getSender(const cPacket *pkt) const;
 };
 
 #endif

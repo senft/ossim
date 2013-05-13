@@ -11,7 +11,7 @@ public:
 
 protected:
     virtual void initialize(int stage);
-    virtual void finish();
+    virtual void finish(void);
 
 private:
     //void processPacket(cPacket *pkt);
@@ -20,6 +20,7 @@ private:
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
 
+	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
 };
 

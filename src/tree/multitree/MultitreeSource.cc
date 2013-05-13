@@ -3,7 +3,10 @@
 Define_Module(MultitreeSource)
 
 MultitreeSource::MultitreeSource(){}
-MultitreeSource::~MultitreeSource(){}
+MultitreeSource::~MultitreeSource()
+{
+	finish();
+}
 
 void MultitreeSource::initialize(int stage){
 	MultitreeBase::initialize(stage);
@@ -13,20 +16,29 @@ void MultitreeSource::initialize(int stage){
     bindToGlobalModule();
     bindToTreeModule();
     bindToStatisticModule();
+
+	// -------------------------------------------------------------------------
+    // -------------------------------- Timers ---------------------------------
+    // -------------------------------------------------------------------------
+    // -- One-time timers
+
+
+    // -- Repeated timers
+
 }
 
-void MultitreeSource::finish(void){}
+void MultitreeSource::finish(void)
+{
+	cancelAndDeleteTimer();
+}
 
-void MultitreeSource::handleTimerMessage(cMessage *msg){}
+void MultitreeSource::handleTimerMessage(cMessage *msg)
+{
+}
 
 void MultitreeSource::bindToGlobalModule(void)
 {
 	MultitreeBase::bindToGlobalModule();
-
-    // -- Churn
-    cModule *temp = simulation.getModuleByPath("churnModerator");
-    m_churn = check_and_cast<IChurnGenerator *>(temp);
-    EV << "Binding to churnModerator is completed successfully" << endl;
 }
 
 void MultitreeSource::bindToTreeModule(void)
@@ -35,5 +47,9 @@ void MultitreeSource::bindToTreeModule(void)
 }
 
 void MultitreeSource::cancelAndDeleteTimer(void)
+{
+}
+
+void MultitreeSource::cancelAllTimer()
 {
 }

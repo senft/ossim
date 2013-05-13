@@ -74,6 +74,11 @@ void MultitreeBase::bindToGlobalModule(void)
 
     cModule *temp = simulation.getModuleByPath("appSetting");
     m_appSetting = check_and_cast<AppSettingDonet *>(temp);
+
+	// -- Churn
+    temp = simulation.getModuleByPath("churnModerator");
+    m_churn = check_and_cast<IChurnGenerator *>(temp);
+    EV << "Binding to churnModerator is completed successfully" << endl;
 }
 
 void MultitreeBase::bindToTreeModule(void)
@@ -86,7 +91,8 @@ void MultitreeBase::bindToTreeModule(void)
 }
 
 
-void MultitreeBase::bindToStatisticModule(void){}
+void MultitreeBase::bindToStatisticModule(void){
+}
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
@@ -102,39 +108,38 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		
 		int numRequestedStripes = treePkt->getStripesArraySize();
 
-		if(numRequestedStripes == 0)
-		{
-			// Requested all stripes
-			// EV << "requested all stripes";
-		}
-		else
-		{
-			int stripes[numRequestedStripes];
-			int i;
-			for (i = 0; i < numRequestedStripes; i++)
-			{
-				stripes[i] = treePkt->getStripes(i);
-			}
-
-			// EV << "requested " << numRequestedStripes << " stripes";
-		}
-
-		// TODO: Add real alternative node
-
 		if(hasBWLeft())
 		{
-			EV << "Received TREE_CONECT_REQUEST FROM " << senderAddress << ". Accepting..." << endl;
+
 			TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
-			acpPkt->setAltNode("hallo");
+			acpPkt->setAltNode("hallo"); // TODO: Add real alternative node
 			sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
 
-			m_partnerList->addChild(senderAddress);
+			if(numRequestedStripes == 0)
+			{
+				// Requested all stripes
+				m_partnerList->addChild(senderAddress);
+				EV << "Received TREE_CONECT_REQUEST (all stripes) FROM " << senderAddress
+					<< ". Accepting..." << endl;
+			}
+			else
+			{
+				// Requested only some stripes
+				int i;
+				for (i = 0; i < numRequestedStripes; i++)
+				{
+					m_partnerList->addChild(treePkt->getStripes(i), senderAddress);
+				}
+				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes) FROM "
+					<< senderAddress << ". Accepting..." << endl;
+			}
 		}
 		else
 		{
-			EV << "Received TREE_CONECT_REQUEST FROM " << senderAddress << ". No Bandwidth left. Rejecting..." << endl;
+			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes) FROM "
+				<< senderAddress << ". No Bandwidth left.  Rejecting..." << endl;
 			TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-			rejPkt->setAltNode("hallo");
+			rejPkt->setAltNode("hallo"); // TODO: Add real alternative node
 			sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);
 		}
 		break;
@@ -167,6 +172,8 @@ void MultitreeBase::processConnectConfirm(cPacket* pkt)
 {
 	if(m_state != TREE_JOIN_STATE_IDLE_WAITING)
 		return;
+
+	// TODO: check if this is really the peer I wanted to connect to
 
 	IPvXAddress address;
 	getSender(pkt, address);
