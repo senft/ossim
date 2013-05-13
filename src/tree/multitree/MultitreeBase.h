@@ -1,5 +1,5 @@
 #ifndef MULTITREEBASE_H_
-#define MULTITREEBASE_H_ value
+#define MULTITREEBASE_H_ true
 
 #include "CommBase.h"
 #include "AppCommon.h"

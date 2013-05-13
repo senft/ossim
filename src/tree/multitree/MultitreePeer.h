@@ -1,5 +1,5 @@
 #ifndef MULTITREEPEER_H_
-#define MULTITREEPEER_H_ value
+#define MULTITREEPEER_H_ true
 
 #include "MultitreeBase.h"
 

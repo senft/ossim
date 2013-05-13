@@ -1,5 +1,5 @@
 #ifndef MULTITREESOURCE_H_
-#define MULTITREESOURCE_H_ value
+#define MULTITREESOURCE_H_ true
 
 #include "MultitreeBase.h"
 
