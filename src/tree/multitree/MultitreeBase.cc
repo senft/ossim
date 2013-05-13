@@ -2,7 +2,6 @@
 #include "DpControlInfo_m.h"
 
 MultitreeBase::MultitreeBase(){
-
 }
 
 MultitreeBase::~MultitreeBase(){
@@ -20,8 +19,6 @@ void MultitreeBase::initialize(int stage)
 		m_apTable->addAddress(getNodeAddress());
 	}
 }
-
-
 
 void MultitreeBase::handleMessage(cMessage *msg)
 {
@@ -69,7 +66,6 @@ void MultitreeBase::processPacket(cPacket *pkt)
     } // switch
 
     delete pkt;
-
 }
 
 void MultitreeBase::bindToGlobalModule(void)
@@ -84,6 +80,9 @@ void MultitreeBase::bindToTreeModule(void)
 {
     cModule *temp = getParentModule()->getModuleByRelativePath("forwarder");
     m_forwarder = check_and_cast<Forwarder *>(temp);
+
+    temp = getParentModule()->getModuleByRelativePath("partnerList");
+    m_partnerList = check_and_cast<MultitreePartnerList *>(temp);
 }
 
 
@@ -128,6 +127,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 			acpPkt->setAltNode("hallo");
 			sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
+
+			m_partnerList->addChild(senderAddress);
 		}
 		else
 		{
@@ -167,11 +168,21 @@ void MultitreeBase::processConnectConfirm(cPacket* pkt)
 	if(m_state != TREE_JOIN_STATE_IDLE_WAITING)
 		return;
 
+	IPvXAddress address;
+	getSender(pkt, address);
+
+	m_partnerList->addParent(address);
 	m_state = TREE_JOIN_STATE_ACTIVE;
 }
 
 void MultitreeBase::processDisconnectRequest(cPacket* pkt)
-{}
+{
+    if(m_state != TREE_JOIN_STATE_ACTIVE)
+		return;
+
+	// TODO: remove child
+
+}
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
 {

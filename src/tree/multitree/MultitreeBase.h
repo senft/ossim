@@ -8,8 +8,10 @@
 #include "ActivePeerTable.h"
 #include "DonetStatistic.h"
 #include "Forwarder.h"
+#include "ChildInfo.h"
+#include "MultitreePartnerList.h"
 
-#include "TreePeerStreamingPacket_m.h" // really neccessary? ... Not in Donet simulation
+#include "TreePeerStreamingPacket_m.h"
 
 enum TreeJoinState
 {
@@ -37,6 +39,7 @@ public:
 
 	virtual int numInitStages() const { return 4; }
 protected:
+    MultitreePartnerList    *m_partnerList;
     DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
 	AppSettingDonet 		*m_appSetting;

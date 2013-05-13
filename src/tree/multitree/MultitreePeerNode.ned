@@ -37,7 +37,7 @@ module MultitreePeerNode
         tree: MultitreePeer {
             @display("p=325,185;i=block/network2");
         }
-        mesh: MultitreeSource { // This should be a dummy module
+        mesh: DummyMembership { // TODO: This should be a dummy module
             @display("p=241,185;i=block/network2");
         }
         dispatcher: Dispatcher {
@@ -102,6 +102,10 @@ module MultitreePeerNode
         videoBuffer: VideoBuffer {
             @display("p=404,116;i=block/buffer2");
         }
+		partnerList: MultitreePartnerList {
+			@display("p=404,165;i=block/rxtx");
+		}
+
     connections:
         dispatcher.overlayIn++ <-- membership.dpOut;
         dispatcher.overlayOut++ --> membership.dpIn;

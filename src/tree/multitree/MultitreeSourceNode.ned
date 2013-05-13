@@ -36,7 +36,7 @@ module MultitreeSourceNode
         tree: MultitreeSource {
             @display("p=325,185;i=block/network2");
         }
-        mesh: MultitreeSource { // This should be a dummy module
+        mesh: DummyMembership { // TODO: This should be a dummy module
             @display("p=241,185;i=block/network2");
         }
 
@@ -100,6 +100,10 @@ module MultitreeSourceNode
         membership: DummyMembership {
             @display("p=162,185;i=block/users");
         }
+		partnerList: MultitreePartnerList {
+			@display("p=404,165;i=block/rxtx");
+		}
+
     connections:
         dispatcher.overlayIn++ <-- membership.dpOut;
         dispatcher.overlayOut++ --> membership.dpIn;
