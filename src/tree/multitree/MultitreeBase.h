@@ -60,6 +60,17 @@ private:
 	void processConnectConfirm(cPacket *pkt);
 	void processDisconnectRequest(cPacket *pkt);
 
+	// Optimization functions
+	void optimize(int stripe);
+	int getPreferredStripe(void);
+
+	int getCosts(ChildInfo child, int stripe);
+	int getGain(ChildInfo child, int stripe);
+
+	int getStripeDensityCosts(int stripe); // K_sel, K_1
+	int getForwardingCosts(ChildInfo child); // K_forw, K_2
+	int getBalanceCosts(ChildInfo child, int stripe); //K_bal, K_3
+	int getNumConnectionsToChild(ChildInfo child); //K_4
 };
 
 #endif
