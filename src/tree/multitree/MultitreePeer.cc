@@ -72,10 +72,6 @@ void MultitreePeer::handleTimerJoin()
 		return;
 
 	TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
-	//reqPkt->setStripesArraySize(3);
-	//reqPkt->setStripes(0, 1);
-	//reqPkt->setStripes(1, 3);
-	//reqPkt->setStripes(2, 6);
 	IPvXAddress addrPeer = m_apTable->getARandPeer(getNodeAddress());
 
     sendToDispatcher(reqPkt, m_localPort, addrPeer, m_destPort);
@@ -93,6 +89,8 @@ void MultitreePeer::handleTimerLeave()
     sendToDispatcher(reqPkt, m_localPort, addrPeer, m_destPort);
 
 	m_state = TREE_JOIN_STATE_IDLE;
+
+	m_apTable->removeAddress(getNodeAddress());
 }
 
 void MultitreePeer::finish(void)

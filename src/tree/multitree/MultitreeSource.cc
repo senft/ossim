@@ -11,11 +11,16 @@ MultitreeSource::~MultitreeSource()
 void MultitreeSource::initialize(int stage){
 	MultitreeBase::initialize(stage);
 
+	if(stage != 3)
+		return;
+
 	m_state = TREE_JOIN_STATE_ACTIVE;
 
     bindToGlobalModule();
     bindToTreeModule();
     bindToStatisticModule();
+
+	m_apTable->addAddress(getNodeAddress());
 
 	// -------------------------------------------------------------------------
     // -------------------------------- Timers ---------------------------------

@@ -14,8 +14,6 @@ void MultitreeBase::initialize(int stage)
 	{
 		getAppSetting();
 		findNodeAddress();
-		// TODO: This should happen not until the node is connected to the tree (else we get un-connected trees)
-		m_apTable->addAddress(getNodeAddress());
 	}
 }
 
@@ -194,6 +192,9 @@ void MultitreeBase::processConnectConfirm(cPacket* pkt)
 
 	m_partnerList->addParent(address);
 	m_state = TREE_JOIN_STATE_ACTIVE;
+
+	// Add myself to ActivePeerList so other peers can find me (to connect to me)
+	m_apTable->addAddress(getNodeAddress());
 }
 
 void MultitreeBase::processDisconnectRequest(cPacket* pkt)
