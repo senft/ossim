@@ -13,27 +13,30 @@ void MultitreePeer::initialize(int stage)
 {
 	MultitreeBase::initialize(stage);
 
-	if(stage != 2)
-		return;
+	if(stage == 2)
+	{
+		bindToGlobalModule();
+		bindToTreeModule();
+		bindToStatisticModule();
+	}
 
-    bindToGlobalModule();
-    bindToTreeModule();
-    bindToStatisticModule();
+	if(stage == 3)
+	{
+		m_state = TREE_JOIN_STATE_IDLE;
 
-    m_state = TREE_JOIN_STATE_IDLE;
+		// -------------------------------------------------------------------------
+		// -------------------------------- Timers ---------------------------------
+		// -------------------------------------------------------------------------
+		// -- One-time timers
+		timer_getJoinTime       = new cMessage("TREE_NODE_TIMER_GET_JOIN_TIME");
+		timer_join              = new cMessage("TREE_NODE_TIMER_JOIN");
+		timer_leave             = new cMessage("TREE_NODE_TIMER_LEAVE");
 
-	// -------------------------------------------------------------------------
-    // -------------------------------- Timers ---------------------------------
-    // -------------------------------------------------------------------------
-    // -- One-time timers
-    timer_getJoinTime       = new cMessage("TREE_NODE_TIMER_GET_JOIN_TIME");
-    timer_join              = new cMessage("TREE_NODE_TIMER_JOIN");
-    timer_leave             = new cMessage("TREE_NODE_TIMER_LEAVE");
+		// -- Repeated timers
+		// e.g. optimization
 
-    // -- Repeated timers
-	// e.g. optimization
-
-    scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
+		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
+	}
 }
 
 void MultitreePeer::handleTimerMessage(cMessage *msg)
@@ -71,11 +74,8 @@ void MultitreePeer::handleTimerJoin()
 	if(m_state != TREE_JOIN_STATE_IDLE)
 		return;
 
-	TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
 	IPvXAddress addrPeer = m_apTable->getARandPeer(getNodeAddress());
-
-    sendToDispatcher(reqPkt, m_localPort, addrPeer, m_destPort);
-	m_state = TREE_JOIN_STATE_IDLE_WAITING;
+	connectVia(addrPeer);
 }
 
 void MultitreePeer::handleTimerLeave()
@@ -129,10 +129,103 @@ void MultitreePeer::cancelAllTimer(void)
 void MultitreePeer::bindToGlobalModule(void)
 {
 	MultitreeBase::bindToGlobalModule();
-
 }
 
 void MultitreePeer::bindToTreeModule(void)
 {
 	MultitreeBase::bindToTreeModule();
+}
+
+void MultitreePeer::processPacket(cPacket *pkt)
+{
+	PeerStreamingPacket *appMsg = check_and_cast<PeerStreamingPacket *>(pkt);
+    if (appMsg->getPacketGroup() != PACKET_GROUP_TREE_OVERLAY)
+    {
+        throw cException("MultitreePeer::processPacket: received a wrong packet. Wrong packet type!");
+    }
+
+    TreePeerStreamingPacket *treeMsg = check_and_cast<TreePeerStreamingPacket *>(appMsg);
+    switch (treeMsg->getPacketType())
+    {
+	case TREE_CONNECT_REQUEST:
+    {
+		processConnectRequest(treeMsg);
+		break;
+    }
+	case TREE_CONNECT_CONFIRM:
+	{
+		processConnectConfirm(treeMsg);
+		break;
+	}
+	case TREE_DISCONNECT_REQUEST:
+	{
+		processDisconnectRequest(treeMsg);
+		break;
+	}
+    default:
+    {
+        throw cException("MultitreePeer::processPacket: Unrecognized packet types! %d", treeMsg->getPacketType());
+        break;
+    }
+    }
+
+    delete pkt;
+}
+
+void MultitreePeer::connectVia(IPvXAddress address)
+{
+	TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
+
+    sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
+	m_state = TREE_JOIN_STATE_IDLE_WAITING;
+}
+
+void MultitreePeer::processConnectConfirm(cPacket* pkt)
+{
+	if(m_state != TREE_JOIN_STATE_IDLE_WAITING)
+		return;
+
+	// TODO: check if this is really the peer I wanted to connect to
+
+	IPvXAddress address;
+	getSender(pkt, address);
+
+	m_partnerList->addParent(address);
+	m_state = TREE_JOIN_STATE_ACTIVE;
+
+	// Add myself to ActivePeerList so other peers can find me (to connect to me)
+	m_apTable->addAddress(getNodeAddress());
+}
+
+void MultitreePeer::processDisconnectRequest(cPacket* pkt)
+{
+	TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
+
+	IPvXAddress senderAddress;
+	int senderPort;
+	getSender(pkt, senderAddress, senderPort);
+
+	if(m_state == TREE_JOIN_STATE_IDLE_WAITING)
+	{
+		IPvXAddress alternativeNode = treePkt->getAlternativeNode();
+		if(alternativeNode.isUnspecified())
+		{
+			// Wait and try to connect later
+			EV << "Node refused to let me join. No alternative node given. Waiting...";
+			m_state = TREE_JOIN_STATE_IDLE;
+		}
+		else
+		{
+			connectVia(alternativeNode);
+		}
+	}
+	else if(m_state == TREE_JOIN_STATE_ACTIVE)
+	{
+		// A node wants to disconnect from me
+	}
+}
+
+int MultitreePeer::getMaxOutConnections()
+{
+	return numStripes * (bwCapacity - 1);
 }

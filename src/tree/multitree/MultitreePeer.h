@@ -14,7 +14,14 @@ protected:
     virtual void finish(void);
 
 private:
+    virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
+
+	void processConnectConfirm(cPacket* pkt);
+	void processDisconnectRequest(cPacket *pkt);
+
+	virtual int getMaxOutConnections(void);
+	void connectVia(IPvXAddress address);
 
     void bindToGlobalModule(void);
     void bindToTreeModule(void);

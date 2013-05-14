@@ -31,9 +31,11 @@
 
 cplusplus {{
 #include <PeerStreamingPacket_m.h>
+#include <IPvXAddress.h>
 }}
 
 class PeerStreamingPacket;
+class IPvXAddress extends void;
 
 enum TreePeerStreamingPacketType
 {
@@ -61,13 +63,13 @@ packet TreeConnectRequestPacket extends TreePeerStreamingPacket
 packet TreeConnectConfirmPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_CONFIRM;
-    string	alternative_node		@getter(getAltNode)		@setter(setAltNode);
+	IPvXAddress alternativeNode;
 }
 
 packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_DISCONNECT_REQUEST;
-    string	alternative_node		@getter(getAltNode)		@setter(setAltNode);
+	IPvXAddress alternativeNode;
 }
 
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket

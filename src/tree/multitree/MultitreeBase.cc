@@ -12,8 +12,14 @@ void MultitreeBase::initialize(int stage)
 {
 	if(stage == 3)
 	{
+		bindToGlobalModule();
+		bindToTreeModule();
+		bindToStatisticModule();
+
 		getAppSetting();
 		findNodeAddress();
+
+		bwCapacity = par("bwCapacity");
 	}
 }
 
@@ -29,46 +35,12 @@ void MultitreeBase::handleMessage(cMessage *msg)
     }
 }
 
-void MultitreeBase::processPacket(cPacket *pkt)
-{
-	PeerStreamingPacket *appMsg = check_and_cast<PeerStreamingPacket *>(pkt);
-    if (appMsg->getPacketGroup() != PACKET_GROUP_TREE_OVERLAY)
-    {
-        throw cException("MultitreBase::processPacket received a wrong packet. Wrong packet type!");
-    }
-
-    TreePeerStreamingPacket *treeMsg = check_and_cast<TreePeerStreamingPacket *>(appMsg);
-    switch (treeMsg->getPacketType())
-    {
-	case TREE_CONNECT_REQUEST:
-    {
-		processConnectRequest(treeMsg);
-		break;
-    }
-	case TREE_CONNECT_CONFIRM:
-	{
-		processConnectConfirm(treeMsg);
-		break;
-	}
-	case TREE_DISCONNECT_REQUEST:
-	{
-		processDisconnectRequest(treeMsg);
-		break;
-	}
-    default:
-    {
-        throw cException("Unrecognized packet types! %d", treeMsg->getPacketType());
-        break;
-    }
-    } // switch
-
-    delete pkt;
-}
-
 void MultitreeBase::getAppSetting(void)
 {
 	m_localPort = getLocalPort();
 	m_destPort = getDestPort();
+
+	numStripes = m_appSetting->getNumStripes();
 }
 
 void MultitreeBase::bindToGlobalModule(void)
@@ -93,7 +65,6 @@ void MultitreeBase::bindToTreeModule(void)
     m_partnerList = check_and_cast<MultitreePartnerList *>(temp);
 }
 
-
 void MultitreeBase::bindToStatisticModule(void){
 }
 
@@ -111,11 +82,10 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		
 		int numRequestedStripes = treePkt->getStripesArraySize();
 
+		// TODO: Add alternative nodes to Packets
 		if(hasBWLeft())
 		{
-
 			TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
-			acpPkt->setAltNode("hallo"); // TODO: Add real alternative node
 			sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
 
 			ChildInfo child;
@@ -138,7 +108,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				int i;
 				for (i = 0; i < numRequestedStripes; i++)
 				{
-					//m_partnerList->addChild(treePkt->getStripes(i), senderAddress);
 					m_partnerList->addChild(treePkt->getStripes(i), child);
 				}
 			}
@@ -149,7 +118,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				<< senderAddress << ". No Bandwidth left.  Rejecting..." << endl;
 
 			TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-			rejPkt->setAltNode("hallo"); // TODO: Add real alternative node
 			sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);
 		}
 		break;
@@ -179,32 +147,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 	m_partnerList->printPartnerList();
 }
- 
-void MultitreeBase::processConnectConfirm(cPacket* pkt)
-{
-	if(m_state != TREE_JOIN_STATE_IDLE_WAITING)
-		return;
 
-	// TODO: check if this is really the peer I wanted to connect to
 
-	IPvXAddress address;
-	getSender(pkt, address);
-
-	m_partnerList->addParent(address);
-	m_state = TREE_JOIN_STATE_ACTIVE;
-
-	// Add myself to ActivePeerList so other peers can find me (to connect to me)
-	m_apTable->addAddress(getNodeAddress());
-}
-
-void MultitreeBase::processDisconnectRequest(cPacket* pkt)
-{
-    if(m_state != TREE_JOIN_STATE_ACTIVE)
-		return;
-
-	// TODO: remove child
-
-}
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
 {
@@ -227,6 +171,6 @@ const IPvXAddress& MultitreeBase::getSender(const cPacket *pkt) const
 
 bool MultitreeBase::hasBWLeft(void)
 {
-	// TODO: implement
-	return true;
+	int outConnections = m_partnerList->getNumOutgoingConnections();
+	return outConnections < getMaxOutConnections();
 }

@@ -49,7 +49,6 @@ protected:
 
     int param_numStripes;
     int param_stripeSize;
-
 };
 
 #endif /* APPSETTINGMULTITREE_H_ */

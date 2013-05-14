@@ -31,9 +31,8 @@ public:
 	virtual void initialize(int stage);
 
     virtual void handleMessage(cMessage *msg);
+    virtual void processPacket(cPacket *pkt) = 0;
     virtual void handleTimerMessage(cMessage *msg) = 0;
-
-    void processPacket(cPacket *pkt);
 
 	bool hasBWLeft(void);
 
@@ -47,6 +46,15 @@ protected:
 
     int m_localPort, m_destPort;
 
+	int numStripes;
+
+	/*
+	 * TODO: correct?  The bandwidth capacity of this node. A bandwidth
+	 * capacity of 1 means, this node is capable of delivering or (!) receiving
+	 * the whole stream once at a time.
+	 */
+	double bwCapacity;
+
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
     void bindToStatisticModule(void);
@@ -55,12 +63,11 @@ protected:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 
-private:
 	void processConnectRequest(cPacket *pkt);
-	void processConnectConfirm(cPacket *pkt);
-	void processDisconnectRequest(cPacket *pkt);
-
+private:
 	void getAppSetting(void);
+
+	virtual int getMaxOutConnections(void) = 0;
 
 	// Optimization functions
 	void optimize(int stripe);

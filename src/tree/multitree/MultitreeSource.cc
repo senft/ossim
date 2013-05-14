@@ -32,6 +32,49 @@ void MultitreeSource::initialize(int stage){
 
 }
 
+void MultitreeSource::processPacket(cPacket *pkt)
+{
+	PeerStreamingPacket *appMsg = check_and_cast<PeerStreamingPacket *>(pkt);
+    if (appMsg->getPacketGroup() != PACKET_GROUP_TREE_OVERLAY)
+    {
+        throw cException("MultitreeSource::processPacket: received a wrong packet. Wrong packet type!");
+    }
+
+    TreePeerStreamingPacket *treeMsg = check_and_cast<TreePeerStreamingPacket *>(appMsg);
+    switch (treeMsg->getPacketType())
+    {
+	case TREE_CONNECT_REQUEST:
+    {
+		processConnectRequest(treeMsg);
+		break;
+    }
+	case TREE_DISCONNECT_REQUEST:
+	{
+		processDisconnectRequest(treeMsg);
+		break;
+	}
+    default:
+    {
+        throw cException("MultitreeSource::processPacket: Unrecognized packet types! %d", treeMsg->getPacketType());
+        break;
+    }
+    }
+
+    delete pkt;
+}
+
+void MultitreeSource::processDisconnectRequest(cPacket* pkt)
+{
+	//TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
+
+	//IPvXAddress senderAddress;
+	//int senderPort;
+	//getSender(pkt, senderAddress, senderPort);
+
+	// TODO: disconnect the node
+}
+ 
+
 void MultitreeSource::finish(void)
 {
 	cancelAndDeleteTimer();
@@ -57,4 +100,9 @@ void MultitreeSource::cancelAndDeleteTimer(void)
 
 void MultitreeSource::cancelAllTimer()
 {
+}
+
+int MultitreeSource::getMaxOutConnections()
+{
+	return numStripes * bwCapacity;
 }

@@ -14,8 +14,12 @@ protected:
     virtual void finish(void);
 
 private:
-    //void processPacket(cPacket *pkt);
+    virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
+
+	void processDisconnectRequest(cPacket *pkt);
+
+	virtual int getMaxOutConnections(void);
 	
     void bindToGlobalModule(void);
     void bindToTreeModule(void);

@@ -14,10 +14,9 @@ public:
 	virtual int numInitStages() const { return 4; }
 	virtual void initialize(int stage);
 	virtual void finish();
-
 	virtual void handleMessage(cMessage *);
 
-	void printPartnerList(void);
+	int getNumOutgoingConnections(void);
 
 	//bool hasParent(IPvXAddress address);
 	//bool hasParent(int stripe, IPvXAddress address);
@@ -35,11 +34,15 @@ public:
 	void removeChild(int stripe, IPvXAddress address);
 	std::vector<ChildInfo> getChildren(int stripe);
 
+	void printPartnerList(void);
 protected:
 	int numStripes;
 
 	IPvXAddress* parents;
 	std::vector<std::vector<ChildInfo> > children;
+
+private:
+	int outConnections;
 };
 
 #endif
