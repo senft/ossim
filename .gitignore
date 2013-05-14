@@ -48,3 +48,4 @@ src/common/PeerStreamingPacket_m.cc
 src/common/PeerStreamingPacket_m.h
 src/membership/newscast/NewscastPacket_m.cc
 src/membership/newscast/NewscastPacket_m.h
+*callgrind*

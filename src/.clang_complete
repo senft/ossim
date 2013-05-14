@@ -1,4 +1,5 @@
 -I/usr/include/omnetpp
+-I/usr/include/omnetpp/omnetpp.h
 -I../../inet/src/networklayer/ipv4
 -I../../inet/src/networklayer/common
 -I../../inet/src/networklayer/rsvp_te
@@ -39,7 +40,6 @@
 -Imesh/donet
 -Ipayload
 -Itree
--I/home/jln/Downloads/omnetpp4/omnetpp/src/omnetpp-4.2.2/include
 -DHAVE_SWAPCONTEXT
 -DHAVE_PCAP
 -DXMLPARSER=libxml
