@@ -17,6 +17,8 @@ public:
 
 	virtual void handleMessage(cMessage *);
 
+	void printPartnerList(void);
+
 	//bool hasParent(IPvXAddress address);
 	//bool hasParent(int stripe, IPvXAddress address);
 	void addParent(IPvXAddress address);

@@ -72,3 +72,30 @@ IPvXAddress MultitreePartnerList::getParent(int stripe)
 {
 	return parents[stripe];
 }
+
+void MultitreePartnerList::printPartnerList(void)
+{
+	int i;
+
+	EV << "*********** Parents **********" << endl;
+	for (i = 0; i < numStripes; i++)
+	{
+		EV << "Stripe " << i << ": " << parents[i] << endl;
+	}
+
+	EV << "********** Children **********" << endl;
+	for (i = 0; i < numStripes; i++)
+	{
+		EV << "Stripe " << i << ": ";
+
+		std::vector<ChildInfo> curChildren = children[i];
+
+		for (std::vector<ChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		{
+			EV << ((ChildInfo)*it).getAddress().str() << ", ";
+		}
+		EV << endl;
+	}
+
+	EV << "******************************" << endl;
+}

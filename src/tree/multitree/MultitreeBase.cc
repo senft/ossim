@@ -177,6 +177,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
         break;
     }
 	}
+
+	m_partnerList->printPartnerList();
 }
  
 void MultitreeBase::processConnectConfirm(cPacket* pkt)
