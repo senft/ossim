@@ -60,6 +60,8 @@ private:
 	void processConnectConfirm(cPacket *pkt);
 	void processDisconnectRequest(cPacket *pkt);
 
+	void getAppSettings(void);
+
 	// Optimization functions
 	void optimize(int stripe);
 	int getPreferredStripe(void);

@@ -3,7 +3,8 @@ package so.simulations;
 import inet.networklayer.autorouting.FlatNetworkConfigurator;
 import inet.nodes.inet.Router;
 import so.global.ActivePeerTable;
-import so.global.AppSettingDonet;
+//import so.global.AppSettingDonet;
+import so.global.AppSettingMultitree;
 import so.global.churn.IChurnModel;
 import so.tree.multitree.MultitreePeerNode;
 import so.tree.multitree.MultitreeSourceNode;
@@ -29,7 +30,6 @@ network Multitree_Network extends BasicNetwork
             datarate = 40Mbps;
         }
 
-
     submodules:
         sourceNode: MultitreeSourceNode {
             @display("p=395,51;i=device/server");
@@ -46,7 +46,7 @@ network Multitree_Network extends BasicNetwork
         activePeerTable: ActivePeerTable {
             @display("p=77,96");
         }
-        appSetting: AppSettingDonet {
+        appSetting: AppSettingMultitree {
             @display("p=77,254;i=block/wheelbarrow");
         }
         globalStatistic: <statisticModule> like IStreamingStatistic {

@@ -1,6 +1,7 @@
 #include <omnetpp.h>
 
 #include "MultitreePartnerList.h"
+#include "AppSettingMultitree.h"
 
 Define_Module(MultitreePartnerList)
 
@@ -11,7 +12,11 @@ void MultitreePartnerList::initialize(int stage)
 {
     if (stage == 3)
     {
-		numStripes = 5; // TODO: make it a real parameter
+
+		cModule *temp = simulation.getModuleByPath("appSetting");
+		AppSettingMultitree *m_appSetting = check_and_cast<AppSettingMultitree *>(temp);
+
+		numStripes = m_appSetting->getNumStripes();
 
 		parents = new IPvXAddress[numStripes];
 
