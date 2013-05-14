@@ -67,7 +67,7 @@ void VideoBuffer::initialize(int stage)
 
     temp = simulation.getModuleByPath("globalStatistic");
     //m_gstat = check_and_cast<GlobalStatistic *>(temp);
-    m_gstat = check_and_cast<DonetStatistic *>(temp);
+	//m_gstat = check_and_cast<DonetStatistic *>(temp);
 
     m_bufferSize_chunk  = m_appSetting->getBufferMapSizeChunk();
     m_chunkInterval     = m_appSetting->getIntervalNewChunk();
