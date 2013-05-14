@@ -73,7 +73,7 @@ void MultitreeBase::bindToGlobalModule(void)
     CommBase::bindToGlobalModule();
 
     cModule *temp = simulation.getModuleByPath("appSetting");
-    m_appSetting = check_and_cast<AppSettingDonet *>(temp);
+    m_appSetting = check_and_cast<AppSettingMultitree *>(temp);
 
 	// -- Churn
     temp = simulation.getModuleByPath("churnModerator");

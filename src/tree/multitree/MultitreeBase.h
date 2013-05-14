@@ -3,7 +3,7 @@
 
 #include "CommBase.h"
 #include "AppCommon.h"
-#include "AppSettingDonet.h"
+#include "AppSettingMultitree.h"
 #include "IPvXAddress.h"
 #include "ActivePeerTable.h"
 #include "DonetStatistic.h"
@@ -42,7 +42,7 @@ protected:
     MultitreePartnerList    *m_partnerList;
     DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
-	AppSettingDonet 		*m_appSetting;
+	AppSettingMultitree 	*m_appSetting;
 	TreeJoinState m_state;
 
     int m_localPort, m_destPort;
