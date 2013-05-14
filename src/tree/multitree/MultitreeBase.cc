@@ -1,4 +1,5 @@
 #include "MultitreeBase.h"
+#include "ChildInfo.h"
 #include "DpControlInfo_m.h"
 
 MultitreeBase::MultitreeBase(){
@@ -115,29 +116,36 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			acpPkt->setAltNode("hallo"); // TODO: Add real alternative node
 			sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
 
+			ChildInfo child;
+			child.setAddress(senderAddress);
+
 			if(numRequestedStripes == 0)
 			{
 				// Requested all stripes
-				m_partnerList->addChild(senderAddress);
 				EV << "Received TREE_CONECT_REQUEST (all stripes) FROM " << senderAddress
 					<< ". Accepting..." << endl;
+
+				m_partnerList->addChild(child);
 			}
 			else
 			{
 				// Requested only some stripes
+				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes) FROM "
+					<< senderAddress << ". Accepting..." << endl;
+
 				int i;
 				for (i = 0; i < numRequestedStripes; i++)
 				{
-					m_partnerList->addChild(treePkt->getStripes(i), senderAddress);
+					//m_partnerList->addChild(treePkt->getStripes(i), senderAddress);
+					m_partnerList->addChild(treePkt->getStripes(i), child);
 				}
-				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes) FROM "
-					<< senderAddress << ". Accepting..." << endl;
 			}
 		}
-		else
+		else // No bandwith left
 		{
 			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes) FROM "
 				<< senderAddress << ". No Bandwidth left.  Rejecting..." << endl;
+
 			TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 			rejPkt->setAltNode("hallo"); // TODO: Add real alternative node
 			sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);

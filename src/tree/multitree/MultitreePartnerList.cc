@@ -1,6 +1,6 @@
-#include "MultitreePartnerList.h"
 #include <omnetpp.h>
-//#include <vector>
+
+#include "MultitreePartnerList.h"
 
 Define_Module(MultitreePartnerList)
 
@@ -18,7 +18,7 @@ void MultitreePartnerList::initialize(int stage)
 		int i;
 		for (i = 0; i < numStripes; i++)
 		{
-			std::vector<IPvXAddress> v;
+			std::vector<ChildInfo> v;
 			children.push_back(v);
 		}
     }
@@ -34,19 +34,19 @@ void MultitreePartnerList::handleMessage(cMessage *)
     throw cException("PartnerList does not process messages!");
 }
 
-void MultitreePartnerList::addChild(int stripe, IPvXAddress address){
-	children[stripe].push_back(address);
+void MultitreePartnerList::addChild(int stripe, ChildInfo child){
+	children[stripe].push_back(child);
 }
 
-void MultitreePartnerList::addChild(IPvXAddress address){
+void MultitreePartnerList::addChild(ChildInfo child){
 	int i;
 	for (i = 0; i < numStripes; i++)
 	{
-		addChild(i, address);
+		addChild(i, child);
 	}
 }
 
-std::vector<IPvXAddress> MultitreePartnerList::getChildren(int stripe)
+std::vector<ChildInfo> MultitreePartnerList::getChildren(int stripe)
 {
 	return children.at(stripe);
 }
