@@ -12,6 +12,7 @@ void MultitreeBase::initialize(int stage)
 {
 	if(stage == 3)
 	{
+		getAppSetting();
 		findNodeAddress();
 		// TODO: This should happen not until the node is connected to the tree (else we get un-connected trees)
 		m_apTable->addAddress(getNodeAddress());
@@ -66,7 +67,7 @@ void MultitreeBase::processPacket(cPacket *pkt)
     delete pkt;
 }
 
-void MultitreeBase::getAppSettings(void)
+void MultitreeBase::getAppSetting(void)
 {
 	m_localPort = getLocalPort();
 	m_destPort = getDestPort();

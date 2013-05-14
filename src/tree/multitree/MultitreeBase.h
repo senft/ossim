@@ -60,7 +60,7 @@ private:
 	void processConnectConfirm(cPacket *pkt);
 	void processDisconnectRequest(cPacket *pkt);
 
-	void getAppSettings(void);
+	void getAppSetting(void);
 
 	// Optimization functions
 	void optimize(int stripe);
