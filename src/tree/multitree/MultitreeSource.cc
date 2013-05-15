@@ -8,18 +8,21 @@ MultitreeSource::~MultitreeSource()
 	finish();
 }
 
-void MultitreeSource::initialize(int stage){
+void MultitreeSource::initialize(int stage)
+{
 	MultitreeBase::initialize(stage);
 
 	if(stage != 3)
 		return;
+	if(stage == 2)
+	{
+		bindToGlobalModule();
+		bindToTreeModule();
+		bindToStatisticModule();
+	}
 
-	m_state = TREE_JOIN_STATE_ACTIVE;
-
-    bindToGlobalModule();
-    bindToTreeModule();
-    bindToStatisticModule();
-
+	if(stage == 3)
+	{m_state = TREE_JOIN_STATE_ACTIVE;
 	m_apTable->addAddress(getNodeAddress());
 
 	// -------------------------------------------------------------------------
@@ -30,6 +33,8 @@ void MultitreeSource::initialize(int stage){
 
     // -- Repeated timers
 
+
+	}
 }
 
 void MultitreeSource::processPacket(cPacket *pkt)
