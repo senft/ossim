@@ -19,16 +19,16 @@ public:
 	int getNumOutgoingConnections(void);
 	int getNumOutgoingConnections(int stripe);
 
-	//bool hasParent(IPvXAddress address);
-	//bool hasParent(int stripe, IPvXAddress address);
+	bool hasParent(IPvXAddress address);
+	bool hasParent(int stripe, IPvXAddress address);
 	void addParent(IPvXAddress address);
 	void addParent(int stripe, IPvXAddress address);
 	void removeParent(IPvXAddress address);
 	void removeParent(int stripe, IPvXAddress address);
 	IPvXAddress getParent(int stripe);
 
-	//bool hasChild(IPvXAddress address);
-	//bool hasChild(int stripe, IPvXAddress address);
+	bool hasChild(IPvXAddress address);
+	bool hasChild(int stripe, IPvXAddress address);
 	void addChild(MultitreeChildInfo child);
 	void addChild(int stripe, MultitreeChildInfo child);
 	void removeChild(IPvXAddress address);

@@ -19,8 +19,7 @@ void MultitreePartnerList::initialize(int stage)
 
 		parents = new IPvXAddress[numStripes];
 
-		int i;
-		for (i = 0; i < numStripes; i++)
+		for (int i = 0; i < numStripes; i++)
 		{
 			std::vector<MultitreeChildInfo> v;
 			children.push_back(v);
@@ -38,14 +37,33 @@ void MultitreePartnerList::handleMessage(cMessage *)
     throw cException("PartnerList does not process messages!");
 }
 
+bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
+{
+	std::vector<MultitreeChildInfo> currentChildren = children[stripe];
+	for(std::vector<MultitreeChildInfo>::iterator it = currentChildren.begin(); it != currentChildren.end(); ++it) {
+		if( ((MultitreeChildInfo)*it).getAddress().equals(address) )
+			return true;
+	}
+	return false;
+}
+
+bool MultitreePartnerList::hasChild(IPvXAddress address)
+{
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(hasChild(i, address))
+			return true;
+	}
+	return false;
+}
+
 void MultitreePartnerList::addChild(int stripe, MultitreeChildInfo child){
 	// TODO check if child is not already added
 	children[stripe].push_back(child);
 }
 
 void MultitreePartnerList::addChild(MultitreeChildInfo child){
-	int i;
-	for (i = 0; i < numStripes; i++)
+	for (int i = 0; i < numStripes; i++)
 	{
 		addChild(i, child);
 	}
@@ -56,13 +74,37 @@ std::vector<MultitreeChildInfo> MultitreePartnerList::getChildren(int stripe)
 	return children.at(stripe);
 }
 
+void MultitreePartnerList::removeChild(int stripe, IPvXAddress address)
+{
+}
+
+void MultitreePartnerList::removeChild(IPvXAddress address)
+{
+}
+
+
+
+bool MultitreePartnerList::hasParent(int stripe, IPvXAddress address)
+{
+	return parents[stripe].equals(address);
+}
+
+bool MultitreePartnerList::hasParent(IPvXAddress address)
+{
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(hasParent(i, address))
+			return true;
+	}
+	return false;
+}
+
 void MultitreePartnerList::addParent(int stripe, IPvXAddress address){
 	parents[stripe] = address;
 }
 
 void MultitreePartnerList::addParent(IPvXAddress address){
-	int i;
-	for (i = 0; i < numStripes; i++)
+	for (int i = 0; i < numStripes; i++)
 	{
 		addParent(i, address);
 	}
@@ -71,6 +113,14 @@ void MultitreePartnerList::addParent(IPvXAddress address){
 IPvXAddress MultitreePartnerList::getParent(int stripe)
 {
 	return parents[stripe];
+}
+
+void MultitreePartnerList::removeParent(int stripe, IPvXAddress address)
+{
+}
+
+void MultitreePartnerList::removeParent(IPvXAddress address)
+{
 }
 
 int MultitreePartnerList::getNumOutgoingConnections(void)
@@ -90,16 +140,14 @@ int MultitreePartnerList::getNumOutgoingConnections(int stripe)
 
 void MultitreePartnerList::printPartnerList(void)
 {
-	int i;
-
 	EV << "*********** Parents **********" << endl;
-	for (i = 0; i < numStripes; i++)
+	for (int i = 0; i < numStripes; i++)
 	{
 		EV << "Stripe " << i << ": " << parents[i] << endl;
 	}
 
 	EV << "********** Children **********" << endl;
-	for (i = 0; i < numStripes; i++)
+	for (int i = 0; i < numStripes; i++)
 	{
 		EV << "Stripe " << i << ": ";
 
