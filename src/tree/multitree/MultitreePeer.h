@@ -14,6 +14,8 @@ protected:
     virtual void finish(void);
 
 private:
+	double param_intervalReconnect;
+
     virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
 

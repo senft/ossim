@@ -70,85 +70,61 @@ void MultitreeBase::bindToStatisticModule(void){
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
-	switch(m_state)
-	{
-	case TREE_JOIN_STATE_ACTIVE:
+	if(m_state == TREE_JOIN_STATE_ACTIVE)
 	{
 		TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
+		int numRequestedStripes = (treePkt->getStripesArraySize()) == 0 ? numStripes : treePkt->getStripesArraySize();
 
-		IPvXAddress senderAddress;
-		int senderPort;
-		getSender(pkt, senderAddress, senderPort);
-		
-		int numRequestedStripes = treePkt->getStripesArraySize();
-
-		// TODO: Add alternative nodes to Packets
-		if(hasBWLeft())
+		if(hasBWLeft(numRequestedStripes))
 		{
-			TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
-			sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
-
-			ChildInfo child;
-			child.setAddress(senderAddress);
-
-			if(numRequestedStripes == 0)
-			{
-				// Requested all stripes
-				EV << "Received TREE_CONECT_REQUEST (all stripes) FROM " << senderAddress
-					<< ". Accepting..." << endl;
-
-				m_partnerList->addChild(child);
-			}
-			else
-			{
-				// Requested only some stripes
-				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes) FROM "
-					<< senderAddress << ". Accepting..." << endl;
-
-				int i;
-				for (i = 0; i < numRequestedStripes; i++)
-				{
-					m_partnerList->addChild(treePkt->getStripes(i), child);
-				}
-			}
+			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes). Accepting..." << endl;
+			acceptConnectRequest(treePkt, numRequestedStripes);
+			m_partnerList->printPartnerList();
 		}
-		else // No bandwith left
+		else
 		{
-			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes) FROM "
-				<< senderAddress << ". No Bandwidth left.  Rejecting..." << endl;
-
-			TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-			sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);
+			 // No bandwith left
+			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes). No Bandwidth left.  Rejecting..." << endl;
+			rejectConnectRequest(treePkt);
 		}
-		break;
+
 	}
-	case TREE_JOIN_STATE_ACTIVE_WAITING:
-	{
-		// TODO: queue incoming request
-		break;
-	}
-	case TREE_JOIN_STATE_IDLE:
-	{
-		// TODO: implement
-		break;
-	}
-	case TREE_JOIN_STATE_IDLE_WAITING:
-	{
-		// TODO: implement
-		break;
-	}
-	default:
+	else
     {
 		// Cannot process ConnectRequest
         throw cException("Uncovered state, check assignment of state variable!");
-        break;
     }
-	}
-
-	m_partnerList->printPartnerList();
 }
 
+void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
+{
+	IPvXAddress senderAddress;
+	int senderPort;
+	getSender(pkt, senderAddress, senderPort);
 
+	TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+	rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+	sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);
+}
+
+void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt, int numRequestedStripes)
+{
+	IPvXAddress senderAddress;
+	int senderPort;
+	getSender(pkt, senderAddress, senderPort);
+
+	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
+	sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
+
+	ChildInfo child;
+	child.setAddress(senderAddress);
+
+	int i;
+	for (i = 0; i < numRequestedStripes; i++)
+	{
+		m_partnerList->addChild(pkt->getStripes(i), child);
+	}
+}
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
 {
@@ -169,8 +145,14 @@ const IPvXAddress& MultitreeBase::getSender(const cPacket *pkt) const
         return controlInfo->getSrcAddr();
 }
 
-bool MultitreeBase::hasBWLeft(void)
+bool MultitreeBase::hasBWLeft(int additionalConnections)
 {
 	int outConnections = m_partnerList->getNumOutgoingConnections();
-	return outConnections < getMaxOutConnections();
+	int maxOutCon = getMaxOutConnections();
+
+	EV << "Currently have " << outConnections << " connections, " <<
+		additionalConnections << " have been requested, max=" << maxOutCon <<
+		endl;
+
+	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }

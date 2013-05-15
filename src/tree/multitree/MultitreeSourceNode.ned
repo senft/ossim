@@ -27,7 +27,6 @@ module MultitreeSourceNode
         bool IPForward = default(false);
         string routingFile = default("");
 
-
     gates:
         inout pppg[] @labels(PPPFrame-conn);
         inout ethg[] @labels(EtherFrame-conn);

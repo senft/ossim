@@ -34,7 +34,7 @@ public:
     virtual void processPacket(cPacket *pkt) = 0;
     virtual void handleTimerMessage(cMessage *msg) = 0;
 
-	bool hasBWLeft(void);
+	bool hasBWLeft(int additionalConnections);
 
 	virtual int numInitStages() const { return 4; }
 protected:
@@ -66,6 +66,8 @@ protected:
 	void processConnectRequest(cPacket *pkt);
 private:
 	void getAppSetting(void);
+	void acceptConnectRequest(TreeConnectRequestPacket *pkt, int numRequestedStripes);
+	void rejectConnectRequest(TreeConnectRequestPacket *pkt);
 
 	virtual int getMaxOutConnections(void) = 0;
 

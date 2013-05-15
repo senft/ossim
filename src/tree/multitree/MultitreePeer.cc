@@ -22,7 +22,8 @@ void MultitreePeer::initialize(int stage)
 
 	if(stage == 3)
 	{
-		m_state = TREE_JOIN_STATE_IDLE;
+
+		param_intervalReconnect = par("intervalReconnect");
 
 		// -------------------------------------------------------------------------
 		// -------------------------------- Timers ---------------------------------
@@ -34,6 +35,8 @@ void MultitreePeer::initialize(int stage)
 
 		// -- Repeated timers
 		// e.g. optimization
+
+		m_state = TREE_JOIN_STATE_IDLE;
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 	}
@@ -208,11 +211,14 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 	if(m_state == TREE_JOIN_STATE_IDLE_WAITING)
 	{
 		IPvXAddress alternativeNode = treePkt->getAlternativeNode();
+
 		if(alternativeNode.isUnspecified())
 		{
 			// Wait and try to connect later
 			EV << "Node refused to let me join. No alternative node given. Waiting...";
 			m_state = TREE_JOIN_STATE_IDLE;
+
+			scheduleAt(simTime() + param_intervalReconnect, timer_getJoinTime);
 		}
 		else
 		{
