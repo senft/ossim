@@ -17,6 +17,7 @@ public:
 	virtual void handleMessage(cMessage *);
 
 	int getNumOutgoingConnections(void);
+	int getNumOutgoingConnections(int stripe);
 
 	//bool hasParent(IPvXAddress address);
 	//bool hasParent(int stripe, IPvXAddress address);

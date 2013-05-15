@@ -16,7 +16,6 @@ void MultitreePartnerList::initialize(int stage)
 		AppSettingMultitree *m_appSetting = check_and_cast<AppSettingMultitree *>(temp);
 
 		numStripes = m_appSetting->getNumStripes();
-		outConnections = 0;
 
 		parents = new IPvXAddress[numStripes];
 
@@ -42,7 +41,6 @@ void MultitreePartnerList::handleMessage(cMessage *)
 void MultitreePartnerList::addChild(int stripe, MultitreeChildInfo child){
 	// TODO check if child is not already added
 	children[stripe].push_back(child);
-	outConnections++;
 }
 
 void MultitreePartnerList::addChild(MultitreeChildInfo child){
@@ -77,7 +75,17 @@ IPvXAddress MultitreePartnerList::getParent(int stripe)
 
 int MultitreePartnerList::getNumOutgoingConnections(void)
 {
-	return outConnections;
+	int sum = 0, i;
+	for (i = 0; i < numStripes; i++)
+	{
+		sum = sum + getNumOutgoingConnections(i);
+	}
+	return sum;
+}
+
+int MultitreePartnerList::getNumOutgoingConnections(int stripe)
+{
+	return children[stripe].size();
 }
 
 void MultitreePartnerList::printPartnerList(void)
