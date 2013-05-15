@@ -107,7 +107,8 @@ void MultitreePartnerList::printPartnerList(void)
 
 		for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 		{
-			EV << ((MultitreeChildInfo)*it).getAddress().str() << ", ";
+		    MultitreeChildInfo current = (MultitreeChildInfo)*it;
+			EV << current.getAddress().str() << " (" << current.getNumSuccessors(i) << " successors), ";
 		}
 		EV << endl;
 	}

@@ -118,10 +118,16 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt, int numR
 	MultitreeChildInfo child;
 	child.setAddress(senderAddress);
 
-	int i;
-	for (i = 0; i < numRequestedStripes; i++)
+	unsigned int i;
+	for (i = 0; i < pkt->getNumSuccessorArraySize(); i++)
 	{
-		m_partnerList->addChild(pkt->getStripes(i), child);
+		child.setNumSuccessors(i, pkt->getNumSuccessor(i));
+	}
+
+	int j;
+	for (j = 0; j < numRequestedStripes; j++)
+	{
+		m_partnerList->addChild(pkt->getStripes(j), child);
 	}
 }
 
