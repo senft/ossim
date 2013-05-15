@@ -3,11 +3,11 @@
 
 #include "IPvXAddress.h"
 
-class ChildInfo
+class MultitreeChildInfo
 {
 public:
-	ChildInfo();
-	virtual ~ChildInfo();
+	MultitreeChildInfo();
+	virtual ~MultitreeChildInfo();
 
 	inline void setAddress(IPvXAddress newAddress){ address = newAddress; }
 	inline IPvXAddress getAddress(){ return address; }
@@ -22,7 +22,7 @@ public:
 	inline int* getForwardingStripes(){ return stripes; }
 
 protected:
-	IPvXAddress address;	
+	IPvXAddress address;
 	int port;
 	int numSuccessors;
 	int* stripes;

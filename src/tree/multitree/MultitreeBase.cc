@@ -1,5 +1,4 @@
 #include "MultitreeBase.h"
-#include "ChildInfo.h"
 #include "DpControlInfo_m.h"
 
 MultitreeBase::MultitreeBase(){
@@ -116,7 +115,7 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt, int numR
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 	sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
 
-	ChildInfo child;
+	MultitreeChildInfo child;
 	child.setAddress(senderAddress);
 
 	int i;

@@ -23,7 +23,7 @@ void MultitreePartnerList::initialize(int stage)
 		int i;
 		for (i = 0; i < numStripes; i++)
 		{
-			std::vector<ChildInfo> v;
+			std::vector<MultitreeChildInfo> v;
 			children.push_back(v);
 		}
     }
@@ -39,13 +39,13 @@ void MultitreePartnerList::handleMessage(cMessage *)
     throw cException("PartnerList does not process messages!");
 }
 
-void MultitreePartnerList::addChild(int stripe, ChildInfo child){
+void MultitreePartnerList::addChild(int stripe, MultitreeChildInfo child){
 	// TODO check if child is not already added
 	children[stripe].push_back(child);
 	outConnections++;
 }
 
-void MultitreePartnerList::addChild(ChildInfo child){
+void MultitreePartnerList::addChild(MultitreeChildInfo child){
 	int i;
 	for (i = 0; i < numStripes; i++)
 	{
@@ -53,7 +53,7 @@ void MultitreePartnerList::addChild(ChildInfo child){
 	}
 }
 
-std::vector<ChildInfo> MultitreePartnerList::getChildren(int stripe)
+std::vector<MultitreeChildInfo> MultitreePartnerList::getChildren(int stripe)
 {
 	return children.at(stripe);
 }
@@ -95,11 +95,11 @@ void MultitreePartnerList::printPartnerList(void)
 	{
 		EV << "Stripe " << i << ": ";
 
-		std::vector<ChildInfo> curChildren = children[i];
+		std::vector<MultitreeChildInfo> curChildren = children[i];
 
-		for (std::vector<ChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 		{
-			EV << ((ChildInfo)*it).getAddress().str() << ", ";
+			EV << ((MultitreeChildInfo)*it).getAddress().str() << ", ";
 		}
 		EV << endl;
 	}

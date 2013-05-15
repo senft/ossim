@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "IPvXAddress.h"
-#include "ChildInfo.h"
+#include "MultitreeChildInfo.h"
 
 class MultitreePartnerList : public cSimpleModule
 {
@@ -28,21 +28,21 @@ public:
 
 	//bool hasChild(IPvXAddress address);
 	//bool hasChild(int stripe, IPvXAddress address);
-	void addChild(ChildInfo child);
-	void addChild(int stripe, ChildInfo child);
+	void addChild(MultitreeChildInfo child);
+	void addChild(int stripe, MultitreeChildInfo child);
 	void removeChild(IPvXAddress address);
 	void removeChild(int stripe, IPvXAddress address);
-	std::vector<ChildInfo> getChildren(int stripe);
+	std::vector<MultitreeChildInfo> getChildren(int stripe);
 
 	void printPartnerList(void);
 protected:
 	int numStripes;
 
 	IPvXAddress* parents;
-	std::vector<std::vector<ChildInfo> > children;
+	std::vector<std::vector<MultitreeChildInfo> > children;
 
 private:
-	int outConnections;
+
 };
 
 #endif
