@@ -48,11 +48,9 @@ protected:
 
 	int numStripes;
 
-	/*
-	 * TODO: correct?  The bandwidth capacity of this node. A bandwidth
+	/* TODO: correct?  The bandwidth capacity of this node. A bandwidth
 	 * capacity of 1 means, this node is capable of delivering or (!) receiving
-	 * the whole stream once at a time.
-	 */
+	 * the whole stream once at a time. */
 	double bwCapacity;
 
     void bindToGlobalModule(void);
@@ -64,6 +62,8 @@ protected:
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 
 	void processConnectRequest(cPacket *pkt);
+	void disconnectFromChild(int stripe, IPvXAddress address); 
+	void disconnectFromChild(IPvXAddress address);
 private:
 	void getAppSetting(void);
 	void acceptConnectRequest(TreeConnectRequestPacket *pkt, int numRequestedStripes);

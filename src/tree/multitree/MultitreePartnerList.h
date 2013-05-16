@@ -16,15 +16,19 @@ public:
 	virtual void finish();
 	virtual void handleMessage(cMessage *);
 
+	void clear(void);
+
 	int getNumOutgoingConnections(void);
 	int getNumOutgoingConnections(int stripe);
+
+	std::set<IPvXAddress> getAllConnections();
 
 	bool hasParent(IPvXAddress address);
 	bool hasParent(int stripe, IPvXAddress address);
 	void addParent(IPvXAddress address);
 	void addParent(int stripe, IPvXAddress address);
-	void removeParent(IPvXAddress address);
-	void removeParent(int stripe, IPvXAddress address);
+	std::vector<int> removeParent(IPvXAddress address);
+	void removeParent(int stripe);
 	IPvXAddress getParent(int stripe);
 
 	bool hasChild(IPvXAddress address);

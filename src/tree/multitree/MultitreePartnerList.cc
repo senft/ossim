@@ -29,12 +29,16 @@ void MultitreePartnerList::initialize(int stage)
 
 void MultitreePartnerList::finish()
 {
-
 }
 
 void MultitreePartnerList::handleMessage(cMessage *)
 {
     throw cException("PartnerList does not process messages!");
+}
+
+void MultitreePartnerList::clear(void)
+{
+	// TODO: implement
 }
 
 bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
@@ -76,10 +80,23 @@ std::vector<MultitreeChildInfo> MultitreePartnerList::getChildren(int stripe)
 
 void MultitreePartnerList::removeChild(int stripe, IPvXAddress address)
 {
+	std::vector<MultitreeChildInfo>::iterator it = children[stripe].begin();
+	while (it != children[stripe].end()) {
+		if ( address.equals(it->getAddress()) ) {
+			it = children[stripe].erase(it);
+		}
+		else {
+			++it;
+		}
+	}
 }
 
 void MultitreePartnerList::removeChild(IPvXAddress address)
 {
+	for (int i = 0; i < numStripes; i++)
+	{
+		removeChild(i, address);
+	}
 }
 
 
@@ -115,12 +132,45 @@ IPvXAddress MultitreePartnerList::getParent(int stripe)
 	return parents[stripe];
 }
 
-void MultitreePartnerList::removeParent(int stripe, IPvXAddress address)
+void MultitreePartnerList::removeParent(int stripe)
 {
+	// TODO: maybe a check would be better?!
+	IPvXAddress address;
+	parents[stripe] = address;
 }
 
-void MultitreePartnerList::removeParent(IPvXAddress address)
+std::vector<int> MultitreePartnerList::removeParent(IPvXAddress address)
 {
+	std::vector<int> affectedStripes;
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(address.equals(parents[i]))
+		{
+			IPvXAddress address;
+			parents[i] = address;
+
+			affectedStripes.push_back(i);
+		}
+	}
+	return affectedStripes;
+}
+
+std::set<IPvXAddress> MultitreePartnerList::getAllConnections()
+{
+	std::set<IPvXAddress> result;
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		result.insert(parents[i]);
+
+		std::vector<MultitreeChildInfo> curChildren = children[i];
+		for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
+			result.insert( ((MultitreeChildInfo)*it).getAddress() );
+		}
+	}
+
+	return result;
 }
 
 int MultitreePartnerList::getNumOutgoingConnections(void)

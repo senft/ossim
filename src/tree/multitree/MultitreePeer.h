@@ -22,8 +22,11 @@ private:
 	void processConnectConfirm(cPacket* pkt);
 	void processDisconnectRequest(cPacket *pkt);
 
+	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);
+	void disconnectFromParent(IPvXAddress address, IPvXAddress alternativeParent);
+
 	virtual int getMaxOutConnections(void);
-	void connectVia(IPvXAddress address);
+	void connectVia(IPvXAddress address, std::vector<int> stripes);
 
     void bindToGlobalModule(void);
     void bindToTreeModule(void);

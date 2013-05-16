@@ -51,7 +51,7 @@ enum TreePeerStreamingPacketType
 packet TreePeerStreamingPacket extends PeerStreamingPacket
 {
     packetGroup = PACKET_GROUP_TREE_OVERLAY;
-    short packetType @getter(getPacketType) @setter(setPacketType) @enum(TreePeerStreamingPacketType) ;
+    short packetType @getter(getPacketType) @setter(setPacketType) @enum(TreePeerStreamingPacketType);
 }
 
 packet TreeConnectRequestPacket extends TreePeerStreamingPacket
@@ -73,6 +73,7 @@ packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_DISCONNECT_REQUEST;
 	IPvXAddress alternativeNode;
+    int		stripes[] = NULL;
 }
 
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket

@@ -70,13 +70,31 @@ void MultitreeSource::processPacket(cPacket *pkt)
 
 void MultitreeSource::processDisconnectRequest(cPacket* pkt)
 {
-	//TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
+	TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
 
-	//IPvXAddress senderAddress;
-	//int senderPort;
-	//getSender(pkt, senderAddress, senderPort);
+	IPvXAddress address;
+	getSender(pkt, address);
 
-	// TODO: disconnect the node
+	int numAffectedStripes = treePkt->getStripesArraySize();
+
+	if(numAffectedStripes == 0)
+	{
+		disconnectFromChild(address);
+	}
+	else
+	{
+		for (int i = 0; i < numAffectedStripes; i++)
+		{
+			EV << "Disconnect" << treePkt->getStripes(i) << endl;
+
+			int affectedStripe = treePkt->getStripes(i);
+
+			if( m_partnerList->hasChild(affectedStripe, address) )
+			{
+				disconnectFromChild(affectedStripe, address);
+			}
+		}
+	}
 }
  
 

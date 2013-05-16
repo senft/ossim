@@ -74,11 +74,12 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
 
 void MultitreePeer::handleTimerJoin()
 {
+	EV << m_state << endl;
 	if(m_state != TREE_JOIN_STATE_IDLE)
 		return;
 
 	IPvXAddress addrPeer = m_apTable->getARandPeer(getNodeAddress());
-	connectVia(addrPeer);
+	connectVia(addrPeer, std::vector<int>());
 }
 
 void MultitreePeer::handleTimerLeave()
@@ -86,14 +87,42 @@ void MultitreePeer::handleTimerLeave()
 	if(m_state != TREE_JOIN_STATE_ACTIVE)
 		return;
 
-	// TODO: send leave to all parents
-	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-	IPvXAddress addrPeer = IPvXAddress("192.168.0.1");
-    sendToDispatcher(reqPkt, m_localPort, addrPeer, m_destPort);
-
 	m_state = TREE_JOIN_STATE_IDLE;
 
+	EV << "LEAVING" << endl;
+	m_partnerList->printPartnerList();
+
+	// Remove myself from ActivePeerTable
 	m_apTable->removeAddress(getNodeAddress());
+
+	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+
+	// TODO would be cool to bundle all DRQ to a nodes I am connected to multiple times in 1 DRQ
+
+	// Disconnect from parents
+	for (int i = 0; i < numStripes; i++)
+	{
+		IPvXAddress address = m_partnerList->getParent(i);
+		sendToDispatcher(reqPkt->dup(), m_localPort, address, m_destPort);
+	}
+
+	// Disconnect from children
+	for (int i = 0; i < numStripes; i++)
+	{
+		std::vector<MultitreeChildInfo> curChildren = m_partnerList->getChildren(i);
+		if(!curChildren.empty())
+		{
+			IPvXAddress alternativParent = m_partnerList->getParent(i);
+			reqPkt->setAlternativeNode(alternativParent);
+
+			for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
+				IPvXAddress address = ((MultitreeChildInfo)*it).getAddress();
+				sendToDispatcher(reqPkt->dup(), m_localPort, address, m_destPort);
+			}
+		}
+	}
+
+	m_partnerList->clear();
 }
 
 void MultitreePeer::finish(void)
@@ -175,9 +204,25 @@ void MultitreePeer::processPacket(cPacket *pkt)
     delete pkt;
 }
 
-void MultitreePeer::connectVia(IPvXAddress address)
+void MultitreePeer::connectVia(IPvXAddress address, std::vector<int> stripes)
 {
 	TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
+
+	if(!stripes.empty())
+	{
+		int numReqStripes = stripes.size();
+		reqPkt->setStripesArraySize(numReqStripes);
+		for (int i = 0; i < numReqStripes; i++)
+		{
+			reqPkt->setStripes(i, stripes[i]);
+		}
+	}
+
+	reqPkt->setNumSuccessorArraySize(numStripes);
+	for (int i = 0; i < numStripes; i++)
+	{
+		reqPkt->setNumSuccessor(i, m_partnerList->getNumOutgoingConnections(i));
+	}
 
     sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
 	m_state = TREE_JOIN_STATE_IDLE_WAITING;
@@ -204,31 +249,71 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 {
 	TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
 
-	IPvXAddress senderAddress;
-	int senderPort;
-	getSender(pkt, senderAddress, senderPort);
-
 	if(m_state == TREE_JOIN_STATE_IDLE_WAITING)
 	{
+		// A node rejected my ConnectRequest
 		IPvXAddress alternativeNode = treePkt->getAlternativeNode();
 
 		if(alternativeNode.isUnspecified())
 		{
 			// Wait and try to connect later
-			EV << "Node refused to let me join. No alternative node given. Waiting...";
+			EV << "Node refused to let me join. No alternative node given. Retrying in " << param_intervalReconnect << "s";
 			m_state = TREE_JOIN_STATE_IDLE;
 
 			scheduleAt(simTime() + param_intervalReconnect, timer_getJoinTime);
 		}
 		else
 		{
-			connectVia(alternativeNode);
+			connectVia(alternativeNode, std::vector<int>());
 		}
 	}
 	else if(m_state == TREE_JOIN_STATE_ACTIVE)
 	{
 		// A node wants to disconnect from me
+
+		IPvXAddress senderAddress;
+		getSender(pkt, senderAddress);
+
+		int numAffectedStripes = treePkt->getStripesArraySize();
+
+		EV << senderAddress.str() << " wants to disconnect from me (" << numAffectedStripes << " stripes)" << endl;
+
+		if(numAffectedStripes == 0)
+		{
+			// All stripes
+			disconnectFromParent(senderAddress, treePkt->getAlternativeNode());
+			disconnectFromChild(senderAddress);
+		}
+		else
+		{
+			// Certain stripes
+
+			for (int i = 0; i < numAffectedStripes; i++)
+			{
+				int affectedStripe = treePkt->getStripes(i);
+
+				if( m_partnerList->hasChild(affectedStripe, senderAddress) )
+				{
+					disconnectFromChild(affectedStripe, senderAddress);
+				}
+				else if( m_partnerList->hasParent(affectedStripe, senderAddress) )
+				{
+					disconnectFromParent(affectedStripe, treePkt->getAlternativeNode());
+				}
+			}
+		}
 	}
+}
+
+void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativeParent)
+{
+	m_partnerList->removeParent(stripe);
+}
+
+void MultitreePeer::disconnectFromParent(IPvXAddress address, IPvXAddress alternativParent)
+{
+	std::vector<int> stripes = m_partnerList->removeParent(address);
+	connectVia(alternativParent, stripes);
 }
 
 int MultitreePeer::getMaxOutConnections()

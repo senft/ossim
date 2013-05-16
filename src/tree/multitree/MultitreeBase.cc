@@ -86,7 +86,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes). No Bandwidth left.  Rejecting..." << endl;
 			rejectConnectRequest(treePkt);
 		}
-
 	}
 	else
     {
@@ -102,6 +101,7 @@ void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
 	getSender(pkt, senderAddress, senderPort);
 
 	TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+	// TODO: choose a better alternative peer
 	rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
 	sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);
 }
@@ -118,17 +118,32 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt, int numR
 	MultitreeChildInfo child;
 	child.setAddress(senderAddress);
 
-	unsigned int i;
-	for (i = 0; i < pkt->getNumSuccessorArraySize(); i++)
+	for (unsigned int i = 0; i < pkt->getNumSuccessorArraySize(); i++)
 	{
 		child.setNumSuccessors(i, pkt->getNumSuccessor(i));
 	}
 
-	int j;
-	for (j = 0; j < numRequestedStripes; j++)
+	if(numRequestedStripes == numStripes)
 	{
-		m_partnerList->addChild(pkt->getStripes(j), child);
+		m_partnerList->addChild(child);
 	}
+	else
+	{
+		for (int i = 0; i < numRequestedStripes; i++)
+		{
+			m_partnerList->addChild(pkt->getStripes(i), child);
+		}
+	}
+}
+
+void MultitreeBase::disconnectFromChild(IPvXAddress address)
+{
+	m_partnerList->removeChild(address);
+}
+
+void MultitreeBase::disconnectFromChild(int stripe, IPvXAddress address)
+{
+	m_partnerList->removeChild(stripe, address);
 }
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
