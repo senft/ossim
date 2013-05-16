@@ -57,7 +57,7 @@ packet TreePeerStreamingPacket extends PeerStreamingPacket
 packet TreeConnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_REQUEST;
-    int		stripes[] = NULL;
+    int		stripe = -1;
 
 	// TODO: This has to be numStripes elements long
     int		numSuccessor[] = NULL;
@@ -73,7 +73,7 @@ packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_DISCONNECT_REQUEST;
 	IPvXAddress alternativeNode;
-    int		stripes[] = NULL;
+    int		stripe = -1;
 }
 
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket

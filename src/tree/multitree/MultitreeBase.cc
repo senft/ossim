@@ -69,15 +69,18 @@ void MultitreeBase::bindToStatisticModule(void){
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
-	if(m_state == TREE_JOIN_STATE_ACTIVE)
-	{
-		TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
-		int numRequestedStripes = (treePkt->getStripesArraySize()) == 0 ? numStripes : treePkt->getStripesArraySize();
 
+	if(m_state == TREE_JOIN_STATE_ACTIVE)
+		TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
+		int numRequestedStripes = (treePkt->getStripe() == -1) ? numStripes : 1;
+
+	{
 		if(hasBWLeft(numRequestedStripes))
 		{
 			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes). Accepting..." << endl;
-			acceptConnectRequest(treePkt, numRequestedStripes);
+			acceptConnectRequest(treePkt);
+
+			EV << getNodeAddress();
 			m_partnerList->printPartnerList();
 		}
 		else
@@ -106,14 +109,14 @@ void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
 	sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);
 }
 
-void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt, int numRequestedStripes)
+void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 {
 	IPvXAddress senderAddress;
-	int senderPort;
-	getSender(pkt, senderAddress, senderPort);
+	getSender(pkt, senderAddress);
 
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
-	sendToDispatcher(acpPkt, m_localPort, senderAddress, senderPort);
+	// TODO: this should also contain an alternative peer
+	sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
 	MultitreeChildInfo child;
 	child.setAddress(senderAddress);
@@ -123,16 +126,16 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt, int numR
 		child.setNumSuccessors(i, pkt->getNumSuccessor(i));
 	}
 
-	if(numRequestedStripes == numStripes)
+	int requestedStripe = pkt->getStripe();
+
+	if(requestedStripe == -1)
 	{
+		// Requested all stripes
 		m_partnerList->addChild(child);
 	}
 	else
 	{
-		for (int i = 0; i < numRequestedStripes; i++)
-		{
-			m_partnerList->addChild(pkt->getStripes(i), child);
-		}
+		m_partnerList->addChild(requestedStripe, child);
 	}
 }
 
@@ -170,7 +173,7 @@ bool MultitreeBase::hasBWLeft(int additionalConnections)
 	int outConnections = m_partnerList->getNumOutgoingConnections();
 	int maxOutCon = getMaxOutConnections();
 
-	EV << "Currently have " << outConnections << " connections, " <<
+	EV << "Currently have " << outConnections << " outgoing connections, " <<
 		additionalConnections << " have been requested, max=" << maxOutCon <<
 		endl;
 

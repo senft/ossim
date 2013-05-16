@@ -66,7 +66,7 @@ protected:
 	void disconnectFromChild(IPvXAddress address);
 private:
 	void getAppSetting(void);
-	void acceptConnectRequest(TreeConnectRequestPacket *pkt, int numRequestedStripes);
+	void acceptConnectRequest(TreeConnectRequestPacket *pkt);
 	void rejectConnectRequest(TreeConnectRequestPacket *pkt);
 
 	virtual int getMaxOutConnections(void) = 0;
