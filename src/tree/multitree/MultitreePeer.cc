@@ -4,10 +4,7 @@ Define_Module(MultitreePeer)
 
 MultitreePeer::MultitreePeer(){}
 
-MultitreePeer::~MultitreePeer()
-{
-	finish();
-}
+MultitreePeer::~MultitreePeer(){}
 
 void MultitreePeer::initialize(int stage)
 {
@@ -45,6 +42,14 @@ void MultitreePeer::initialize(int stage)
 		}
 	}
 }
+
+void MultitreePeer::finish(void)
+{
+	MultitreeBase::finish();
+
+	cancelAndDeleteTimer();
+}
+
 
 void MultitreePeer::handleTimerMessage(cMessage *msg)
 {
@@ -138,11 +143,6 @@ void MultitreePeer::handleTimerLeave()
 	}
 
 	m_partnerList->clear();
-}
-
-void MultitreePeer::finish(void)
-{
-	cancelAndDeleteTimer();
 }
 
 void MultitreePeer::cancelAndDeleteTimer(void)

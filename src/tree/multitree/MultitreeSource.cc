@@ -3,10 +3,7 @@
 Define_Module(MultitreeSource)
 
 MultitreeSource::MultitreeSource(){}
-MultitreeSource::~MultitreeSource()
-{
-	finish();
-}
+MultitreeSource::~MultitreeSource(){}
 
 void MultitreeSource::initialize(int stage)
 {
@@ -40,6 +37,13 @@ void MultitreeSource::initialize(int stage)
 
 
 	}
+}
+
+void MultitreeSource::finish(void)
+{
+	MultitreeBase::finish();
+
+	cancelAndDeleteTimer();
 }
 
 void MultitreeSource::processPacket(cPacket *pkt)
@@ -86,11 +90,6 @@ void MultitreeSource::processDisconnectRequest(cPacket* pkt)
 	disconnectFromChild(stripe, address);
 }
  
-
-void MultitreeSource::finish(void)
-{
-	cancelAndDeleteTimer();
-}
 
 void MultitreeSource::handleTimerMessage(cMessage *msg)
 {

@@ -7,7 +7,7 @@ MultitreeChildInfo::MultitreeChildInfo()
 
 	numStripes = m_appSetting->getNumStripes();
 
-	numSuccessors = new int[numStripes];
+	numSuccessors.resize(numStripes);
 }
 
 MultitreeChildInfo::~MultitreeChildInfo(){}

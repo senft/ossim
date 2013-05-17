@@ -23,6 +23,12 @@ void MultitreeBase::initialize(int stage)
 	}
 }
 
+void MultitreeBase::finish(void)
+{
+	m_partnerList->clear();
+	delete [] m_state;
+}
+
 void MultitreeBase::handleMessage(cMessage *msg)
 {
     if (msg->isSelfMessage())

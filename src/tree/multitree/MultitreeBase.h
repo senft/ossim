@@ -29,6 +29,7 @@ public:
 	virtual ~MultitreeBase();
 
 	virtual void initialize(int stage);
+	virtual void finish(void);
 
     virtual void handleMessage(cMessage *msg);
     virtual void processPacket(cPacket *pkt) = 0;

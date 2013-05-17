@@ -29,6 +29,7 @@ void MultitreePartnerList::initialize(int stage)
 
 void MultitreePartnerList::finish()
 {
+	delete[] parents;
 }
 
 void MultitreePartnerList::handleMessage(cMessage *)

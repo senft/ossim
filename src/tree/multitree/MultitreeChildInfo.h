@@ -29,7 +29,7 @@ protected:
 
 	IPvXAddress address;
 	int port;
-	int* numSuccessors;
+	std::vector<int> numSuccessors;
 	int* stripes;
 
 private:
