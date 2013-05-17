@@ -19,6 +19,7 @@ void MultitreeBase::initialize(int stage)
 		findNodeAddress();
 
 		bwCapacity = par("bwCapacity");
+		m_state = new TreeJoinState[numStripes];
 	}
 }
 
@@ -69,32 +70,77 @@ void MultitreeBase::bindToStatisticModule(void){
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
+	TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
+	int stripe = treePkt->getStripe();
+	int numRequestedStripes = (stripe == -1) ? numStripes : 1;
 
-	if(m_state == TREE_JOIN_STATE_ACTIVE)
-		TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
-		int numRequestedStripes = (treePkt->getStripe() == -1) ? numStripes : 1;
-
+	if(stripe == -1) // Requested all stripes
 	{
-		if(hasBWLeft(numRequestedStripes))
+		bool allActive = true;
+		for (int i = 0; i < numStripes; i++)
 		{
-			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes). Accepting..." << endl;
-			acceptConnectRequest(treePkt);
+			if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
+			{
+				allActive = false;
+				break;
+			}
+		}
+		if(allActive)
+		{
+			if(hasBWLeft(numRequestedStripes))
+			{
+				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripe). Accepting..." << endl;
+				acceptConnectRequest(treePkt);
 
-			EV << getNodeAddress();
-			m_partnerList->printPartnerList();
+				EV << getNodeAddress();
+				m_partnerList->printPartnerList();
+			}
+			else
+			{
+				 // No bandwith left
+				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripe). No Bandwidth left.  Rejecting..." << endl;
+				rejectConnectRequest(treePkt);
+			}
+
 		}
 		else
 		{
-			 // No bandwith left
-			EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripes). No Bandwidth left.  Rejecting..." << endl;
-			rejectConnectRequest(treePkt);
+			// TODO: Queue the request or something (really neccessary?)
 		}
 	}
-	else
-    {
-		// Cannot process ConnectRequest
-        throw cException("Uncovered state, check assignment of state variable!");
-    }
+	else // Requested one stripe
+	{
+		switch(m_state[stripe])
+		{ 
+		case TREE_JOIN_STATE_ACTIVE:
+		{
+			m_state[stripe] = TREE_JOIN_STATE_ACTIVE_WAITING;
+
+			if(hasBWLeft(1))
+			{
+				EV << "Received TREE_CONECT_REQUEST (1 stripe). Accepting..." << endl;
+				acceptConnectRequest(treePkt);
+
+				EV << getNodeAddress();
+				m_partnerList->printPartnerList();
+			}
+			else
+			{
+				 // No bandwith left
+				EV << "Received TREE_CONECT_REQUEST (1 stripe). No Bandwidth left.  Rejecting..." << endl;
+				rejectConnectRequest(treePkt);
+			}
+
+			m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
+			break;
+		}
+		case TREE_JOIN_STATE_ACTIVE_WAITING:
+		{
+			// TODO: Queue the request or something (really neccessary?)
+			break;
+		}
+		}
+	}
 }
 
 void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
@@ -113,8 +159,10 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 {
 	IPvXAddress senderAddress;
 	getSender(pkt, senderAddress);
+	int requestedStripe = pkt->getStripe();
 
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
+	acpPkt->setStripe(requestedStripe);
 	// TODO: this should also contain an alternative peer
 	sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
@@ -125,8 +173,6 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	{
 		child.setNumSuccessors(i, pkt->getNumSuccessor(i));
 	}
-
-	int requestedStripe = pkt->getStripe();
 
 	if(requestedStripe == -1)
 	{

@@ -42,7 +42,7 @@ protected:
     DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
 	AppSettingMultitree 	*m_appSetting;
-	TreeJoinState m_state;
+	TreeJoinState *m_state;
 
     int m_localPort, m_destPort;
 

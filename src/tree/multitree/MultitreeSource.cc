@@ -22,8 +22,13 @@ void MultitreeSource::initialize(int stage)
 	}
 
 	if(stage == 3)
-	{m_state = TREE_JOIN_STATE_ACTIVE;
-	m_apTable->addAddress(getNodeAddress());
+	{
+		for (int i = 0; i < numStripes; i++)
+		{
+			m_state[i] = TREE_JOIN_STATE_ACTIVE;
+		}
+
+		m_apTable->addAddress(getNodeAddress());
 
 	// -------------------------------------------------------------------------
     // -------------------------------- Timers ---------------------------------
