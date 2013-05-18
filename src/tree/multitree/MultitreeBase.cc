@@ -163,6 +163,12 @@ void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
 
 void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 {
+	int numSuccArraySize = pkt->getNumSuccessorArraySize();
+
+	if( numSuccArraySize != numStripes )
+		throw cException("Received invalid ConnectRequest. Contains %d numbers of successors. Should be %d.",
+				numSuccArraySize, numStripes);
+
 	IPvXAddress senderAddress;
 	getSender(pkt, senderAddress);
 	int requestedStripe = pkt->getStripe();
@@ -175,7 +181,7 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	MultitreeChildInfo child;
 	child.setAddress(senderAddress);
 
-	for (unsigned int i = 0; i < pkt->getNumSuccessorArraySize(); i++)
+	for (int i = 0; i < numSuccArraySize; i++)
 	{
 		child.setNumSuccessors(i, pkt->getNumSuccessor(i));
 	}
