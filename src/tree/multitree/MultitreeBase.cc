@@ -223,22 +223,19 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 	{
 		m_partnerList->updateNumSuccessor(i, address, treePkt->getNumSuccessor(i));
 	}
-	
-	EV << getNodeAddress();
-	m_partnerList->printPartnerList();
+
+	scheduleInformParents();
 }
 
 void MultitreeBase::disconnectFromChild(IPvXAddress address)
 {
 	m_partnerList->removeChild(address);
-
 	scheduleInformParents();
 }
 
 void MultitreeBase::disconnectFromChild(int stripe, IPvXAddress address)
 {
 	m_partnerList->removeChild(stripe, address);
-
 	scheduleInformParents();
 }
 

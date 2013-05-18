@@ -21,13 +21,3 @@ int MultitreeChildInfo::getNumSuccessors(int stripe)
 {
 	return numSuccessors[stripe];
 }
-
-//int MultitreeChildInfo::getNumSuccessors()
-//{
-//	int sum = 0, i;
-//	for (i = 0; i < numStripes; i++)
-//	{
-//		sum = sum + getNumSuccessors(i);
-//	}
-//	return sum;
-//}

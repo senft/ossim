@@ -141,7 +141,6 @@ void MultitreePeer::handleTimerLeave()
 
 			for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
 				IPvXAddress address = ((MultitreeChildInfo)*it).getAddress();
-				//EV << "KICKING " << address.str() << " stripe " << reqPkt->getStripe() << endl;
 				sendToDispatcher(reqPkt->dup(), m_localPort, address, m_destPort);
 			}
 		}
@@ -295,7 +294,6 @@ void MultitreePeer::connectVia(IPvXAddress address, int stripe)
 			reqPkt->setNumSuccessor(i, m_partnerList->getNumOutgoingConnections(i));
 		}
 
-		EV << "SENDING CRQ to " << address << " stripe: " << stripe << endl;
 		sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
 
 		for (int i = 0; i < numStripes; i++)
@@ -327,8 +325,6 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 {
 	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
 	int stripe = treePkt->getStripe();
-
-	EV << "CONECT CONFIRM " << stripe << endl;
 
 	if(stripe == -1)
 	{
@@ -371,8 +367,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 	TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
 	int stripe = treePkt->getStripe();
 
-	EV << "RECEIVED DRQ stripe: " << stripe << endl;
-
 	bool allIdleWaiting = true;
 	if(stripe == -1)
 	{
@@ -380,12 +374,11 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		{
 			if(m_state[i] != TREE_JOIN_STATE_IDLE_WAITING)
 			{
-				//EV << "m_state " << i << " is not TREE_JOIN_STATE_q
 				allIdleWaiting = false;
 				break;
 			}
 		}
-		//EV << "AllIdleWaiting " <<  allIdleWaiting << endl;
+
 		if(allIdleWaiting)
 		{
 			// A node rejected my ConnectRequest
