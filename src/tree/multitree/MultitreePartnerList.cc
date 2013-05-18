@@ -21,8 +21,7 @@ void MultitreePartnerList::initialize(int stage)
 
 		for (int i = 0; i < numStripes; i++)
 		{
-			std::vector<MultitreeChildInfo> v;
-			children.push_back(v);
+			children.push_back(std::map<IPvXAddress, MultitreeChildInfo>());
 		}
     }
 }
@@ -39,17 +38,21 @@ void MultitreePartnerList::handleMessage(cMessage *)
 
 void MultitreePartnerList::clear(void)
 {
-	// TODO: implement
+	delete[] parents;
+	parents = new IPvXAddress[numStripes];
+
+	children.clear();
+	for (int i = 0; i < numStripes; i++)
+	{
+		children.push_back(std::map<IPvXAddress, MultitreeChildInfo>());
+	}
 }
 
 bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
 {
-	std::vector<MultitreeChildInfo> currentChildren = children[stripe];
-	for(std::vector<MultitreeChildInfo>::iterator it = currentChildren.begin(); it != currentChildren.end(); ++it) {
-		if( ((MultitreeChildInfo)*it).getAddress().equals(address) )
-			return true;
-	}
-	return false;
+	std::map<IPvXAddress, MultitreeChildInfo> currentChildren = children[stripe];
+	std::map<IPvXAddress, MultitreeChildInfo>::const_iterator it = currentChildren.find(address);
+	return it != currentChildren.end();
 }
 
 bool MultitreePartnerList::hasChild(IPvXAddress address)
@@ -63,8 +66,8 @@ bool MultitreePartnerList::hasChild(IPvXAddress address)
 }
 
 void MultitreePartnerList::addChild(int stripe, MultitreeChildInfo child){
-	// TODO check if child is not already added
-	children[stripe].push_back(child);
+	children[stripe].insert(
+			std::pair<IPvXAddress, MultitreeChildInfo>(child.getAddress(), child));
 }
 
 void MultitreePartnerList::addChild(MultitreeChildInfo child){
@@ -76,20 +79,20 @@ void MultitreePartnerList::addChild(MultitreeChildInfo child){
 
 std::vector<MultitreeChildInfo> MultitreePartnerList::getChildren(int stripe)
 {
-	return children.at(stripe);
+	std::vector<MultitreeChildInfo> result;
+	std::map<IPvXAddress, MultitreeChildInfo> curChildren = children[stripe];
+
+	for (std::map<IPvXAddress, MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+	{
+		result.push_back(it->second);
+	}
+
+	return result;
 }
 
 void MultitreePartnerList::removeChild(int stripe, IPvXAddress address)
 {
-	std::vector<MultitreeChildInfo>::iterator it = children[stripe].begin();
-	while (it != children[stripe].end()) {
-		if ( address.equals(it->getAddress()) ) {
-			it = children[stripe].erase(it);
-		}
-		else {
-			++it;
-		}
-	}
+	children[stripe].erase(address);
 }
 
 void MultitreePartnerList::removeChild(IPvXAddress address)
@@ -157,23 +160,6 @@ std::vector<int> MultitreePartnerList::removeParent(IPvXAddress address)
 	return affectedStripes;
 }
 
-//std::set<IPvXAddress> MultitreePartnerList::getAllConnections()
-//{
-//	std::set<IPvXAddress> result;
-//
-//	for (int i = 0; i < numStripes; i++)
-//	{
-//		result.insert(parents[i]);
-//
-//		std::vector<MultitreeChildInfo> curChildren = children[i];
-//		for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
-//			result.insert( ((MultitreeChildInfo)*it).getAddress() );
-//		}
-//	}
-//
-//	return result;
-//}
-
 int MultitreePartnerList::getNumOutgoingConnections(void)
 {
 	int sum = 0, i;
@@ -192,31 +178,18 @@ int MultitreePartnerList::getNumOutgoingConnections(int stripe)
 int MultitreePartnerList::getNumSuccessors(int stripe)
 {
 	int sum = 0;
-	std::vector<MultitreeChildInfo> curChildren = children[stripe];
-
-	for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+	std::map<IPvXAddress, MultitreeChildInfo> curChildren = children[stripe];
+	for (std::map<IPvXAddress, MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 	{
-		MultitreeChildInfo current = (MultitreeChildInfo)*it;
-		sum = sum + 1 + current.getNumSuccessors(stripe);
+		sum = sum + 1 + (it->second).getNumSuccessors(stripe);
 	}
 	return sum;
 }
 
 void MultitreePartnerList::updateNumSuccessor(int stripe, IPvXAddress address, int numSuccessors)
 {
-	std::vector<MultitreeChildInfo> curChildren = children[stripe];
+	children[stripe][address].setNumSuccessors(stripe, numSuccessors);
 
-	//EV << "UPDATING PartnerList for stripe: " << stripe << " LIST " << this << endl;
-
-	for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
-	{
-		MultitreeChildInfo current = (MultitreeChildInfo)*it;
-		if(current.getAddress().equals(address))
-		{
-			EV << &current << " FOUND PEER: " << address << ". Update NUMSUC to " << numSuccessors << endl;
-			current.setNumSuccessors(stripe, numSuccessors);
-		}
-	}
 }
 
 void MultitreePartnerList::printPartnerList(void)
@@ -232,12 +205,12 @@ void MultitreePartnerList::printPartnerList(void)
 	{
 		EV << "Stripe " << i << ": ";
 
-		std::vector<MultitreeChildInfo> curChildren = children[i];
+		//std::vector<MultitreeChildInfo> curChildren = children[i];
+		std::map<IPvXAddress, MultitreeChildInfo> curChildren = children[i];
 
-		for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		for (std::map<IPvXAddress, MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 		{
-		    MultitreeChildInfo current = (MultitreeChildInfo)*it;
-			EV << &current << " " << current.getAddress().str() << " (" << current.getNumSuccessors(i) << " successors), ";
+			EV << it->second.getAddress().str() << " (" << it->second.getNumSuccessors(i) << " successors), ";
 		}
 		EV << endl;
 	}

@@ -48,7 +48,7 @@ protected:
 	int numStripes;
 
 	IPvXAddress* parents;
-	std::vector<std::vector<MultitreeChildInfo> > children;
+	std::vector<std::map<IPvXAddress, MultitreeChildInfo> > children;
 
 private:
 
