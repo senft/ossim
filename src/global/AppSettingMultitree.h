@@ -41,6 +41,7 @@ public:
 
 	inline int getNumStripes(){ return param_numStripes; };
 	inline int getStripeSize() { return param_stripeSize; };
+	inline int getWaitUntilInform() { return param_waitUntilInform; };
 
 protected:
     void handleMessage(cMessage* msg);
@@ -49,6 +50,7 @@ protected:
 
     int param_numStripes;
     int param_stripeSize;
+    double param_waitUntilInform;
 };
 
 #endif /* APPSETTINGMULTITREE_H_ */

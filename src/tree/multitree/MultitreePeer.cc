@@ -21,6 +21,7 @@ void MultitreePeer::initialize(int stage)
 	{
 
 		param_intervalReconnect = par("intervalReconnect");
+		param_waitUntilInform = m_appSetting->getWaitUntilInform();
 
 		// -------------------------------------------------------------------------
 		// -------------------------------- Timers ---------------------------------
