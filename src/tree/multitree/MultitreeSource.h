@@ -19,6 +19,8 @@ private:
 
 	void processDisconnectRequest(cPacket *pkt);
 
+	virtual void scheduleInformParents(void);
+
 	virtual int getMaxOutConnections(void);
 	
     void bindToGlobalModule(void);

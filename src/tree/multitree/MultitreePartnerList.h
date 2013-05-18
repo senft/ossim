@@ -21,7 +21,11 @@ public:
 	int getNumOutgoingConnections(void);
 	int getNumOutgoingConnections(int stripe);
 
-	std::set<IPvXAddress> getAllConnections();
+	int getNumSuccessors(int stripe);
+
+	void updateNumSuccessor(int stripe, IPvXAddress address, int numSuccessors);
+
+	//std::set<IPvXAddress> getAllConnections();
 
 	bool hasParent(IPvXAddress address);
 	bool hasParent(int stripe, IPvXAddress address);

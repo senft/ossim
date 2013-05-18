@@ -118,6 +118,14 @@ void MultitreeSource::cancelAllTimer()
 {
 }
 
+
+void MultitreeSource::scheduleInformParents(void)
+{ 
+	// Do nothing because a source has no parents...
+	EV << getNodeAddress();
+	m_partnerList->printPartnerList();
+}
+
 int MultitreeSource::getMaxOutConnections()
 {
 	return numStripes * bwCapacity;

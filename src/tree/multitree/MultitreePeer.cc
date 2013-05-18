@@ -31,9 +31,11 @@ void MultitreePeer::initialize(int stage)
 		timer_join              = new cMessage("TREE_NODE_TIMER_JOIN");
 		timer_leave             = new cMessage("TREE_NODE_TIMER_LEAVE");
 
-		// -- Repeated timers
-		// e.g. optimization
 
+		// -- Repeated timers
+		timer_informParents     = new cMessage("TREE_NODE_TIMER_INFORM_PARENTS");
+
+		// -------------------------------------------------------------------------
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 
@@ -80,6 +82,10 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
     {
 		handleTimerLeave();
     }
+	else if (msg == timer_informParents)
+	{
+		handleTimerInformParents();
+	}
 } 
 
 void MultitreePeer::handleTimerJoin()
@@ -106,9 +112,6 @@ void MultitreePeer::handleTimerLeave()
 
 	for (int i = 0; i < numStripes; i++)
 		m_state[i] = TREE_JOIN_STATE_IDLE;
-
-	//EV << "LEAVING" << endl;
-	//m_partnerList->printPartnerList();
 
 	// Remove myself from ActivePeerTable
 	m_apTable->removeAddress(getNodeAddress());
@@ -138,12 +141,48 @@ void MultitreePeer::handleTimerLeave()
 
 			for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
 				IPvXAddress address = ((MultitreeChildInfo)*it).getAddress();
+				//EV << "KICKING " << address.str() << " stripe " << reqPkt->getStripe() << endl;
 				sendToDispatcher(reqPkt->dup(), m_localPort, address, m_destPort);
 			}
 		}
 	}
 
 	m_partnerList->clear();
+}
+
+void MultitreePeer::handleTimerInformParents(void)
+{
+	TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_INFORM_PARENTS");
+	pkt->setNumSuccessorArraySize(numStripes);
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		int numSucc = m_partnerList->getNumSuccessors(i);
+		pkt->setNumSuccessor(i, numSucc);
+	}
+
+	set<IPvXAddress> sentTo;
+	for (int i = 0; i < numStripes; i++)
+	{
+		IPvXAddress address = m_partnerList->getParent(i);
+		if( sentTo.find(address) == sentTo.end() )
+		{
+			sentTo.insert(address);
+			sendToDispatcher(pkt->dup(), m_localPort, address, m_destPort);
+		}
+	}
+}
+
+void MultitreePeer::scheduleInformParents(void)
+{
+	EV << getNodeAddress();
+	m_partnerList->printPartnerList();
+
+	if(timer_informParents->isScheduled())
+		return;
+
+	// TODO this only happens in forwarding nodes
+	scheduleAt(simTime() + param_waitUntilInform, timer_informParents);
 }
 
 void MultitreePeer::cancelAndDeleteTimer(void)
@@ -165,6 +204,12 @@ void MultitreePeer::cancelAndDeleteTimer(void)
 		delete cancelEvent(timer_leave);
 		timer_leave = NULL;
 	}
+
+	if(timer_informParents != NULL)
+	{
+		delete cancelEvent(timer_informParents);
+		timer_informParents = NULL;
+	}
 }
 
 void MultitreePeer::cancelAllTimer(void)
@@ -172,6 +217,7 @@ void MultitreePeer::cancelAllTimer(void)
 	cancelEvent(timer_getJoinTime);
 	cancelEvent(timer_join);
 	cancelEvent(timer_leave);
+	cancelEvent(timer_informParents);
 }
 
 void MultitreePeer::bindToGlobalModule(void)
@@ -376,7 +422,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			disconnectFromParent(stripe, treePkt->getAlternativeNode());
 		}
 	}
-	m_partnerList->printPartnerList();
 }
 
 void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativeParent)

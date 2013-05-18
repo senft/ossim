@@ -19,6 +19,15 @@ void MultitreeBase::initialize(int stage)
 		findNodeAddress();
 
 		bwCapacity = par("bwCapacity");
+
+		// -------------------------------------------------------------------------
+		// -------------------------------- Timers ---------------------------------
+		// -------------------------------------------------------------------------
+		// -- One-time timers
+		
+		// -- Repeated timers
+
+
 		m_state = new TreeJoinState[numStripes];
 	}
 }
@@ -97,14 +106,12 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			{
 				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripe). Accepting..." << endl;
 				acceptConnectRequest(treePkt);
-
-				EV << getNodeAddress();
-				m_partnerList->printPartnerList();
 			}
 			else
 			{
 				 // No bandwith left
-				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripe). No Bandwidth left.  Rejecting..." << endl;
+				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripe). No Bandwidth left.  Rejecting..." 
+					<< endl;
 				rejectConnectRequest(treePkt);
 			}
 
@@ -126,9 +133,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			{
 				EV << "Received TREE_CONECT_REQUEST (1 stripe). Accepting..." << endl;
 				acceptConnectRequest(treePkt);
-
-				EV << getNodeAddress();
-				m_partnerList->printPartnerList();
 			}
 			else
 			{
@@ -143,6 +147,11 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		case TREE_JOIN_STATE_ACTIVE_WAITING:
 		{
 			// TODO: Queue the request or something (really neccessary?)
+			break;
+		}
+		default:
+		{
+			throw cException("sup?");
 			break;
 		}
 		}
@@ -195,6 +204,10 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	{
 		m_partnerList->addChild(requestedStripe, child);
 	}
+
+	scheduleInformParents();
+}
+
 void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 {
     TreeSuccessorInfoPacket *treePkt = check_and_cast<TreeSuccessorInfoPacket *>(pkt);
@@ -218,11 +231,15 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 void MultitreeBase::disconnectFromChild(IPvXAddress address)
 {
 	m_partnerList->removeChild(address);
+
+	scheduleInformParents();
 }
 
 void MultitreeBase::disconnectFromChild(int stripe, IPvXAddress address)
 {
 	m_partnerList->removeChild(stripe, address);
+
+	scheduleInformParents();
 }
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)

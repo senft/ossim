@@ -18,7 +18,7 @@ public:
 
 	void setNumSuccessors(int stripe, int successors);
 	int getNumSuccessors(int stripe);
-	int getNumSuccessors();
+	//int getNumSuccessors();
 
 	inline void setForwardingStripes(int* newStripes){ stripes = newStripes; }
 	inline int* getForwardingStripes(){ return stripes; }

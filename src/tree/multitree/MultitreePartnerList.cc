@@ -157,22 +157,22 @@ std::vector<int> MultitreePartnerList::removeParent(IPvXAddress address)
 	return affectedStripes;
 }
 
-std::set<IPvXAddress> MultitreePartnerList::getAllConnections()
-{
-	std::set<IPvXAddress> result;
-
-	for (int i = 0; i < numStripes; i++)
-	{
-		result.insert(parents[i]);
-
-		std::vector<MultitreeChildInfo> curChildren = children[i];
-		for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
-			result.insert( ((MultitreeChildInfo)*it).getAddress() );
-		}
-	}
-
-	return result;
-}
+//std::set<IPvXAddress> MultitreePartnerList::getAllConnections()
+//{
+//	std::set<IPvXAddress> result;
+//
+//	for (int i = 0; i < numStripes; i++)
+//	{
+//		result.insert(parents[i]);
+//
+//		std::vector<MultitreeChildInfo> curChildren = children[i];
+//		for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
+//			result.insert( ((MultitreeChildInfo)*it).getAddress() );
+//		}
+//	}
+//
+//	return result;
+//}
 
 int MultitreePartnerList::getNumOutgoingConnections(void)
 {
@@ -187,6 +187,19 @@ int MultitreePartnerList::getNumOutgoingConnections(void)
 int MultitreePartnerList::getNumOutgoingConnections(int stripe)
 {
 	return children[stripe].size();
+}
+
+int MultitreePartnerList::getNumSuccessors(int stripe)
+{
+	int sum = 0;
+	std::vector<MultitreeChildInfo> curChildren = children[stripe];
+
+	for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+	{
+		MultitreeChildInfo current = (MultitreeChildInfo)*it;
+		sum = sum + 1 + current.getNumSuccessors(stripe);
+	}
+	return sum;
 }
 
 void MultitreePartnerList::updateNumSuccessor(int stripe, IPvXAddress address, int numSuccessors)
@@ -224,7 +237,7 @@ void MultitreePartnerList::printPartnerList(void)
 		for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 		{
 		    MultitreeChildInfo current = (MultitreeChildInfo)*it;
-			EV << current.getAddress().str() << " (" << current.getNumSuccessors(i) << " successors), ";
+			EV << &current << " " << current.getAddress().str() << " (" << current.getNumSuccessors(i) << " successors), ";
 		}
 		EV << endl;
 	}
