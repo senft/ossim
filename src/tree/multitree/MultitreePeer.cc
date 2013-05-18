@@ -148,6 +148,8 @@ void MultitreePeer::handleTimerLeave()
 	}
 
 	m_partnerList->clear();
+
+	delete reqPkt;
 }
 
 void MultitreePeer::handleTimerInformParents(void)
@@ -171,6 +173,8 @@ void MultitreePeer::handleTimerInformParents(void)
 			sendToDispatcher(pkt->dup(), m_localPort, address, m_destPort);
 		}
 	}
+
+	delete pkt;
 }
 
 void MultitreePeer::scheduleInformParents(void)
