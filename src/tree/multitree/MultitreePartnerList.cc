@@ -189,6 +189,23 @@ int MultitreePartnerList::getNumOutgoingConnections(int stripe)
 	return children[stripe].size();
 }
 
+void MultitreePartnerList::updateNumSuccessor(int stripe, IPvXAddress address, int numSuccessors)
+{
+	std::vector<MultitreeChildInfo> curChildren = children[stripe];
+
+	//EV << "UPDATING PartnerList for stripe: " << stripe << " LIST " << this << endl;
+
+	for (std::vector<MultitreeChildInfo>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+	{
+		MultitreeChildInfo current = (MultitreeChildInfo)*it;
+		if(current.getAddress().equals(address))
+		{
+			EV << &current << " FOUND PEER: " << address << ". Update NUMSUC to " << numSuccessors << endl;
+			current.setNumSuccessors(stripe, numSuccessors);
+		}
+	}
+}
+
 void MultitreePartnerList::printPartnerList(void)
 {
 	EV << "*********** Parents **********" << endl;

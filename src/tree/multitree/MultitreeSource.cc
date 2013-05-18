@@ -67,6 +67,11 @@ void MultitreeSource::processPacket(cPacket *pkt)
 		processDisconnectRequest(treeMsg);
 		break;
 	}
+	case TREE_SUCCESSOR_INFO:
+	{
+		processSuccessorUpdate(treeMsg);
+		break;
+	}
     default:
     {
         throw cException("MultitreeSource::processPacket: Unrecognized packet types! %d", treeMsg->getPacketType());

@@ -62,6 +62,7 @@ protected:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 
+	void processSuccessorUpdate(cPacket *pkt);
 	void processConnectRequest(cPacket *pkt);
 	void disconnectFromChild(int stripe, IPvXAddress address); 
 	void disconnectFromChild(IPvXAddress address);

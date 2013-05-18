@@ -210,6 +210,11 @@ void MultitreePeer::processPacket(cPacket *pkt)
 		processDisconnectRequest(treeMsg);
 		break;
 	}
+	case TREE_SUCCESSOR_INFO:
+	{
+		processSuccessorUpdate(treeMsg);
+		break;
+	}
     default:
     {
         throw cException("MultitreePeer::processPacket: Unrecognized packet types! %d", treeMsg->getPacketType());
@@ -293,6 +298,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	getSender(pkt, address);
 
 	m_partnerList->addParent(address);
+
 	if(stripe == -1)
 	{
 		for (int i = 0; i < numStripes; i++)

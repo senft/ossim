@@ -40,6 +40,7 @@ class IPvXAddress extends void;
 enum TreePeerStreamingPacketType
 {
     TREE_KEEP_ALIVE     = 0;
+    TREE_SUCCESSOR_INFO = 1;
 
 	// ----------------------- Partnership
 	TREE_CONNECT_REQUEST = 10;
@@ -59,7 +60,6 @@ packet TreeConnectRequestPacket extends TreePeerStreamingPacket
     packetType = TREE_CONNECT_REQUEST;
     int		stripe = -1;
 
-	// TODO: This has to be numStripes elements long
     int		numSuccessor[] = NULL;
 }
 
@@ -80,4 +80,11 @@ packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_PASS_NODE_REQUEST;
+}
+
+packet TreeSuccessorInfoPacket extends TreePeerStreamingPacket
+{
+    packetType = TREE_SUCCESSOR_INFO;
+
+    int		numSuccessor[] = NULL;
 }

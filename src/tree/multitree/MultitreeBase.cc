@@ -195,6 +195,24 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	{
 		m_partnerList->addChild(requestedStripe, child);
 	}
+void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
+{
+    TreeSuccessorInfoPacket *treePkt = check_and_cast<TreeSuccessorInfoPacket *>(pkt);
+	int arraySize = treePkt->getNumSuccessorArraySize();
+	if(arraySize != numStripes)
+		throw cException("Received invalid SuccessorInfo. Contains %d numbers of successors. Should be %d.",
+				arraySize, numStripes);
+
+	IPvXAddress address;
+	getSender(pkt, address);
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		m_partnerList->updateNumSuccessor(i, address, treePkt->getNumSuccessor(i));
+	}
+	
+	EV << getNodeAddress();
+	m_partnerList->printPartnerList();
 }
 
 void MultitreeBase::disconnectFromChild(IPvXAddress address)
