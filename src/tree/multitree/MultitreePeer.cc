@@ -4,37 +4,55 @@ Define_Module(MultitreePeer)
 
 MultitreePeer::MultitreePeer(){}
 
-MultitreePeer::~MultitreePeer()
-{
-	finish();
-}
+MultitreePeer::~MultitreePeer(){}
 
 void MultitreePeer::initialize(int stage)
 {
 	MultitreeBase::initialize(stage);
 
-	if(stage != 2)
-		return;
+	if(stage == 2)
+	{
+		bindToGlobalModule();
+		bindToTreeModule();
+		bindToStatisticModule();
+	}
 
-    bindToGlobalModule();
-    bindToTreeModule();
-    bindToStatisticModule();
+	if(stage == 3)
+	{
 
-    m_state = TREE_JOIN_STATE_IDLE;
+		param_intervalReconnect = par("intervalReconnect");
+		param_waitUntilInform = m_appSetting->getWaitUntilInform();
 
-	// -------------------------------------------------------------------------
-    // -------------------------------- Timers ---------------------------------
-    // -------------------------------------------------------------------------
-    // -- One-time timers
-    timer_getJoinTime       = new cMessage("TREE_NODE_TIMER_GET_JOIN_TIME");
-    timer_join              = new cMessage("TREE_NODE_TIMER_JOIN");
-    timer_leave             = new cMessage("TREE_NODE_TIMER_LEAVE");
+		// -------------------------------------------------------------------------
+		// -------------------------------- Timers ---------------------------------
+		// -------------------------------------------------------------------------
+		// -- One-time timers
+		timer_getJoinTime       = new cMessage("TREE_NODE_TIMER_GET_JOIN_TIME");
+		timer_join              = new cMessage("TREE_NODE_TIMER_JOIN");
+		timer_leave             = new cMessage("TREE_NODE_TIMER_LEAVE");
 
-    // -- Repeated timers
-	// e.g. optimization
 
-    scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
+		// -- Repeated timers
+		timer_informParents     = new cMessage("TREE_NODE_TIMER_INFORM_PARENTS");
+
+		// -------------------------------------------------------------------------
+
+		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
+
+		for (int i = 0; i < numStripes; i++)
+		{
+			m_state[i] = TREE_JOIN_STATE_IDLE;
+		}
+	}
 }
+
+void MultitreePeer::finish(void)
+{
+	MultitreeBase::finish();
+
+	cancelAndDeleteTimer();
+}
+
 
 void MultitreePeer::handleTimerMessage(cMessage *msg)
 {
@@ -64,38 +82,108 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
     {
 		handleTimerLeave();
     }
+	else if (msg == timer_informParents)
+	{
+		handleTimerInformParents();
+	}
 } 
 
 void MultitreePeer::handleTimerJoin()
 {
-	if(m_state != TREE_JOIN_STATE_IDLE)
-		return;
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_state[i] != TREE_JOIN_STATE_IDLE)
+			// Something can't be right here
+			return;
+	}
 
-	TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
 	IPvXAddress addrPeer = m_apTable->getARandPeer(getNodeAddress());
-
-    sendToDispatcher(reqPkt, m_localPort, addrPeer, m_destPort);
-	m_state = TREE_JOIN_STATE_IDLE_WAITING;
+	connectVia(addrPeer, -1);
 }
 
 void MultitreePeer::handleTimerLeave()
 {
-	if(m_state != TREE_JOIN_STATE_ACTIVE)
-		return;
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
+			// TODO: reschedule timerLeave
+			return;
+	}
 
-	// TODO: send leave to all parents
-	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-	IPvXAddress addrPeer = IPvXAddress("192.168.0.1");
-    sendToDispatcher(reqPkt, m_localPort, addrPeer, m_destPort);
+	for (int i = 0; i < numStripes; i++)
+		m_state[i] = TREE_JOIN_STATE_IDLE;
 
-	m_state = TREE_JOIN_STATE_IDLE;
-
+	// Remove myself from ActivePeerTable
 	m_apTable->removeAddress(getNodeAddress());
+
+	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+
+	// TODO would be cool to bundle all DRQ to a nodes I am connected to multiple times in 1 DRQ
+
+	// Disconnect from parents
+	for (int i = 0; i < numStripes; i++)
+	{
+		IPvXAddress address = m_partnerList->getParent(i);
+		reqPkt->setStripe(i);
+		sendToDispatcher(reqPkt->dup(), m_localPort, address, m_destPort);
+	}
+
+	// Disconnect from children
+	for (int i = 0; i < numStripes; i++)
+	{
+		reqPkt->setStripe(i);
+		std::vector<IPvXAddress> curChildren = m_partnerList->getChildren(i);
+		if(!curChildren.empty())
+		{
+			IPvXAddress alternativParent = m_partnerList->getParent(i);
+			reqPkt->setAlternativeNode(alternativParent);
+
+			for(std::vector<IPvXAddress>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
+				sendToDispatcher(reqPkt->dup(), m_localPort, ((IPvXAddress)*it), m_destPort);
+			}
+		}
+	}
+
+	m_partnerList->clear();
+
+	delete reqPkt;
 }
 
-void MultitreePeer::finish(void)
+void MultitreePeer::handleTimerInformParents(void)
 {
-	cancelAndDeleteTimer();
+	TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_INFORM_PARENTS");
+	pkt->setNumSuccessorArraySize(numStripes);
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		int numSucc = m_partnerList->getNumSuccessors(i);
+		pkt->setNumSuccessor(i, numSucc);
+	}
+
+	set<IPvXAddress> sentTo;
+	for (int i = 0; i < numStripes; i++)
+	{
+		IPvXAddress address = m_partnerList->getParent(i);
+		if( sentTo.find(address) == sentTo.end() )
+		{
+			sentTo.insert(address);
+			sendToDispatcher(pkt->dup(), m_localPort, address, m_destPort);
+		}
+	}
+
+	delete pkt;
+}
+
+void MultitreePeer::scheduleInformParents(void)
+{
+	EV << getNodeAddress();
+	m_partnerList->printPartnerList();
+
+	if(timer_informParents->isScheduled())
+		return;
+
+	// TODO this only happens in forwarding nodes
+	scheduleAt(simTime() + param_waitUntilInform, timer_informParents);
 }
 
 void MultitreePeer::cancelAndDeleteTimer(void)
@@ -117,6 +205,12 @@ void MultitreePeer::cancelAndDeleteTimer(void)
 		delete cancelEvent(timer_leave);
 		timer_leave = NULL;
 	}
+
+	if(timer_informParents != NULL)
+	{
+		delete cancelEvent(timer_informParents);
+		timer_informParents = NULL;
+	}
 }
 
 void MultitreePeer::cancelAllTimer(void)
@@ -124,15 +218,222 @@ void MultitreePeer::cancelAllTimer(void)
 	cancelEvent(timer_getJoinTime);
 	cancelEvent(timer_join);
 	cancelEvent(timer_leave);
+	cancelEvent(timer_informParents);
 }
 
 void MultitreePeer::bindToGlobalModule(void)
 {
 	MultitreeBase::bindToGlobalModule();
-
 }
 
 void MultitreePeer::bindToTreeModule(void)
 {
 	MultitreeBase::bindToTreeModule();
+}
+
+void MultitreePeer::processPacket(cPacket *pkt)
+{
+	PeerStreamingPacket *appMsg = check_and_cast<PeerStreamingPacket *>(pkt);
+    if (appMsg->getPacketGroup() != PACKET_GROUP_TREE_OVERLAY)
+    {
+        throw cException("MultitreePeer::processPacket: received a wrong packet. Wrong packet type!");
+    }
+
+    TreePeerStreamingPacket *treeMsg = check_and_cast<TreePeerStreamingPacket *>(appMsg);
+    switch (treeMsg->getPacketType())
+    {
+	case TREE_CONNECT_REQUEST:
+    {
+		processConnectRequest(treeMsg);
+		break;
+    }
+	case TREE_CONNECT_CONFIRM:
+	{
+		processConnectConfirm(treeMsg);
+		break;
+	}
+	case TREE_DISCONNECT_REQUEST:
+	{
+		processDisconnectRequest(treeMsg);
+		break;
+	}
+	case TREE_SUCCESSOR_INFO:
+	{
+		processSuccessorUpdate(treeMsg);
+		break;
+	}
+    default:
+    {
+        throw cException("MultitreePeer::processPacket: Unrecognized packet types! %d", treeMsg->getPacketType());
+        break;
+    }
+    }
+
+    delete pkt;
+}
+
+void MultitreePeer::connectVia(IPvXAddress address, int stripe)
+{
+	if(stripe == -1)
+	{
+		for (int i = 0; i < numStripes; i++)
+		{
+			if(m_state[i] != TREE_JOIN_STATE_IDLE)
+				throw cException("Trying to connect in an invalid state (all stripes).");
+		}
+		
+		TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
+		reqPkt->setStripe(stripe);
+
+		// Include my numbers of successors
+		reqPkt->setNumSuccessorArraySize(numStripes);
+		for (int i = 0; i < numStripes; i++)
+		{
+			reqPkt->setNumSuccessor(i, m_partnerList->getNumOutgoingConnections(i));
+		}
+
+		sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
+
+		for (int i = 0; i < numStripes; i++)
+		{
+			m_state[i] = TREE_JOIN_STATE_IDLE_WAITING;
+		}
+	}
+	else
+	{
+		if(m_state[stripe] != TREE_JOIN_STATE_IDLE)
+			throw cException("Trying to connect in an invalid state (stripe %d).", stripe);
+
+		TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
+		reqPkt->setStripe(stripe);
+
+		// Include my numbers of successors
+		reqPkt->setNumSuccessorArraySize(numStripes);
+		for (int i = 0; i < numStripes; i++)
+		{
+			reqPkt->setNumSuccessor(i, m_partnerList->getNumOutgoingConnections(i));
+		}
+
+		sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
+		m_state[stripe] = TREE_JOIN_STATE_IDLE_WAITING;
+	}
+}
+
+void MultitreePeer::processConnectConfirm(cPacket* pkt)
+{
+	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
+	int stripe = treePkt->getStripe();
+
+	if(stripe == -1)
+	{
+		for (int i = 0; i < numStripes; i++)
+		{
+			if(m_state[i] != TREE_JOIN_STATE_IDLE_WAITING)
+				throw cException("Received a ConnectConfirm although I am already connected (stripe %d).", i);
+		}
+	}
+	else
+	{
+		if(m_state[stripe] != TREE_JOIN_STATE_IDLE_WAITING)
+			throw cException("Received a ConnectConfirm although I am already connected (stripe %d).", stripe);
+	}
+
+	IPvXAddress address;
+	getSender(pkt, address);
+
+	m_partnerList->addParent(address);
+
+	if(stripe == -1)
+	{
+		for (int i = 0; i < numStripes; i++)
+		{
+			m_state[i] = TREE_JOIN_STATE_ACTIVE;
+		}
+	}
+	else
+	{
+		EV << "Setting state for stripe " << stripe << "to TREE_JOIN_STATE_ACTIVE" << endl;
+		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
+	}
+
+	// Add myself to ActivePeerList so other peers can find me (to connect to me)
+	m_apTable->addAddress(getNodeAddress());
+}
+
+void MultitreePeer::processDisconnectRequest(cPacket* pkt)
+{
+	TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
+	int stripe = treePkt->getStripe();
+
+	bool allIdleWaiting = true;
+	if(stripe == -1)
+	{
+		for (int i = 0; i < numStripes; i++)
+		{
+			if(m_state[i] != TREE_JOIN_STATE_IDLE_WAITING)
+			{
+				allIdleWaiting = false;
+				break;
+			}
+		}
+
+		if(allIdleWaiting)
+		{
+			// A node rejected my ConnectRequest
+			IPvXAddress alternativeNode = treePkt->getAlternativeNode();
+
+			for (int i = 0; i < numStripes; i++)
+			{
+				m_state[i] = TREE_JOIN_STATE_IDLE;
+			}
+
+			if(alternativeNode.isUnspecified())
+			{
+				// Wait and try to connect later
+				EV << "Node refused to let me join. No alternative node given. Retrying in " << param_intervalReconnect << "s";
+
+				scheduleAt(simTime() + param_intervalReconnect, timer_getJoinTime);
+			}
+			else
+			{
+				connectVia(alternativeNode, -1);
+			}
+		}
+	}
+	else if(m_state[stripe] == TREE_JOIN_STATE_ACTIVE) // in this case stripe should always be >= 0
+	{
+		// A node wants to disconnect from me
+		IPvXAddress senderAddress;
+		getSender(pkt, senderAddress);
+
+		EV << senderAddress.str() << " wants to disconnect from me (stripe " << stripe << ")" << endl;
+
+		if( m_partnerList->hasChild(stripe, senderAddress) )
+		{
+			disconnectFromChild(stripe, senderAddress);
+		}
+		else if( m_partnerList->hasParent(stripe, senderAddress) )
+		{
+			disconnectFromParent(stripe, treePkt->getAlternativeNode());
+		}
+	}
+}
+
+void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativeParent)
+{
+	EV << "DISCONNECT FROM PARENT stripe " << stripe << " alt parent=" << alternativeParent.str() << endl;
+	m_state[stripe] = TREE_JOIN_STATE_IDLE;
+	m_partnerList->removeParent(stripe);
+	connectVia(alternativeParent, stripe);
+}
+
+//void MultitreePeer::disconnectFromParent(IPvXAddress address, IPvXAddress alternativParent)
+//{
+//	std::vector<int> stripes = m_partnerList->removeParent(address);
+//	connectVia(alternativParent, stripes);
+//}
+
+int MultitreePeer::getMaxOutConnections()
+{
+	return numStripes * (bwCapacity - 1);
 }

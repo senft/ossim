@@ -31,13 +31,16 @@
 
 cplusplus {{
 #include <PeerStreamingPacket_m.h>
+#include <IPvXAddress.h>
 }}
 
 class PeerStreamingPacket;
+class IPvXAddress extends void;
 
 enum TreePeerStreamingPacketType
 {
     TREE_KEEP_ALIVE     = 0;
+    TREE_SUCCESSOR_INFO = 1;
 
 	// ----------------------- Partnership
 	TREE_CONNECT_REQUEST = 10;
@@ -49,28 +52,39 @@ enum TreePeerStreamingPacketType
 packet TreePeerStreamingPacket extends PeerStreamingPacket
 {
     packetGroup = PACKET_GROUP_TREE_OVERLAY;
-    short packetType @getter(getPacketType) @setter(setPacketType) @enum(TreePeerStreamingPacketType) ;
+    short packetType @getter(getPacketType) @setter(setPacketType) @enum(TreePeerStreamingPacketType);
 }
 
 packet TreeConnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_REQUEST;
-    int		stripes[] = NULL;
+    int		stripe = -1;
+
+    int		numSuccessor[] = NULL;
 }
 
 packet TreeConnectConfirmPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_CONFIRM;
-    string	alternative_node		@getter(getAltNode)		@setter(setAltNode);
+    int		stripe = -1;
+	IPvXAddress alternativeNode;
 }
 
 packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_DISCONNECT_REQUEST;
-    string	alternative_node		@getter(getAltNode)		@setter(setAltNode);
+	IPvXAddress alternativeNode;
+    int		stripe = -1;
 }
 
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_PASS_NODE_REQUEST;
+}
+
+packet TreeSuccessorInfoPacket extends TreePeerStreamingPacket
+{
+    packetType = TREE_SUCCESSOR_INFO;
+
+    int		numSuccessor[] = NULL;
 }

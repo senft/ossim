@@ -7,4 +7,6 @@ simple MultitreeBase extends CommBase
     parameters:
         @class(MultitreeBase);
         @display("i=block/app;bgb=250,410");
+
+        double bwCapacity = default(4);
 }

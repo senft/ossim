@@ -40,4 +40,5 @@ simple AppSettingMultitree extends AppSetting
 
         int numStripes =default(4);
         int stripeSize @unit(byte) = default(1250B);
+        int waitUntilInform @unit(s) = default(10ms);
 }

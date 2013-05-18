@@ -8,7 +8,6 @@
 #include "ActivePeerTable.h"
 #include "DonetStatistic.h"
 #include "Forwarder.h"
-#include "ChildInfo.h"
 #include "MultitreePartnerList.h"
 
 #include "TreePeerStreamingPacket_m.h"
@@ -29,13 +28,13 @@ public:
 	virtual ~MultitreeBase();
 
 	virtual void initialize(int stage);
+	virtual void finish(void);
 
     virtual void handleMessage(cMessage *msg);
+    virtual void processPacket(cPacket *pkt) = 0;
     virtual void handleTimerMessage(cMessage *msg) = 0;
 
-    void processPacket(cPacket *pkt);
-
-	bool hasBWLeft(void);
+	bool hasBWLeft(int additionalConnections);
 
 	virtual int numInitStages() const { return 4; }
 protected:
@@ -43,9 +42,16 @@ protected:
     DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
 	AppSettingMultitree 	*m_appSetting;
-	TreeJoinState m_state;
+	TreeJoinState *m_state;
 
     int m_localPort, m_destPort;
+
+	int numStripes;
+
+	/* TODO: correct?  The bandwidth capacity of this node. A bandwidth
+	 * capacity of 1 means, this node is capable of delivering or (!) receiving
+	 * the whole stream once at a time. */
+	double bwCapacity;
 
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
@@ -55,24 +61,30 @@ protected:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 
-private:
-	void processConnectRequest(cPacket *pkt);
-	void processConnectConfirm(cPacket *pkt);
-	void processDisconnectRequest(cPacket *pkt);
+	virtual void scheduleInformParents(void) = 0;
 
+	void processSuccessorUpdate(cPacket *pkt);
+	void processConnectRequest(cPacket *pkt);
+	void disconnectFromChild(int stripe, IPvXAddress address); 
+	void disconnectFromChild(IPvXAddress address);
+private:
 	void getAppSetting(void);
+	void acceptConnectRequest(TreeConnectRequestPacket *pkt);
+	void rejectConnectRequest(TreeConnectRequestPacket *pkt);
+
+	virtual int getMaxOutConnections(void) = 0;
 
 	// Optimization functions
 	void optimize(int stripe);
 	int getPreferredStripe(void);
 
-	int getCosts(ChildInfo child, int stripe);
-	int getGain(ChildInfo child, int stripe);
+	double getCosts(IPvXAddress child, int stripe);
+	double getGain(IPvXAddress child, int stripe);
 
-	int getStripeDensityCosts(int stripe); // K_sel, K_1
-	int getForwardingCosts(ChildInfo child); // K_forw, K_2
-	int getBalanceCosts(ChildInfo child, int stripe); //K_bal, K_3
-	int getNumConnectionsToChild(ChildInfo child); //K_4
+	double getStripeDensityCosts(int stripe); // K_sel, K_1
+	int getForwardingCosts(IPvXAddress child); // K_forw, K_2
+	double getBalanceCosts(IPvXAddress child, int stripe); //K_bal, K_3
+	double getNumConnectionsToChild(IPvXAddress child); //K_4
 };
 
 #endif

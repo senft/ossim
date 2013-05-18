@@ -15,4 +15,5 @@ void AppSettingMultitree::initialize()
 {
 	param_numStripes = par("numStripes");
 	param_stripeSize = par("stripeSize").longValue();
+	param_waitUntilInform = par("waitUntilInform").doubleValue();
 }
