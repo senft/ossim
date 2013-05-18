@@ -8,7 +8,6 @@
 #include "ActivePeerTable.h"
 #include "DonetStatistic.h"
 #include "Forwarder.h"
-#include "MultitreeChildInfo.h"
 #include "MultitreePartnerList.h"
 
 #include "TreePeerStreamingPacket_m.h"
@@ -79,13 +78,13 @@ private:
 	void optimize(int stripe);
 	int getPreferredStripe(void);
 
-	int getCosts(MultitreeChildInfo child, int stripe);
-	int getGain(MultitreeChildInfo child, int stripe);
+	double getCosts(IPvXAddress child, int stripe);
+	double getGain(IPvXAddress child, int stripe);
 
-	int getStripeDensityCosts(int stripe); // K_sel, K_1
-	int getForwardingCosts(MultitreeChildInfo child); // K_forw, K_2
-	int getBalanceCosts(MultitreeChildInfo child, int stripe); //K_bal, K_3
-	int getNumConnectionsToChild(MultitreeChildInfo child); //K_4
+	double getStripeDensityCosts(int stripe); // K_sel, K_1
+	int getForwardingCosts(IPvXAddress child); // K_forw, K_2
+	double getBalanceCosts(IPvXAddress child, int stripe); //K_bal, K_3
+	double getNumConnectionsToChild(IPvXAddress child); //K_4
 };
 
 #endif

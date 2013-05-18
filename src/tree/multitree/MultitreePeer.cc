@@ -121,7 +121,6 @@ void MultitreePeer::handleTimerLeave()
 	// TODO would be cool to bundle all DRQ to a nodes I am connected to multiple times in 1 DRQ
 
 	// Disconnect from parents
-	// TODO: which stripes?
 	for (int i = 0; i < numStripes; i++)
 	{
 		IPvXAddress address = m_partnerList->getParent(i);
@@ -133,15 +132,14 @@ void MultitreePeer::handleTimerLeave()
 	for (int i = 0; i < numStripes; i++)
 	{
 		reqPkt->setStripe(i);
-		std::vector<MultitreeChildInfo> curChildren = m_partnerList->getChildren(i);
+		std::vector<IPvXAddress> curChildren = m_partnerList->getChildren(i);
 		if(!curChildren.empty())
 		{
 			IPvXAddress alternativParent = m_partnerList->getParent(i);
 			reqPkt->setAlternativeNode(alternativParent);
 
-			for(std::vector<MultitreeChildInfo>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
-				IPvXAddress address = ((MultitreeChildInfo)*it).getAddress();
-				sendToDispatcher(reqPkt->dup(), m_localPort, address, m_destPort);
+			for(std::vector<IPvXAddress>::iterator it = curChildren.begin(); it != curChildren.end(); ++it) {
+				sendToDispatcher(reqPkt->dup(), m_localPort, ((IPvXAddress)*it), m_destPort);
 			}
 		}
 	}

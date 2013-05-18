@@ -187,22 +187,17 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	// TODO: this should also contain an alternative peer
 	sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
-	MultitreeChildInfo child;
-	child.setAddress(senderAddress);
-
-	for (int i = 0; i < numSuccArraySize; i++)
-	{
-		child.setNumSuccessors(i, pkt->getNumSuccessor(i));
-	}
-
 	if(requestedStripe == -1)
 	{
 		// Requested all stripes
-		m_partnerList->addChild(child);
+		for (int i = 0; i < numStripes; i++)
+		{
+			m_partnerList->addChild(i, senderAddress, pkt->getNumSuccessor(i));
+		}
 	}
 	else
 	{
-		m_partnerList->addChild(requestedStripe, child);
+		m_partnerList->addChild(requestedStripe, senderAddress, pkt->getNumSuccessor(requestedStripe));
 	}
 
 	scheduleInformParents();
