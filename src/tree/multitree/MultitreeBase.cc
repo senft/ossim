@@ -264,3 +264,8 @@ bool MultitreeBase::hasBWLeft(int additionalConnections)
 
 	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }
+
+double MultitreeBase::getStripeDensityCosts(int stripe)
+{
+	return m_partnerList->getNumSuccessors(stripe) / (bwCapacity - 1);
+}
