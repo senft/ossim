@@ -32,11 +32,11 @@ private:
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
 
-	virtual void scheduleInformParents(void);
+	virtual void scheduleSuccessorInfo(void);
 
 	void handleTimerJoin(void);
 	void handleTimerLeave(void);
-	void handleTimerInformParents(void);
+	void handleTimerSuccessorInfo(void);
 
 	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
@@ -44,6 +44,6 @@ private:
 	cMessage *timer_getJoinTime;
 	cMessage *timer_join;
 	cMessage *timer_leave;
-	cMessage *timer_informParents;
+	cMessage *timer_successorInfo;
 };
 #endif

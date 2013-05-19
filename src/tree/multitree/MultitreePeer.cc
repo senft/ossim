@@ -33,7 +33,7 @@ void MultitreePeer::initialize(int stage)
 
 
 		// -- Repeated timers
-		timer_informParents     = new cMessage("TREE_NODE_TIMER_INFORM_PARENTS");
+        timer_successorInfo     = new cMessage("TREE_NODE_TIMER_SUCCESSOR_UPDATE");
 
 		// -------------------------------------------------------------------------
 
@@ -82,9 +82,9 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
     {
 		handleTimerLeave();
     }
-	else if (msg == timer_informParents)
+    else if (msg == timer_successorInfo)
 	{
-		handleTimerInformParents();
+        handleTimerSuccessorInfo();
 	}
 } 
 
@@ -149,9 +149,9 @@ void MultitreePeer::handleTimerLeave()
 	delete reqPkt;
 }
 
-void MultitreePeer::handleTimerInformParents(void)
+void MultitreePeer::handleTimerSuccessorInfo(void)
 {
-	TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_INFORM_PARENTS");
+    TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_SUCCESSOR_INFO");
 	pkt->setNumSuccessorArraySize(numStripes);
 
 	for (int i = 0; i < numStripes; i++)
@@ -164,26 +164,26 @@ void MultitreePeer::handleTimerInformParents(void)
 	for (int i = 0; i < numStripes; i++)
 	{
 		IPvXAddress address = m_partnerList->getParent(i);
-		if( sentTo.find(address) == sentTo.end() )
+        if( !address.isUnspecified() && sentTo.find(address) == sentTo.end() )
 		{
 			sentTo.insert(address);
 			sendToDispatcher(pkt->dup(), m_localPort, address, m_destPort);
-		}
+        }
 	}
 
 	delete pkt;
 }
 
-void MultitreePeer::scheduleInformParents(void)
+void MultitreePeer::scheduleSuccessorInfo(void)
 {
 	EV << getNodeAddress();
 	m_partnerList->printPartnerList();
 
-	if(timer_informParents->isScheduled())
+    if(timer_successorInfo->isScheduled())
 		return;
 
 	// TODO this only happens in forwarding nodes
-	scheduleAt(simTime() + param_waitUntilInform, timer_informParents);
+    scheduleAt(simTime() + param_waitUntilInform, timer_successorInfo);
 }
 
 void MultitreePeer::cancelAndDeleteTimer(void)
@@ -206,10 +206,10 @@ void MultitreePeer::cancelAndDeleteTimer(void)
 		timer_leave = NULL;
 	}
 
-	if(timer_informParents != NULL)
+    if(timer_successorInfo != NULL)
 	{
-		delete cancelEvent(timer_informParents);
-		timer_informParents = NULL;
+        delete cancelEvent(timer_successorInfo);
+        timer_successorInfo = NULL;
 	}
 }
 
@@ -218,7 +218,7 @@ void MultitreePeer::cancelAllTimer(void)
 	cancelEvent(timer_getJoinTime);
 	cancelEvent(timer_join);
 	cancelEvent(timer_leave);
-	cancelEvent(timer_informParents);
+    cancelEvent(timer_successorInfo);
 }
 
 void MultitreePeer::bindToGlobalModule(void)
@@ -296,7 +296,7 @@ void MultitreePeer::connectVia(IPvXAddress address, int stripe)
 
 		for (int i = 0; i < numStripes; i++)
 		{
-			m_state[i] = TREE_JOIN_STATE_IDLE_WAITING;
+            m_state[i] = TREE_JOIN_STATE_IDLE_WAITING;
 		}
 	}
 	else
@@ -324,18 +324,21 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
 	int stripe = treePkt->getStripe();
 
-	if(stripe == -1)
+    if(stripe == -1)
 	{
 		for (int i = 0; i < numStripes; i++)
 		{
 			if(m_state[i] != TREE_JOIN_STATE_IDLE_WAITING)
-				throw cException("Received a ConnectConfirm although I am already connected (stripe %d).", i);
+                throw cException("Received a ConnectConfirm although I am already connected (or unconnected) (stripe %d).", i);
 		}
 	}
 	else
 	{
-		if(m_state[stripe] != TREE_JOIN_STATE_IDLE_WAITING)
-			throw cException("Received a ConnectConfirm although I am already connected (stripe %d).", stripe);
+        if(m_state[stripe] != TREE_JOIN_STATE_IDLE_WAITING)
+        {
+            throw cException("Received a ConnectConfirm although I am already connected (or unconnected) (stripe %d), state is %d, should be %d.",
+                             stripe, TREE_JOIN_STATE_IDLE_WAITING, m_state[stripe]);
+        }
 	}
 
 	IPvXAddress address;
@@ -358,6 +361,9 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 	// Add myself to ActivePeerList so other peers can find me (to connect to me)
 	m_apTable->addAddress(getNodeAddress());
+
+    EV << getNodeAddress();
+    m_partnerList->printPartnerList();
 }
 
 void MultitreePeer::processDisconnectRequest(cPacket* pkt)
@@ -426,12 +432,6 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 	m_partnerList->removeParent(stripe);
 	connectVia(alternativeParent, stripe);
 }
-
-//void MultitreePeer::disconnectFromParent(IPvXAddress address, IPvXAddress alternativParent)
-//{
-//	std::vector<int> stripes = m_partnerList->removeParent(address);
-//	connectVia(alternativParent, stripes);
-//}
 
 int MultitreePeer::getMaxOutConnections()
 {

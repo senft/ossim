@@ -119,7 +119,7 @@ void MultitreeSource::cancelAllTimer()
 }
 
 
-void MultitreeSource::scheduleInformParents(void)
+void MultitreeSource::scheduleSuccessorInfo(void)
 { 
 	// Do nothing because a source has no parents...
 	EV << getNodeAddress();

@@ -4,7 +4,6 @@
 #include "CommBase.h"
 #include "AppCommon.h"
 #include "AppSettingMultitree.h"
-#include "IPvXAddress.h"
 #include "ActivePeerTable.h"
 #include "DonetStatistic.h"
 #include "Forwarder.h"
@@ -16,8 +15,7 @@ enum TreeJoinState
 {
     TREE_JOIN_STATE_IDLE            = 0, // Not joined
     TREE_JOIN_STATE_IDLE_WAITING    = 1, // Not joined but requested
-    TREE_JOIN_STATE_ACTIVE          = 2, // Joined, waiting for requests
-    TREE_JOIN_STATE_ACTIVE_WAITING  = 3  // Joined, processing incoming request
+    TREE_JOIN_STATE_ACTIVE          = 2 // Active node
 };
 
 
@@ -41,8 +39,8 @@ protected:
     MultitreePartnerList    *m_partnerList;
     DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
-	AppSettingMultitree 	*m_appSetting;
-	TreeJoinState *m_state;
+    AppSettingMultitree   	*m_appSetting;
+    TreeJoinState     		*m_state;
 
     int m_localPort, m_destPort;
 
@@ -61,7 +59,7 @@ protected:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 
-	virtual void scheduleInformParents(void) = 0;
+    virtual void scheduleSuccessorInfo(void) = 0;
 
 	void processSuccessorUpdate(cPacket *pkt);
 	void processConnectRequest(cPacket *pkt);

@@ -91,83 +91,50 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 	if(stripe == -1) // Requested all stripes
 	{
-		bool allActive = true;
-		for (int i = 0; i < numStripes; i++)
-		{
-			if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
-			{
-				allActive = false;
-				break;
-			}
-		}
-		if(allActive)
-		{
-			if(hasBWLeft(numRequestedStripes))
-			{
-				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripe). Accepting..." << endl;
-				acceptConnectRequest(treePkt);
-			}
-			else
-			{
-				 // No bandwith left
-				EV << "Received TREE_CONECT_REQUEST (" << numRequestedStripes << " stripe). No Bandwidth left.  Rejecting..." 
-					<< endl;
-				rejectConnectRequest(treePkt);
-			}
+        for (int i = 0; i < numStripes; i++)
+        {
+            if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
+            {
+                EV << "CR in for unconnected stripe " << stripe << " Rejecting..." << endl;
+                rejectConnectRequest(treePkt);
+                return;
+            }
+        }
+    }
+    else // Requested one stripes
+    {
+        if (m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
+        {
+            EV << "CR in for unconnected stripe " << stripe << " Rejecting..." << endl;
+            rejectConnectRequest(treePkt);
+            return;
+        }
+    }
 
-		}
-		else
-		{
-			// TODO: Queue the request or something (really neccessary?)
-		}
-	}
-	else // Requested one stripe
-	{
-		switch(m_state[stripe])
-		{ 
-		case TREE_JOIN_STATE_ACTIVE:
-		{
-			m_state[stripe] = TREE_JOIN_STATE_ACTIVE_WAITING;
-
-			if(hasBWLeft(1))
-			{
-				EV << "Received TREE_CONECT_REQUEST (1 stripe). Accepting..." << endl;
-				acceptConnectRequest(treePkt);
-			}
-			else
-			{
-				 // No bandwith left
-				EV << "Received TREE_CONECT_REQUEST (1 stripe). No Bandwidth left.  Rejecting..." << endl;
-				rejectConnectRequest(treePkt);
-			}
-
-			m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
-			break;
-		}
-		case TREE_JOIN_STATE_ACTIVE_WAITING:
-		{
-			// TODO: Queue the request or something (really neccessary?)
-			break;
-		}
-		default:
-		{
-			throw cException("sup?");
-			break;
-		}
-		}
-	}
+    if(hasBWLeft(numRequestedStripes))
+    {
+        EV << "Received CR (" << numRequestedStripes << " stripe). Accepting..." << endl;
+        acceptConnectRequest(treePkt);
+    }
+    else
+    {
+         // No bandwith left
+        EV << "Received CR (" << numRequestedStripes << " stripe). No Bandwidth left.  Rejecting..."
+            << endl;
+        rejectConnectRequest(treePkt);
+    }
 }
 
 void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
 {
 	IPvXAddress senderAddress;
-	int senderPort;
-	getSender(pkt, senderAddress, senderPort);
+    getSender(pkt, senderAddress);
 
 	TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 	// TODO: choose a better alternative peer
+    rejPkt->setStripe(pkt->getStripe());
 	rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
-	sendToDispatcher(rejPkt, m_localPort, senderAddress, senderPort);
+    sendToDispatcher(rejPkt, m_localPort, senderAddress, m_destPort);
 }
 
 void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
@@ -175,7 +142,7 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	int numSuccArraySize = pkt->getNumSuccessorArraySize();
 
 	if( numSuccArraySize != numStripes )
-		throw cException("Received invalid ConnectRequest. Contains %d numbers of successors. Should be %d.",
+        throw cException("Received invalid CR. Contains %d numbers of successors. Should be %d.",
 				numSuccArraySize, numStripes);
 
 	IPvXAddress senderAddress;
@@ -184,8 +151,9 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 	acpPkt->setStripe(requestedStripe);
-	// TODO: this should also contain an alternative peer
-	sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
+    // TODO: choose a better alternative peer
+    acpPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+    sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
 	if(requestedStripe == -1)
 	{
@@ -200,7 +168,7 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 		m_partnerList->addChild(requestedStripe, senderAddress, pkt->getNumSuccessor(requestedStripe));
 	}
 
-	scheduleInformParents();
+    scheduleSuccessorInfo();
 }
 
 void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
@@ -219,19 +187,19 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 		m_partnerList->updateNumSuccessor(i, address, treePkt->getNumSuccessor(i));
 	}
 
-	scheduleInformParents();
+    scheduleSuccessorInfo();
 }
 
 void MultitreeBase::disconnectFromChild(IPvXAddress address)
 {
 	m_partnerList->removeChild(address);
-	scheduleInformParents();
+    scheduleSuccessorInfo();
 }
 
 void MultitreeBase::disconnectFromChild(int stripe, IPvXAddress address)
 {
 	m_partnerList->removeChild(stripe, address);
-	scheduleInformParents();
+    scheduleSuccessorInfo();
 }
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
@@ -256,12 +224,6 @@ const IPvXAddress& MultitreeBase::getSender(const cPacket *pkt) const
 bool MultitreeBase::hasBWLeft(int additionalConnections)
 {
 	int outConnections = m_partnerList->getNumOutgoingConnections();
-	int maxOutCon = getMaxOutConnections();
-
-	EV << "Currently have " << outConnections << " outgoing connections, " <<
-		additionalConnections << " have been requested, max=" << maxOutCon <<
-		endl;
-
 	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }
 

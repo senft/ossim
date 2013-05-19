@@ -19,7 +19,7 @@ private:
 
 	void processDisconnectRequest(cPacket *pkt);
 
-	virtual void scheduleInformParents(void);
+	virtual void scheduleSuccessorInfo(void);
 
 	virtual int getMaxOutConnections(void);
 	
