@@ -46,9 +46,11 @@ protected:
 
 	int numStripes;
 
-	/* TODO: correct?  The bandwidth capacity of this node. A bandwidth
-	 * capacity of 1 means, this node is capable of delivering or (!) receiving
-	 * the whole stream once at a time. */
+	/*
+	 * The bandwidth capacity of this node. A bandwidth capacity of 1 means,
+	 * this node is capable of delivering or (!) receiving the whole stream
+	 * once at a time.
+	 */
 	double bwCapacity;
 
     void bindToGlobalModule(void);
@@ -59,30 +61,34 @@ protected:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 
-    virtual void scheduleSuccessorInfo(void) = 0;
-
 	void processSuccessorUpdate(cPacket *pkt);
 	void processConnectRequest(cPacket *pkt);
 	void disconnectFromChild(int stripe, IPvXAddress address); 
 	void disconnectFromChild(IPvXAddress address);
+
+	void optimize(void);
+
 private:
 	void getAppSetting(void);
 	void acceptConnectRequest(TreeConnectRequestPacket *pkt);
 	void rejectConnectRequest(TreeConnectRequestPacket *pkt);
 
-	virtual int getMaxOutConnections(void) = 0;
+    virtual void scheduleSuccessorInfo(void) = 0;
+    virtual int getMaxOutConnections(void) = 0;
+	virtual bool isPreferredStripe(int stripe) = 0;
 
 	// Optimization functions
-	void optimize(int stripe);
-	int getPreferredStripe(void);
+	double getCosts(int stripe, IPvXAddress child);
+	double getGain(int stripe, IPvXAddress child);
+	double getGainThreshold(void);
 
-	double getCosts(IPvXAddress child, int stripe);
-	double getGain(IPvXAddress child, int stripe);
+	void getCostliestChild(int &stripe, IPvXAddress &address);
+	void getCheapestChild(int &stripe, IPvXAddress &address, int skipStripe, IPvXAddress skipAddress);
 
 	double getStripeDensityCosts(int stripe); // K_sel, K_1
-	int getForwardingCosts(IPvXAddress child); // K_forw, K_2
-	double getBalanceCosts(IPvXAddress child, int stripe); //K_bal, K_3
-	double getNumConnectionsToChild(IPvXAddress child); //K_4
+    int getForwardingCosts(int stripe, IPvXAddress child); // K_forw, K_2
+    double getBalanceCosts(int stripe, IPvXAddress child); //K_bal, K_3
+    double getDepencyCosts(IPvXAddress child); //K_4
 };
 
 #endif

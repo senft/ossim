@@ -1,8 +1,8 @@
 #ifndef MULTITREEPARTNERLIST_H_
 #define MULTITREEPARTNERLIST_H_ true
 
+#include <IPvXAddress.h>
 #include <vector>
-#include "IPvXAddress.h"
 
 class MultitreePartnerList : public cSimpleModule
 {
@@ -17,12 +17,14 @@ public:
 
 	void clear(void);
 
-	int getNumOutgoingConnections(void);
-	int getNumOutgoingConnections(int stripe);
+	int getNumChildren(void);
+	int getNumChildren(int stripe);
 
 	int getNumSuccessors(int stripe);
+    int getNumSuccessors(int stripe, IPvXAddress child);
 
-	void updateNumSuccessor(int stripe, IPvXAddress address, int numSuccessors);
+    void updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors);
+    int getNumChildsSuccessors(int stripe, IPvXAddress address);
 
 	bool hasParent(IPvXAddress address);
 	bool hasParent(int stripe, IPvXAddress address);

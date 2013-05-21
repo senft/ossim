@@ -130,3 +130,8 @@ int MultitreeSource::getMaxOutConnections()
 {
 	return numStripes * bwCapacity;
 }
+
+bool MultitreeSource::isPreferredStripe(int stripe)
+{
+	return true;
+}

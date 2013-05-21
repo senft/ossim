@@ -22,6 +22,8 @@ private:
 	virtual void scheduleSuccessorInfo(void);
 
 	virtual int getMaxOutConnections(void);
+
+	virtual bool isPreferredStripe(int stripe);
 	
     void bindToGlobalModule(void);
     void bindToTreeModule(void);

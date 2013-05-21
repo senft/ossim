@@ -289,7 +289,7 @@ void MultitreePeer::connectVia(IPvXAddress address, int stripe)
 		reqPkt->setNumSuccessorArraySize(numStripes);
 		for (int i = 0; i < numStripes; i++)
 		{
-			reqPkt->setNumSuccessor(i, m_partnerList->getNumOutgoingConnections(i));
+			reqPkt->setNumSuccessor(i, m_partnerList->getNumChildren(i));
 		}
 
 		sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
@@ -311,7 +311,7 @@ void MultitreePeer::connectVia(IPvXAddress address, int stripe)
 		reqPkt->setNumSuccessorArraySize(numStripes);
 		for (int i = 0; i < numStripes; i++)
 		{
-			reqPkt->setNumSuccessor(i, m_partnerList->getNumOutgoingConnections(i));
+			reqPkt->setNumSuccessor(i, m_partnerList->getNumChildren(i));
 		}
 
 		sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
@@ -436,4 +436,16 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 int MultitreePeer::getMaxOutConnections()
 {
 	return numStripes * (bwCapacity - 1);
+}
+
+
+bool MultitreePeer::isPreferredStripe(int stripe)
+{
+	int numChildren = m_partnerList->getNumChildren(stripe);
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(i != stripe && numChildren < m_partnerList->getNumChildren(i))
+			return false;
+	}
+	return true;
 }

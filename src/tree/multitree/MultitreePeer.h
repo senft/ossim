@@ -27,6 +27,7 @@ private:
 	//void disconnectFromParent(IPvXAddress address, IPvXAddress alternativeParent);
 
 	virtual int getMaxOutConnections(void);
+	virtual bool isPreferredStripe(int stripe);
 	void connectVia(IPvXAddress address, int stripe);
 
     void bindToGlobalModule(void);

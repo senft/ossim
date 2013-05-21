@@ -154,17 +154,17 @@ std::vector<int> MultitreePartnerList::removeParent(IPvXAddress address)
 	return affectedStripes;
 }
 
-int MultitreePartnerList::getNumOutgoingConnections(void)
+int MultitreePartnerList::getNumChildren(void)
 {
 	int sum = 0, i;
 	for (i = 0; i < numStripes; i++)
 	{
-		sum = sum + getNumOutgoingConnections(i);
+        sum = sum + getNumChildren(i);
 	}
 	return sum;
 }
 
-int MultitreePartnerList::getNumOutgoingConnections(int stripe)
+int MultitreePartnerList::getNumChildren(int stripe)
 {
 	return children[stripe].size();
 }
@@ -180,9 +180,19 @@ int MultitreePartnerList::getNumSuccessors(int stripe)
 	return sum;
 }
 
-void MultitreePartnerList::updateNumSuccessor(int stripe, IPvXAddress address, int numSuccessors)
+int MultitreePartnerList::getNumSuccessors(int stripe, IPvXAddress child)
+{
+    return children[stripe][child];
+}
+
+void MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors)
 {
 	children[stripe][address] =  numSuccessors;
+}
+
+int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address)
+{
+    return children[stripe][address];
 }
 
 void MultitreePartnerList::printPartnerList(void)
