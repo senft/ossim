@@ -20,8 +20,8 @@ void MultitreePeer::initialize(int stage)
 	if(stage == 3)
 	{
 
-		param_intervalReconnect = par("intervalReconnect");
-		param_waitUntilInform = m_appSetting->getWaitUntilInform();
+		param_intervalReconnect =  m_appSetting->getIntervalReconnect();
+		param_delaySuccessorInfo = m_appSetting->getDelaySuccessorInfo();
 
 		// -------------------------------------------------------------------------
 		// -------------------------------- Timers ---------------------------------
@@ -49,6 +49,10 @@ void MultitreePeer::initialize(int stage)
 
 		m_count_prev_chunkMiss = 0L;
 		m_count_prev_chunkHit = 0L;
+
+		WATCH(m_localAddress);
+		WATCH(m_localPort);
+		WATCH(m_destPort);
 	}
 }
 
@@ -216,7 +220,7 @@ void MultitreePeer::scheduleSuccessorInfo(void)
 		return;
 
 	// TODO this only happens in forwarding nodes
-    scheduleAt(simTime() + param_waitUntilInform, timer_successorInfo);
+    scheduleAt(simTime() + param_delaySuccessorInfo, timer_successorInfo);
 }
 
 void MultitreePeer::cancelAndDeleteTimer(void)

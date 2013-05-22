@@ -16,7 +16,7 @@ protected:
 
 private:
 	double param_intervalReconnect;
-	double param_waitUntilInform;
+	double param_delaySuccessorInfo;
 
     virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);

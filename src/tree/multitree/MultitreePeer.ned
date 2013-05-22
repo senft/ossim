@@ -8,6 +8,4 @@ simple MultitreePeer extends MultitreeBase
 
         // Timer
         volatile double startTime @unit(s);
-
-        volatile double intervalReconnect @unit(s);
 }

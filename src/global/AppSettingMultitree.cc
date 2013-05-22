@@ -14,8 +14,9 @@ void AppSettingMultitree::handleMessage(cMessage* msg)
 void AppSettingMultitree::initialize()
 {
 	param_numStripes				= par("numStripes");
-	param_waitUntilInform			= par("waitUntilInform").doubleValue();
     param_bufferMapSize_seconds		= par("bufferMapSize").longValue();
+	param_intervalReconnect 		= par("intervalReconnect").doubleValue();
+	param_delaySuccessorInfo 		= par("delaySuccessorInfo").doubleValue();
 	param_chunkSize					= par("chunkSize").longValue();
 	param_videoStreamBitRate		= par("videoStreamBitRate").longValue();
 
@@ -29,5 +30,4 @@ void AppSettingMultitree::initialize()
 	WATCH(param_chunkSize);
 	WATCH(param_videoStreamBitRate);
 	WATCH(param_intervalNewChunk);
-	
 }

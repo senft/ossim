@@ -17,6 +17,8 @@ public:
 
     inline int getBufferMapSizeChunk(void) { return param_bufferMapSizeChunk; };
     inline double getIntervalNewChunk(void) { return param_intervalNewChunk; };
+	inline int getDelaySuccessorInfo() { return param_delaySuccessorInfo; };
+	inline int getIntervalReconnect() { return param_intervalReconnect; };
 
 protected:
     void handleMessage(cMessage* msg);
@@ -35,6 +37,8 @@ protected:
     int param_bufferMapSize_seconds;
     int m_videoStreamChunkRate;
  
+    double param_delaySuccessorInfo;
+    double param_intervalReconnect;
 };
 
 #endif /* APPSETTINGMULTITREE_H_ */
