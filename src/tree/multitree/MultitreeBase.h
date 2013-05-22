@@ -8,6 +8,7 @@
 #include "DonetStatistic.h"
 #include "Forwarder.h"
 #include "MultitreePartnerList.h"
+#include "MultitreeStatistic.h"
 #include "VideoBuffer.h"
 #include "VideoBufferListener.h"
 
@@ -39,7 +40,7 @@ public:
 	virtual int numInitStages() const { return 4; }
 protected:
     MultitreePartnerList    *m_partnerList;
-    DonetStatistic          *m_gstat;
+    //DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
     AppSettingMultitree   	*m_appSetting;
     VideoBuffer				*m_videoBuffer;

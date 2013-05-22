@@ -31,7 +31,6 @@ void MultitreeBase::initialize(int stage)
 		
 		// -- Repeated timers
 
-
 		m_state = new TreeJoinState[numStripes];
 	}
 }
@@ -87,7 +86,10 @@ void MultitreeBase::bindToTreeModule(void)
     m_partnerList = check_and_cast<MultitreePartnerList *>(temp);
 }
 
-void MultitreeBase::bindToStatisticModule(void){
+void MultitreeBase::bindToStatisticModule(void)
+{
+    cModule *temp = simulation.getModuleByPath("globalStatistic");
+	m_gstat = check_and_cast<MultitreeStatistic *>(temp);
 }
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
@@ -399,6 +401,7 @@ void MultitreeBase::onNewChunk(int sequenceNumber)
 	int stripe = stripePkt->getStripe();
 	int hopcount = stripePkt->getHopCount();
 
+	m_gstat->reportChunkArrival(hopcount);
 
 	stripePkt->setHopCount(++hopcount);
 

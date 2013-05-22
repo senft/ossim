@@ -49,9 +49,9 @@ network Multitree_Network extends BasicNetwork
         appSetting: AppSettingMultitree {
             @display("p=77,254;i=block/wheelbarrow");
         }
-        //globalStatistic: <statisticModule> like IStreamingStatistic {
-        //    @display("p=77,195;i=device/disk");
-        //}
+        globalStatistic: <statisticModule> like IStreamingStatistic {
+            @display("p=77,195;i=device/disk");
+        }
         churnModerator: <churnModel> like IChurnModel {
             @display("p=77,171");
         }
