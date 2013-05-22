@@ -361,6 +361,8 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
 	int stripe = treePkt->getStripe();
 
+	// TODO this contains an alternative "parent". save this in case your parent leaves
+
     if(stripe == -1)
 	{
 		for (int i = 0; i < numStripes; i++)

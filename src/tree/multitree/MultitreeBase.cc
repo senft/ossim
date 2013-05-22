@@ -133,6 +133,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
             << endl;
         rejectConnectRequest(treePkt);
 
+		// Optimize when a node has to reject a ConnectRequest due to lack of bandwidth
 		optimize();
     }
 }
@@ -189,6 +190,7 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
     scheduleSuccessorInfo();
 
 	if(doOptimize)
+		// Optimize when node is forced to forward an "un-preferred" stripe
 		optimize();
 }
 
@@ -212,6 +214,7 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 
 	// TODO: Maybe count the overall number of changes received here and only optimize if > X
 	// paper says "only on major changes"
+	// Optimize when a node detects "major changes" in the topology below
 	optimize();
 }
 
