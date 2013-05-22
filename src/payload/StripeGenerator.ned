@@ -20,7 +20,7 @@
 // this program. If not, see <http://www.gnu.org/licenses/>.
 
 // -----------------------------------------------------------------------------
-// VideoChunkPacket.msg
+// StripeGenerator.ned
 // -----------------------------------------------------------------------------
 // (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
 //
@@ -29,22 +29,13 @@
 // -----------------------------------------------------------------------------
 //
 
+package so.payload;
 
-cplusplus {{
-#include <PeerStreamingPacket_m.h>
-}}
-
-class PeerStreamingPacket;
-
-packet VideoChunkPacket extends PeerStreamingPacket
+simple StripeGenerator
 {
-    packetGroup = PACKET_GROUP_VIDEO_CHUNK;
-    long seqNumber @getter(getSeqNumber) @setter(setSeqNumber);
-    double timeStamp @getter(getTimeStamp) @setter(setTimeStamp);
-}
-
-packet VideoStripePacket extends VideoChunkPacket
-{
-    int hopCount;
-    int stripe;
+    parameters:
+        @class(StripeGenerator); 
+        
+        // Timer
+		double videoStartTime     @unit(s) = default(5.0s);
 }

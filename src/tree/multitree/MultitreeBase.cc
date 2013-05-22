@@ -21,6 +21,9 @@ void MultitreeBase::initialize(int stage)
 
 		bwCapacity = par("bwCapacity");
 
+
+		m_videoBuffer->addListener(this);
+
 		// -------------------------------------------------------------------------
 		// -------------------------------- Timers ---------------------------------
 		// -------------------------------------------------------------------------
@@ -76,6 +79,9 @@ void MultitreeBase::bindToTreeModule(void)
 {
     cModule *temp = getParentModule()->getModuleByRelativePath("forwarder");
     m_forwarder = check_and_cast<Forwarder *>(temp);
+
+    temp = getParentModule()->getModuleByRelativePath("videoBuffer");
+    m_videoBuffer = check_and_cast<VideoBuffer *>(temp);
 
     temp = getParentModule()->getModuleByRelativePath("partnerList");
     m_partnerList = check_and_cast<MultitreePartnerList *>(temp);
@@ -381,4 +387,24 @@ double MultitreeBase::getBalanceCosts(int stripe, IPvXAddress child) // K_bal, K
 double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
 {
     return 1.0 / numStripes;
+}
+
+void MultitreeBase::onNewChunk(int sequenceNumber)
+{
+	Enter_Method("onNewChunk");
+
+	VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(sequenceNumber);
+	VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
+
+	int stripe = stripePkt->getStripe();
+	int hopcount = stripePkt->getHopCount();
+
+
+	stripePkt->setHopCount(++hopcount);
+
+	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
+	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
+	{
+		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
+	}
 }

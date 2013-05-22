@@ -8,6 +8,8 @@
 #include "DonetStatistic.h"
 #include "Forwarder.h"
 #include "MultitreePartnerList.h"
+#include "VideoBuffer.h"
+#include "VideoBufferListener.h"
 
 #include "TreePeerStreamingPacket_m.h"
 
@@ -19,7 +21,7 @@ enum TreeJoinState
 };
 
 
-class MultitreeBase : public CommBase
+class MultitreeBase : public CommBase, public VideoBufferListener
 {
 public:
 	MultitreeBase();
@@ -40,6 +42,9 @@ protected:
     DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
     AppSettingMultitree   	*m_appSetting;
+    VideoBuffer				*m_videoBuffer;
+    MultitreeStatistic 		*m_gstat;
+
     TreeJoinState     		*m_state;
 
     int m_localPort, m_destPort;
@@ -60,6 +65,8 @@ protected:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort);
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
+
+    virtual void onNewChunk(int sequenceNumber);
 
 	void processSuccessorUpdate(cPacket *pkt);
 	void processConnectRequest(cPacket *pkt);

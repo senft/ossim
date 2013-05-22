@@ -1,9 +1,9 @@
 package so.tree.multitree;
 
 import so.common.Dispatcher;
-import so.payload.ChunkGenerator;
-import so.payload.Forwarder;
+import so.payload.StripeGenerator;
 import so.payload.VideoBuffer;
+import so.payload.Forwarder;
 import so.membership.dummy.DummyMembership;
 
 import inet.base.NotificationBoard;
@@ -87,14 +87,14 @@ module MultitreeSourceNode
                 out2[sizeof(pppg)+sizeof(ethg)+numExtInterfaces];
         }
 
-        chunkGenerator: ChunkGenerator {
+        chunkGenerator: StripeGenerator {
             @display("p=404,43;i=block/source");
         }
+		videoBuffer: VideoBuffer {
+			@display("p=404,116;i=block/buffer2");
+		}
         forwarder: Forwarder {
             @display("p=404,185;i=block/rxtx");
-        }
-        videoBuffer: VideoBuffer {
-            @display("p=404,116;i=block/buffer2");
         }
         membership: DummyMembership {
             @display("p=162,185;i=block/users");

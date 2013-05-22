@@ -2,9 +2,9 @@ package so.tree.multitree;
 
 import so.common.Dispatcher;
 import so.membership.dummy.DummyMembership;
+import so.payload.VideoBuffer;
 import so.payload.ChunkGenerator;
 import so.payload.Forwarder;
-import so.payload.VideoBuffer;
 import so.payload.PlayerSimpleSkip;
 import so.membership.dummy.DummyMembership;
 
@@ -94,9 +94,7 @@ module MultitreePeerNode
         forwarder: Forwarder {
             @display("p=404,185;i=block/rxtx");
         }
-        //player: Player {
         player: PlayerSimpleSkip {
-            //player: <playerModule> like PlayerBase {
             @display("p=404,56;i=device/terminal");
         }
         videoBuffer: VideoBuffer {
