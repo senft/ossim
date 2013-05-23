@@ -80,7 +80,7 @@ void PlayerSimpleSkip::initialize(int stage)
     m_videoBuffer = check_and_cast<VideoBuffer *>(temp);
 
     temp = simulation.getModuleByPath("appSetting");
-    //m_appSetting = check_and_cast<AppSettingDonet *>(temp);
+    m_appSetting = check_and_cast<AppSettingDonet *>(temp);
 
     temp = simulation.getModuleByPath("globalStatistic");
     //m_stat = check_and_cast<StatisticBase *>(temp);
@@ -103,11 +103,8 @@ void PlayerSimpleSkip::initialize(int stage)
     m_state = PLAYER_STATE_IDLE;
     m_skip = 0;
 
-    //m_interval_newChunk = m_appSetting->getIntervalNewChunk();
-    //m_chunkSize  = m_appSetting->getChunkSize();
-
-    m_interval_newChunk = 1;
-    m_chunkSize  = 512;
+    m_interval_newChunk = m_appSetting->getIntervalNewChunk();
+    m_chunkSize  = m_appSetting->getChunkSize();
 
     // -- State variables
     m_playerStarted = false;
@@ -129,7 +126,7 @@ void PlayerSimpleSkip::initialize(int stage)
     sig_timePlayerStart = registerSignal("Signal_timePlayerStart");
 
     WATCH(m_videoBuffer);
-    //WATCH(m_appSetting);
+    WATCH(m_appSetting);
     WATCH(m_chunkSize);
     WATCH(m_interval_newChunk);
 

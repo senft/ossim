@@ -65,19 +65,16 @@ void ChunkGenerator::initialize(int stage)
     timer_newChunk      = new cMessage("MESH_SOURCE_TIMER_NEW_CHUNK");
 
     temp = simulation.getModuleByPath("appSetting");
-    //m_appSetting = dynamic_cast<AppSettingDonet *>(temp);
-    //if (m_appSetting == NULL) throw cException("m_appSetting == NULL is invalid");
+    m_appSetting = dynamic_cast<AppSettingDonet *>(temp);
+    if (m_appSetting == NULL) throw cException("m_appSetting == NULL is invalid");
 
-    //m_interval_newChunk = m_appSetting->getIntervalNewChunk();
-    //m_size_chunkPacket  = m_appSetting->getPacketSizeVideoChunk();
-
-    m_interval_newChunk = 1;
-    m_size_chunkPacket  = 512;
+    m_interval_newChunk = m_appSetting->getIntervalNewChunk();
+    m_size_chunkPacket  = m_appSetting->getPacketSizeVideoChunk();
 
     // -- Schedule the first event for the first chunk
     scheduleAt(simTime() + par("videoStartTime").doubleValue(), timer_newChunk);
 
-    //WATCH(m_appSetting);
+    WATCH(m_appSetting);
     WATCH(m_videoBuffer);
     WATCH(m_size_chunkPacket);
     WATCH(m_interval_newChunk);

@@ -63,17 +63,14 @@ void VideoBuffer::initialize(int stage)
     }
 
     cModule *temp = simulation.getModuleByPath("appSetting");
-    //AppSettingDonet *m_appSetting = check_and_cast<AppSettingDonet *>(temp);
+    AppSettingDonet *m_appSetting = check_and_cast<AppSettingDonet *>(temp);
 
     temp = simulation.getModuleByPath("globalStatistic");
     //m_gstat = check_and_cast<GlobalStatistic *>(temp);
 	//m_gstat = check_and_cast<DonetStatistic *>(temp);
 
-    //m_bufferSize_chunk  = m_appSetting->getBufferMapSizeChunk();
-    //m_chunkInterval     = m_appSetting->getIntervalNewChunk();
-
-    m_bufferSize_chunk  = 512;
-    m_chunkInterval     = 1;
+    m_bufferSize_chunk  = m_appSetting->getBufferMapSizeChunk();
+    m_chunkInterval     = m_appSetting->getIntervalNewChunk();
 
     // -- Adjust the size of the videoBuffer to the suitable value
     m_streamBuffer.resize(m_bufferSize_chunk);
