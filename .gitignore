@@ -9,6 +9,8 @@ out/gcc-debug/src/membership/
 out/gcc-debug/src/mesh/
 out/gcc-debug/src/payload/
 out/gcc-debug/src/tree/
+simulations/results/*.csv
+simulations/results/*.png
 simulations/results/*.sca
 simulations/results/*.vci
 simulations/results/*.vec
@@ -50,3 +52,8 @@ src/membership/newscast/NewscastPacket_m.cc
 src/membership/newscast/NewscastPacket_m.h
 *callgrind*
 src/valgrind.log
+ossim.config
+ossim.creator
+ossim.creator.user
+ossim.files
+ossim.includes
