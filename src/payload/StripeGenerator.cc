@@ -30,8 +30,8 @@ void StripeGenerator::initialize(int stage)
     nextStripe = 0;
     timer_newStripe      = new cMessage("TIMER_NEW_STRIPE");
 
-    m_interval_newStripe = 1;
-    m_size_stripePacket  = 100;
+    m_interval_newStripe = m_appSetting->getIntervalNewChunk();
+    m_size_stripePacket  = m_appSetting->getPacketSizeVideoChunk();
 
     // -- Schedule the first event for the first stripe
     scheduleAt(simTime() + par("videoStartTime").doubleValue(), timer_newStripe);

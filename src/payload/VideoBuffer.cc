@@ -31,7 +31,7 @@
 
 #include "VideoBuffer.h"
 //#include "simutil.h"
-#include "AppSettingDonet.h"
+#include "AppSetting.h"
 #include "DonetStatistic.h"
 
 #define _VERSION_1 1
@@ -63,7 +63,7 @@ void VideoBuffer::initialize(int stage)
     }
 
     cModule *temp = simulation.getModuleByPath("appSetting");
-    AppSettingDonet *m_appSetting = check_and_cast<AppSettingDonet *>(temp);
+    AppSetting *m_appSetting = check_and_cast<AppSetting *>(temp);
 
     temp = simulation.getModuleByPath("globalStatistic");
     //m_gstat = check_and_cast<GlobalStatistic *>(temp);

@@ -31,17 +31,6 @@
 
 #include "AppSetting.h"
 
-Define_Module(AppSetting)
+AppSetting::AppSetting(){}
 
-AppSetting::AppSetting() { }
-
-AppSetting::~AppSetting() { }
-
-//int AppSetting::getLocalPort(void)
-//{
-//    return param_localPort;
-//}
-//int AppSetting::getDestPort(void)
-//{
-//    return param_destPort;
-//}
+AppSetting::~AppSetting(){}

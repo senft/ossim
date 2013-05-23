@@ -1,34 +1,3 @@
-//  
-// =============================================================================
-// OSSIM : A Generic Simulation Framework for Overlay Streaming
-// =============================================================================
-//
-// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
-//
-// Project Info: http://www.p2p.tu-darmstadt.de/research/ossim
-//
-// OSSIM is free software: you can redistribute it and/or modify it under the 
-// terms of the GNU General Public License as published by the Free Software 
-// Foundation, either version 3 of the License, or (at your option) any later 
-// version.
-//
-// OSSIM is distributed in the hope that it will be useful, but WITHOUT ANY 
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with 
-// this program. If not, see <http://www.gnu.org/licenses/>.
-
-// -----------------------------------------------------------------------------
-// AppSettingMultitree.h
-// -----------------------------------------------------------------------------
-// (C) Copyright 2012-2013, by Giang Nguyen (P2P, TU Darmstadt) and Contributors
-//
-// Contributors: Giang;
-// Code Reviewers: -;
-// -----------------------------------------------------------------------------
-//
-
 #ifndef APPSETTINGMULTITREE_H_
 #define APPSETTINGMULTITREE_H_
 
@@ -36,21 +5,37 @@
 
 class AppSettingMultitree : public AppSetting {
 public:
-    AppSettingMultitree();
-    virtual ~AppSettingMultitree();
+    AppSettingMultitree(void);
+    virtual ~AppSettingMultitree(void);
 
-	inline int getNumStripes(){ return param_numStripes; };
-	inline int getStripeSize() { return param_stripeSize; };
-	inline int getWaitUntilInform() { return param_waitUntilInform; };
+	inline int getNumStripes(void){ return param_numStripes; };
+	inline double getWaitUntilInform(void) { return param_waitUntilInform; };
+
+	inline int getChunkSize(void) { return param_chunkSize; };
+	inline int getPacketSizeVideoChunk(void) { return param_chunkSize + 8; }; // 4 for seq_num, 4 for stripe_num
+	inline int getVideoStreamBitRate(void) { return param_videoStreamBitRate; };
+
+    inline int getBufferMapSizeChunk(void) { return param_bufferMapSizeChunk; };
+    inline double getIntervalNewChunk(void) { return param_intervalNewChunk; };
 
 protected:
     void handleMessage(cMessage* msg);
-    virtual void initialize();
-    virtual void finish();
+    virtual void initialize(void);
+    virtual void finish(void);
 
     int param_numStripes;
     int param_stripeSize;
     double param_waitUntilInform;
+
+    int param_chunkSize;
+    int param_videoStreamBitRate;
+
+    int param_bufferMapSizeChunk;
+    double param_intervalNewChunk;
+
+    int param_bufferMapSize_seconds;
+    int m_videoStreamChunkRate;
+ 
 };
 
 #endif /* APPSETTINGMULTITREE_H_ */

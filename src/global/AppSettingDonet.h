@@ -64,7 +64,7 @@ public:
     int getPacketSizeBufferMap(void) const;
     int getPacketSizeChunkRequest(void) const;
 
-    int getPacketSizeVideoChunk(void) const;
+    int getPacketSizeVideoChunk(void);
 
 protected:
     int param_videoStreamBitRate; //par("videoStreamBitRate").longValue();

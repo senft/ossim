@@ -105,7 +105,7 @@ protected:
 
     // -- Pointers to external modules
     VideoBuffer *m_videoBuffer;
-    AppSettingDonet *m_appSetting;
+    AppSetting *m_appSetting;
     //GlobalStatistic *m_stat;
     //StatisticBase *m_stat;
     //StreamingStatistic *m_stat;

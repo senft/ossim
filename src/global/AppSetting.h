@@ -38,16 +38,10 @@ public:
     AppSetting();
     virtual ~AppSetting();
 
-//public:
-//    int getLocalPort(void);
-//    int getDestPort(void);
-//
-//protected:
-//    int param_localPort;
-//    int param_destPort;
-
-
-
+    virtual int getBufferMapSizeChunk(void) = 0;
+    virtual double getIntervalNewChunk(void) = 0;
+	virtual int getChunkSize(void) = 0;
+	virtual int getPacketSizeVideoChunk(void) = 0;
 
 };
 

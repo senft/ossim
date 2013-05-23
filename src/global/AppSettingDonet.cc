@@ -179,7 +179,7 @@ int AppSettingDonet::getPacketSizeChunkRequest(void) const
     return constant_packet_size_mesh_chunk_request;
 }
 
-int AppSettingDonet::getPacketSizeVideoChunk(void) const
+int AppSettingDonet::getPacketSizeVideoChunk(void)
 {
     return constant_packet_size_video_chunk;
 }
