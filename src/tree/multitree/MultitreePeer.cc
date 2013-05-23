@@ -34,10 +34,13 @@ void MultitreePeer::initialize(int stage)
 
 		// -- Repeated timers
         timer_successorInfo     = new cMessage("TREE_NODE_TIMER_SUCCESSOR_UPDATE");
+		timer_reportStatistic   = new cMessage("TREE_NODE_TIMER_REPORT_STATISTIC");
 
 		// -------------------------------------------------------------------------
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
+
+		scheduleAt(simTime() + 5, timer_reportStatistic);
 
 		for (int i = 0; i < numStripes; i++)
 		{
@@ -86,6 +89,11 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
 	{
         handleTimerSuccessorInfo();
 	}
+	else if (msg == timer_reportStatistic)
+    {
+       handleTimerReportStatistic();
+       scheduleAt(simTime() + 5, timer_reportStatistic);
+    }
 } 
 
 void MultitreePeer::handleTimerJoin()
@@ -147,6 +155,31 @@ void MultitreePeer::handleTimerLeave()
 	m_partnerList->clear();
 
 	delete reqPkt;
+}
+
+void MultitreePeer::handleTimerReportStatistic()
+{
+
+   EV << "miss: " << m_player->getCountChunkMiss() << " hit: " << m_player->getCountChunkHit() << endl;
+
+   if (m_player->getState() == PLAYER_STATE_PLAYING)
+   {
+      //long int delta = m_player->getCountChunkHit() - m_count_prev_chunkHit;
+
+      //m_count_prev_chunkHit = m_player->getCountChunkHit();
+      //m_gstat->increaseChunkHit((int)delta);
+
+      //EV << "Got it: " << delta << endl;
+
+      //delta = m_player->getCountChunkMiss() - m_count_prev_chunkMiss;
+
+      //m_count_prev_chunkMiss = m_player->getCountChunkMiss();
+
+      //m_gstat->increaseChunkMiss((int)delta);
+
+      //EV << "Got it, 2: " << delta << endl;
+   }
+   
 }
 
 void MultitreePeer::handleTimerSuccessorInfo(void)
@@ -229,6 +262,10 @@ void MultitreePeer::bindToGlobalModule(void)
 void MultitreePeer::bindToTreeModule(void)
 {
 	MultitreeBase::bindToTreeModule();
+
+    cModule *temp = getParentModule()->getModuleByRelativePath("player");
+	m_player = check_and_cast<PlayerBase *>(temp);
+    EV << "Binding to churnModerator is completed successfully" << endl;
 }
 
 void MultitreePeer::processPacket(cPacket *pkt)

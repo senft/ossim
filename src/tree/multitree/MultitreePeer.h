@@ -2,6 +2,7 @@
 #define MULTITREEPEER_H_ true
 
 #include "MultitreeBase.h"
+#include "PlayerBase.h"
 
 class MultitreePeer : public MultitreeBase
 {
@@ -38,13 +39,17 @@ private:
 	void handleTimerJoin(void);
 	void handleTimerLeave(void);
 	void handleTimerSuccessorInfo(void);
+	void handleTimerReportStatistic(void);
 
 	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
+
+    PlayerBase *m_player;
 
 	cMessage *timer_getJoinTime;
 	cMessage *timer_join;
 	cMessage *timer_leave;
 	cMessage *timer_successorInfo;
+	cMessage *timer_reportStatistic;
 };
 #endif
