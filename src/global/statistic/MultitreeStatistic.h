@@ -20,13 +20,10 @@ public:
 
     virtual int numInitStages() const  {return 4;}
     virtual void initialize(int stage);
+    virtual void finish();
 
     virtual void handleMessage(cMessage *msg);
 
-    virtual void finish();
-
-    void reportChunkHit(const SEQUENCE_NUMBER_T &seq_num);
-    void reportChunkMiss(const SEQUENCE_NUMBER_T &seq_num);
     void increaseChunkHit(const int &delta);
     void increaseChunkMiss(const int &delta);
 
@@ -36,21 +33,14 @@ private:
     void handleTimerMessage(cMessage *msg);
 
 public:
-    void writeActivePeerTable2File(vector<IPvXAddress>);
-    void writePartnerList2File(IPvXAddress node, vector<IPvXAddress> pList);
-    void writePartnership2File(IPvXAddress local, IPvXAddress remote);
-
 	void reportChunkArrival(const int hopcount);
 
 private:
 
 private:
-    NotificationBoard *nb;
     ActivePeerTable *m_apTable;
 
     simsignal_t sig_chunkArrival;
-
-    ofstream m_outFile;
 
 };
 
