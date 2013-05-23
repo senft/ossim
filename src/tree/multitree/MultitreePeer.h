@@ -25,7 +25,6 @@ private:
 	void processDisconnectRequest(cPacket *pkt);
 
 	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);
-	//void disconnectFromParent(IPvXAddress address, IPvXAddress alternativeParent);
 
 	virtual int getMaxOutConnections(void);
 	virtual bool isPreferredStripe(int stripe);

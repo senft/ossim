@@ -399,6 +399,8 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	// Add myself to ActivePeerList so other peers can find me (to connect to me)
 	m_apTable->addAddress(getNodeAddress());
 
+	m_player->activate();
+
     EV << getNodeAddress();
     m_partnerList->printPartnerList();
 }
