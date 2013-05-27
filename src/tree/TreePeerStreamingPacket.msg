@@ -67,6 +67,7 @@ packet TreeConnectConfirmPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_CONFIRM;
     int		stripe = -1;
+    int		nextSequenceNumber = -1;
 	IPvXAddress alternativeNode;
 }
 

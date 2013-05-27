@@ -59,6 +59,8 @@ protected:
 	 */
 	double bwCapacity;
 
+	long lastSeqNumber;
+
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
     void bindToStatisticModule(void);
@@ -77,6 +79,7 @@ protected:
 	void optimize(void);
 
 private:
+
 	void getAppSetting(void);
 	void acceptConnectRequest(TreeConnectRequestPacket *pkt);
 	void rejectConnectRequest(TreeConnectRequestPacket *pkt);

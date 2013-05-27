@@ -32,6 +32,7 @@ void MultitreeBase::initialize(int stage)
 		// -- Repeated timers
 
 		m_state = new TreeJoinState[numStripes];
+		lastSeqNumber = 0L;
 	}
 }
 
@@ -163,6 +164,7 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 	acpPkt->setStripe(requestedStripe);
     // TODO: choose a better alternative peer
+	acpPkt->setNextSequenceNumber(lastSeqNumber + 1);
     acpPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
     sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
@@ -400,6 +402,8 @@ void MultitreeBase::onNewChunk(int sequenceNumber)
 
 	int stripe = stripePkt->getStripe();
 	int hopcount = stripePkt->getHopCount();
+	lastSeqNumber = stripePkt->getSeqNumber();
+
 
 	m_gstat->reportChunkArrival(hopcount);
 

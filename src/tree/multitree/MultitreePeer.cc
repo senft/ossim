@@ -389,6 +389,11 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		{
 			m_state[i] = TREE_JOIN_STATE_ACTIVE;
 		}
+
+		int nextSeq = treePkt->getNextSequenceNumber();
+		EV << "NEXT VIDEOPACKET I WILL RECEIVE IS: " << nextSeq << endl;
+		m_videoBuffer->initializeRangeVideoBuffer(nextSeq);
+		lastSeqNumber = nextSeq;
 	}
 	else
 	{
