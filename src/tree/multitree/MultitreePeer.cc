@@ -117,8 +117,7 @@ void MultitreePeer::handleTimerLeave()
 	for (int i = 0; i < numStripes; i++)
 	{
 		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
-			// TODO: reschedule timerLeave
-			return;
+			throw cException("This happens...probably should reschedule leave");
 	}
 
 	for (int i = 0; i < numStripes; i++)
@@ -128,8 +127,6 @@ void MultitreePeer::handleTimerLeave()
 	m_apTable->removeAddress(getNodeAddress());
 
 	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-
-	// TODO would be cool to bundle all DRQ to a nodes I am connected to multiple times in 1 DRQ
 
 	// Disconnect from parents
 	for (int i = 0; i < numStripes; i++)
@@ -154,6 +151,8 @@ void MultitreePeer::handleTimerLeave()
 			}
 		}
 	}
+
+	m_player->scheduleStopPlayer();
 
 	m_partnerList->clear();
 
@@ -405,7 +404,8 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	// Add myself to ActivePeerList so other peers can find me (to connect to me)
 	m_apTable->addAddress(getNodeAddress());
 
-	m_player->activate();
+	if(m_player->getState() == PLAYER_STATE_IDLE)
+		m_player->activate();
 
     EV << getNodeAddress();
     m_partnerList->printPartnerList();
