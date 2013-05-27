@@ -40,12 +40,15 @@ void MultitreePeer::initialize(int stage)
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 
-		scheduleAt(simTime() + 5, timer_reportStatistic);
+		scheduleAt(simTime() + 2, timer_reportStatistic);
 
 		for (int i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_IDLE;
 		}
+
+		m_count_prev_chunkMiss = 0L;
+		m_count_prev_chunkHit = 0L;
 	}
 }
 
@@ -92,7 +95,7 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
 	else if (msg == timer_reportStatistic)
     {
        handleTimerReportStatistic();
-       scheduleAt(simTime() + 5, timer_reportStatistic);
+       scheduleAt(simTime() + 2, timer_reportStatistic);
     }
 } 
 
@@ -160,24 +163,22 @@ void MultitreePeer::handleTimerLeave()
 void MultitreePeer::handleTimerReportStatistic()
 {
 
-   EV << "miss: " << m_player->getCountChunkMiss() << " hit: " << m_player->getCountChunkHit() << endl;
-
    if (m_player->getState() == PLAYER_STATE_PLAYING)
    {
-      //long int delta = m_player->getCountChunkHit() - m_count_prev_chunkHit;
+      long int delta = m_player->getCountChunkHit() - m_count_prev_chunkHit;
 
-      //m_count_prev_chunkHit = m_player->getCountChunkHit();
-      //m_gstat->increaseChunkHit((int)delta);
+      m_count_prev_chunkHit = m_player->getCountChunkHit();
+      m_gstat->increaseChunkHit((int)delta);
 
-      //EV << "Got it: " << delta << endl;
+      EV << "Reporting " << delta << " found chunks" << endl;
 
-      //delta = m_player->getCountChunkMiss() - m_count_prev_chunkMiss;
+      delta = m_player->getCountChunkMiss() - m_count_prev_chunkMiss;
 
-      //m_count_prev_chunkMiss = m_player->getCountChunkMiss();
+      m_count_prev_chunkMiss = m_player->getCountChunkMiss();
 
-      //m_gstat->increaseChunkMiss((int)delta);
+      m_gstat->increaseChunkMiss((int)delta);
 
-      //EV << "Got it, 2: " << delta << endl;
+      EV << "Reporting " << delta << " missed chunks" << endl;
    }
    
 }

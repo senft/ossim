@@ -50,5 +50,8 @@ private:
 	cMessage *timer_leave;
 	cMessage *timer_successorInfo;
 	cMessage *timer_reportStatistic;
+
+	long m_count_prev_chunkMiss;
+	long m_count_prev_chunkHit;
 };
 #endif
