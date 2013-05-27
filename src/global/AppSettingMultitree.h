@@ -24,7 +24,6 @@ protected:
     virtual void finish(void);
 
     int param_numStripes;
-    int param_stripeSize;
     double param_waitUntilInform;
 
     int param_chunkSize;
