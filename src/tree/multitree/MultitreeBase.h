@@ -35,7 +35,6 @@ public:
     virtual void processPacket(cPacket *pkt) = 0;
     virtual void handleTimerMessage(cMessage *msg) = 0;
 
-	bool hasBWLeft(int additionalConnections);
 
 	virtual int numInitStages() const { return 4; }
 protected:
@@ -60,6 +59,8 @@ protected:
 	double bwCapacity;
 
 	long lastSeqNumber;
+
+	bool hasBWLeft(int additionalConnections);
 
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
@@ -86,19 +87,25 @@ private:
 
     virtual void scheduleSuccessorInfo(void) = 0;
     virtual int getMaxOutConnections(void) = 0;
+	int getConnections(void);
+
 	virtual bool isPreferredStripe(int stripe) = 0;
+	int getPreferredStripe();
 
 	// Optimization functions
+	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
+
 	double getCosts(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child);
+	double getGain(int stripe, IPvXAddress child, IPvXAddress dropChild);
 	double getGainThreshold(void);
 
-	void getCostliestChild(int &stripe, IPvXAddress &address);
-	void getCheapestChild(int &stripe, IPvXAddress &address, int skipStripe, IPvXAddress skipAddress);
+	void getCostliestChild(int fromStripe, IPvXAddress &address);
+	void getCheapestChild(int fromStripe, IPvXAddress &address, IPvXAddress skipAddress);
 
 	double getStripeDensityCosts(int stripe); // K_sel, K_1
     int getForwardingCosts(int stripe, IPvXAddress child); // K_forw, K_2
-    double getBalanceCosts(int stripe, IPvXAddress child); //K_bal, K_3
+    double getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress dropChild); //K_bal, K_3
     double getDepencyCosts(IPvXAddress child); //K_4
 };
 

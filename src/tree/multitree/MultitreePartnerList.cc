@@ -180,19 +180,14 @@ int MultitreePartnerList::getNumSuccessors(int stripe)
 	return sum;
 }
 
-int MultitreePartnerList::getNumSuccessors(int stripe, IPvXAddress child)
+int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address)
 {
-    return children[stripe][child];
+    return children[stripe][address];
 }
 
 void MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors)
 {
 	children[stripe][address] =  numSuccessors;
-}
-
-int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address)
-{
-    return children[stripe][address];
 }
 
 void MultitreePartnerList::printPartnerList(void)

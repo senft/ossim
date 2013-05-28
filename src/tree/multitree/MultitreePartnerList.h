@@ -21,10 +21,9 @@ public:
 	int getNumChildren(int stripe);
 
 	int getNumSuccessors(int stripe);
-    int getNumSuccessors(int stripe, IPvXAddress child);
+    int getNumChildsSuccessors(int stripe, IPvXAddress address);
 
     void updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors);
-    int getNumChildsSuccessors(int stripe, IPvXAddress address);
 
 	bool hasParent(IPvXAddress address);
 	bool hasParent(int stripe, IPvXAddress address);
