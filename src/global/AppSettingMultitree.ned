@@ -11,6 +11,6 @@ simple AppSettingMultitree extends AppSetting
         int chunkSize           @unit(byte) = default(1250B);
         int bufferMapSize       @unit(s)    = default(2s);
 
-        int delaySuccessorInfo @unit(s) = default(10ms);
-		int intervalReconnect @unit(s) = default(2s);
+        double delaySuccessorInfo @unit(s) = default(10ms);
+		double intervalReconnect @unit(s) = default(2s);
 }

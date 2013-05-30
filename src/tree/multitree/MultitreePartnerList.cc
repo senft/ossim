@@ -48,8 +48,20 @@ void MultitreePartnerList::clear(void)
 	}
 }
 
+bool MultitreePartnerList::hasChildren(void)
+{
+	for (int i = 0; i < numStripes; i++)
+		if(children[i].size() > 0)
+			return true;
+
+	return false;
+}
+
 bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
 {
+	if(stripe == -1)
+		return hasChild(address);
+
 	std::map<IPvXAddress, int> currentChildren = children[stripe];
 	std::map<IPvXAddress, int>::const_iterator it = currentChildren.find(address);
 	return it != currentChildren.end();

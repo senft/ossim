@@ -18,7 +18,8 @@ enum TreeJoinState
 {
     TREE_JOIN_STATE_IDLE            = 0, // Not joined
     TREE_JOIN_STATE_IDLE_WAITING    = 1, // Not joined but requested
-    TREE_JOIN_STATE_ACTIVE          = 2 // Active node
+    TREE_JOIN_STATE_ACTIVE          = 2, // Joined/Active
+    TREE_JOIN_STATE_LEAVING         = 3  // Leaving
 };
 
 
@@ -39,7 +40,6 @@ public:
 	virtual int numInitStages() const { return 4; }
 protected:
     MultitreePartnerList    *m_partnerList;
-    //DonetStatistic          *m_gstat;
     Forwarder				*m_forwarder;
     AppSettingMultitree   	*m_appSetting;
     VideoBuffer				*m_videoBuffer;

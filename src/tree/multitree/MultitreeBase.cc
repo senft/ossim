@@ -95,6 +95,9 @@ void MultitreeBase::bindToStatisticModule(void)
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
+	IPvXAddress senderAddress;
+    getSender(pkt, senderAddress);
+
 	TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
 	int stripe = treePkt->getStripe();
 	int numRequestedStripes = (stripe == -1) ? numStripes : 1;
@@ -123,6 +126,13 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
     if(hasBWLeft(numRequestedStripes))
     {
+		if(m_partnerList->hasParent(senderAddress))
+		{
+			EV << "Received CR from parent. Rejecting..." << endl;
+			rejectConnectRequest(treePkt);
+		}
+
+
         EV << "Received CR (" << numRequestedStripes << " stripe). Accepting..." << endl;
         acceptConnectRequest(treePkt);
     }
@@ -134,7 +144,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
         rejectConnectRequest(treePkt);
 
 		// Optimize when a node has to reject a ConnectRequest due to lack of bandwidth
-		optimize();
+		//optimize();
     }
 }
 
@@ -146,7 +156,11 @@ void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
 	TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 	// TODO: choose a better alternative peer
     rejPkt->setStripe(pkt->getStripe());
+
 	rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+	while(rejPkt->getAlternativeNode().equals(senderAddress))
+		rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+
     sendToDispatcher(rejPkt, m_localPort, senderAddress, m_destPort);
 }
 
@@ -164,9 +178,13 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 	acpPkt->setStripe(requestedStripe);
-    // TODO: choose a better alternative peer
 	acpPkt->setNextSequenceNumber(lastSeqNumber + 1);
+
+    // TODO: choose a better alternative peer
     acpPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+	while(acpPkt->getAlternativeNode().equals(senderAddress))
+		acpPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+
     sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
 	bool doOptimize = false;
@@ -190,8 +208,10 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
     scheduleSuccessorInfo();
 
 	if(doOptimize)
+	{
 		// Optimize when node is forced to forward an "un-preferred" stripe
-		optimize();
+		//optimize();
+	}
 }
 
 void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
@@ -215,7 +235,7 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 	// TODO: Maybe count the overall number of changes received here and only optimize if > X
 	// paper says "only on major changes"
 	// Optimize when a node detects "major changes" in the topology below
-	optimize();
+	//optimize();
 }
 
 void MultitreeBase::disconnectFromChild(IPvXAddress address)

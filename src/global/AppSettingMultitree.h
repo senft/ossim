@@ -17,7 +17,7 @@ public:
 
     inline int getBufferMapSizeChunk(void) { return param_bufferMapSizeChunk; };
     inline double getIntervalNewChunk(void) { return param_intervalNewChunk; };
-	inline int getDelaySuccessorInfo() { return param_delaySuccessorInfo; };
+	inline double getDelaySuccessorInfo() { return param_delaySuccessorInfo; };
 	inline int getIntervalReconnect() { return param_intervalReconnect; };
 
 protected:

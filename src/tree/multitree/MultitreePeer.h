@@ -24,6 +24,8 @@ private:
 	void processConnectConfirm(cPacket* pkt);
 	void processDisconnectRequest(cPacket *pkt);
 
+	void leave(void);
+
 	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);
 
 	virtual int getMaxOutConnections(void);
