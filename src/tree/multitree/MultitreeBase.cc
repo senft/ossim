@@ -132,8 +132,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			rejectConnectRequest(treePkt);
 		}
 
-
-        EV << "Received CR (" << numRequestedStripes << " stripe). Accepting..." << endl;
         acceptConnectRequest(treePkt);
     }
     else
@@ -153,13 +151,14 @@ void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
 	IPvXAddress senderAddress;
     getSender(pkt, senderAddress);
 
-	TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-	// TODO: choose a better alternative peer
-    rejPkt->setStripe(pkt->getStripe());
+    int stripe = pkt->getStripe();
 
-	rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
-	while(rejPkt->getAlternativeNode().equals(senderAddress))
-		rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+	TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+    rejPkt->setStripe(stripe);
+
+	// TODO: choose a better alternative peer
+	//rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+	rejPkt->setAlternativeNode(getAlternativeNode(stripe, senderAddress));
 
     sendToDispatcher(rejPkt, m_localPort, senderAddress, m_destPort);
 }
@@ -174,21 +173,19 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 
 	IPvXAddress senderAddress;
 	getSender(pkt, senderAddress);
-	int requestedStripe = pkt->getStripe();
+	int stripe = pkt->getStripe();
 
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
-	acpPkt->setStripe(requestedStripe);
+	acpPkt->setStripe(stripe);
 	acpPkt->setNextSequenceNumber(lastSeqNumber + 1);
+    acpPkt->setAlternativeNode(getAlternativeNode(stripe, senderAddress));
 
-    // TODO: choose a better alternative peer
-    acpPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
-	while(acpPkt->getAlternativeNode().equals(senderAddress))
-		acpPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
+	EV << "Accepting ConnectRequest for stripe " << stripe << " of " << senderAddress << endl;
 
     sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
 	bool doOptimize = false;
-	if(requestedStripe == -1)
+	if(stripe == -1)
 	{
 		// Requested all stripes
 		for (int i = 0; i < numStripes; i++)
@@ -200,8 +197,8 @@ void MultitreeBase::acceptConnectRequest(TreeConnectRequestPacket *pkt)
 	}
 	else
 	{
-		m_partnerList->addChild(requestedStripe, senderAddress, pkt->getNumSuccessor(requestedStripe));
-		if(!isPreferredStripe(requestedStripe))
+		m_partnerList->addChild(stripe, senderAddress, pkt->getNumSuccessor(stripe));
+		if(!isPreferredStripe(stripe))
 			doOptimize = true;
 	}
 
@@ -536,3 +533,6 @@ int MultitreeBase::getConnections(void)
 
 	return result;
 }
+
+
+

@@ -19,6 +19,8 @@ private:
 
 	void processDisconnectRequest(cPacket *pkt);
 
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
+
 	virtual void scheduleSuccessorInfo(void);
 
 	virtual int getMaxOutConnections(void);

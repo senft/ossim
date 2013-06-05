@@ -85,6 +85,8 @@ private:
 	void acceptConnectRequest(TreeConnectRequestPacket *pkt);
 	void rejectConnectRequest(TreeConnectRequestPacket *pkt);
 
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode) = 0;
+
     virtual void scheduleSuccessorInfo(void) = 0;
     virtual int getMaxOutConnections(void) = 0;
 	int getConnections(void);

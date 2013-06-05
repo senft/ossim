@@ -135,3 +135,34 @@ bool MultitreeSource::isPreferredStripe(int stripe)
 {
 	return true;
 }
+
+IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode)
+{
+	m_partnerList->printPartnerList();
+
+	int reqStripe = (stripe == -1) ? 0 : stripe;
+	std::vector<IPvXAddress> children = m_partnerList->getChildren(reqStripe);
+
+	if(children.size() < 2)
+	{
+		for (int i = 0; i < numStripes; ++i)
+		{
+			if(i == stripe)
+				continue;
+
+			children = m_partnerList->getChildren(i);
+
+			if(children.size() > 0)
+				break;
+		}
+		if(children.size() == 0)
+		{
+			// No children at all
+			IPvXAddress null_node;
+			return null_node;
+		}
+	}
+	
+	// TODO better select a random child
+	return children[children[0].equals(forNode)];
+}
