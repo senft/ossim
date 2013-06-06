@@ -129,6 +129,8 @@ void MultitreePeer::handleTimerLeave()
 			if(timer_leave->isScheduled())
 				cancelEvent(timer_leave);
 			scheduleAt(simTime() + 2, timer_leave);
+
+			return;
 		}
 	}
 
