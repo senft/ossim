@@ -58,24 +58,26 @@ packet TreePeerStreamingPacket extends PeerStreamingPacket
 packet TreeConnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_REQUEST;
-    int		stripe = -1;
 
-    int		numSuccessor[] = NULL;
+    int			stripes[];
+    int			numSuccessor[];
 }
 
 packet TreeConnectConfirmPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_CONFIRM;
-    int		stripe = -1;
-    int		nextSequenceNumber = -1;
+
+    int			stripes[];
+    int			nextSequenceNumber = -1;
 	IPvXAddress alternativeNode;
 }
 
 packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_DISCONNECT_REQUEST;
+
 	IPvXAddress alternativeNode;
-    int		stripe = -1;
+    int			stripes[];
 }
 
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket
@@ -87,5 +89,5 @@ packet TreeSuccessorInfoPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_SUCCESSOR_INFO;
 
-    int		numSuccessor[] = NULL;
+    int		numSuccessor[];
 }

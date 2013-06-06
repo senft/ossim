@@ -40,6 +40,7 @@ void MultitreePeer::initialize(int stage)
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 
+		// TODO: maybe schedule this first when connected to the system
 		scheduleAt(simTime() + 2, timer_reportStatistic);
 
 		for (int i = 0; i < numStripes; i++)
@@ -114,8 +115,14 @@ void MultitreePeer::handleTimerJoin()
 			return;
 	}
 
+	int reqStripes[numStripes];
+	for (int i = 0; i < numStripes; ++i)
+	{
+		reqStripes[i] = i;
+	}
+
 	IPvXAddress addrPeer = m_apTable->getARandPeer(getNodeAddress());
-	connectVia(addrPeer, -1);
+	connectVia(addrPeer, numStripes, reqStripes);
 }
 
 void MultitreePeer::handleTimerLeave()
@@ -141,6 +148,7 @@ void MultitreePeer::handleTimerLeave()
 	m_apTable->removeAddress(getNodeAddress());
 
 	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+	reqPkt->setStripesArraySize(1);
 
 	if(m_partnerList->getNumChildren() == 0)
 	{
@@ -151,7 +159,7 @@ void MultitreePeer::handleTimerLeave()
 			IPvXAddress address = m_partnerList->getParent(i);
 			if(!address.isUnspecified())
 			{
-				reqPkt->setStripe(i);
+				reqPkt->setStripes(0, i);
 				sendToDispatcher(reqPkt->dup(), m_localPort, address, m_destPort);
 			}
 		}
@@ -164,15 +172,12 @@ void MultitreePeer::handleTimerLeave()
 		// If I have children I have to tell them I will be leaving but still
 		// forward packets to them until they are connected to the new parent
 
-		for (int i = 0; i < numStripes; i++)
-			m_state[i] = TREE_JOIN_STATE_LEAVING;
-
 		// Disconnect from children
 		for (int i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_LEAVING;
 
-			reqPkt->setStripe(i);
+			reqPkt->setStripes(0, i);
 			std::vector<IPvXAddress> curChildren = m_partnerList->getChildren(i);
 			if(!curChildren.empty())
 			{
@@ -349,100 +354,82 @@ void MultitreePeer::processPacket(cPacket *pkt)
 
 void MultitreePeer::connectVia(IPvXAddress address, int stripe)
 {
-	if(stripe == -1)
+	int reqStripes[1];
+	reqStripes[0] = stripe;
+	connectVia(address, 1, reqStripes);
+}
+
+void MultitreePeer::connectVia(IPvXAddress address, int numReqStripes, int stripes[])
+{
+	for (int i = 0; i < numReqStripes; i++)
 	{
-		for (int i = 0; i < numStripes; i++)
-		{
-			if(m_state[i] != TREE_JOIN_STATE_IDLE)
-				throw cException("Trying to connect in an invalid state (all stripes).");
-		}
-		
-		TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
-		reqPkt->setStripe(stripe);
-
-		// Include my numbers of successors
-		reqPkt->setNumSuccessorArraySize(numStripes);
-		for (int i = 0; i < numStripes; i++)
-		{
-			reqPkt->setNumSuccessor(i, m_partnerList->getNumChildren(i));
-		}
-
-		EV << "Sending ConnectRequest for all stripes to " << address << " " << endl;
-
-		sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
-
-		for (int i = 0; i < numStripes; i++)
-		{
-            m_state[i] = TREE_JOIN_STATE_IDLE_WAITING;
-		}
+		if(m_state[stripes[i]] != TREE_JOIN_STATE_IDLE)
+			throw cException("Trying to connect in an invalid state in stripe %d.", stripes[i]);
 	}
-	else
+
+	TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
+
+	// Set requested stripes
+	reqPkt->setStripesArraySize(numReqStripes);
+	for (int i = 0; i < numReqStripes; i++)
 	{
-		if(m_state[stripe] != TREE_JOIN_STATE_IDLE)
-			throw cException("Trying to connect in an invalid state (stripe %d).", stripe);
+		reqPkt->setStripes(i, stripes[i]);
+	}
 
-		TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
-		reqPkt->setStripe(stripe);
+	// Include my numbers of successors
+	reqPkt->setNumSuccessorArraySize(numStripes);
+	for (int i = 0; i < numStripes; i++)
+	{
+		reqPkt->setNumSuccessor(i, m_partnerList->getNumChildren(i));
+	}
 
-		// Include my numbers of successors
-		reqPkt->setNumSuccessorArraySize(numStripes);
-		for (int i = 0; i < numStripes; i++)
-		{
-			reqPkt->setNumSuccessor(i, m_partnerList->getNumChildren(i));
-		}
+	EV << "Sending ConnectRequest for stripe(s) ";
+	for (int i = 0; i < numReqStripes; i++)
+		EV << stripes[i] << " ";
+	EV << "to " << address << " " << endl;
 
-		EV << "Sending ConnectRequest for stripe " << stripe << " to " << address << " " << endl;
-		
-		sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
-		m_state[stripe] = TREE_JOIN_STATE_IDLE_WAITING;
+	sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
+
+	for (int i = 0; i < numReqStripes; i++)
+	{
+		m_state[stripes[i]] = TREE_JOIN_STATE_IDLE_WAITING;
 	}
 }
 
 void MultitreePeer::processConnectConfirm(cPacket* pkt)
 {
-	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
-	int stripe = treePkt->getStripe();
-
 	// TODO this contains an alternative "parent". save this in case your parent leaves
+
+	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
+	int numReqStripes = treePkt->getStripesArraySize();
 
 	IPvXAddress address;
 	getSender(pkt, address);
-
-    if(stripe == -1)
+	for (int i = 0; i < numReqStripes; ++i)
 	{
-		for (int i = 0; i < numStripes; i++)
+		int stripe = treePkt->getStripes(i);
+
+		if(m_state[stripe] != TREE_JOIN_STATE_IDLE_WAITING)
 		{
-			if(m_state[i] != TREE_JOIN_STATE_IDLE_WAITING)
-                throw cException("Received a ConnectConfirm although I am already connected (or unconnected) (stripe %d).", i);
+			const char *sAddr = address.str().c_str();
+			throw cException("Received a ConnectConfirm (%s) although I am already connected (or haven't even requested) (stripe %d) (state %d).",
+					sAddr, stripe, m_state[stripe]);
 		}
-
-		for (int i = 0; i < numStripes; i++)
-		{
-			m_state[i] = TREE_JOIN_STATE_ACTIVE;
-			m_partnerList->addParent(i, address);
-		}
-
-		int nextSeq = treePkt->getNextSequenceNumber();
-		m_videoBuffer->initializeRangeVideoBuffer(nextSeq);
-		lastSeqNumber = nextSeq;
-
-		// Add myself to ActivePeerList so other peers can find me (to connect to me)
-		m_apTable->addAddress(getNodeAddress());
 
 	}
-	else
+
+	for (int i = 0; i < numReqStripes; ++i)
 	{
-        //if(m_state[stripe] != TREE_JOIN_STATE_IDLE_WAITING)
-        //    throw cException("Received a ConnectConfirm although I am already connected (or unconnected) (stripe %d), state is %d, should be %d.",
-        //                     stripe, m_state[stripe], TREE_JOIN_STATE_IDLE_WAITING);
+		int stripe = treePkt->getStripes(i);
 
 		if(!m_partnerList->getParent(stripe).isUnspecified())
 		{
-			// There already is a parent (I probably disconnected from it, though)
-			// So now I should tell him that he can stop forwarding packets to me
+			// There already is another parent for this stripe (I disconnected from it, though).
+			// So now I should tell him that it can stop forwarding packets to me
 			EV << "Switching parent in stripe: " << stripe << " old: " << m_partnerList->getParent(stripe) << " new: " << address << endl;
 			TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-			rejPkt->setStripe(stripe);
+			rejPkt->setStripesArraySize(1);
+			rejPkt->setStripes(0, stripe);
 			sendToDispatcher(rejPkt, m_localPort, m_partnerList->getParent(stripe), m_destPort);
 		}
 
@@ -450,8 +437,27 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		m_partnerList->addParent(stripe, address);
 	}
 
+
+	// Add myself to ActivePeerList so other peers can find me (to connect to me)
+	m_apTable->addAddress(getNodeAddress());
+
 	if(m_player->getState() == PLAYER_STATE_IDLE)
+	{
+		int nextSeq = treePkt->getNextSequenceNumber();
+		m_videoBuffer->initializeRangeVideoBuffer(nextSeq);
+		lastSeqNumber = nextSeq;
+
+		// TODO: Include this loop to not start the player before I am connected in all stripes
+		// Doing so prevents packet loss in the case that I am accepted in one
+		// stripe but still looking for parents in all other stripes
+		for (size_t i = 0; i < numStripes; ++i)
+		{
+			if(m_partnerList->getParent(i).isUnspecified())
+				return;
+		}
+
 		m_player->activate();
+	}
 
     EV << getNodeAddress();
     m_partnerList->printPartnerList();
@@ -460,142 +466,115 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 {
 	TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
-	int stripe = treePkt->getStripe();
+	int numReqStripes = treePkt->getStripesArraySize();
 
 	IPvXAddress senderAddress;
 	getSender(pkt, senderAddress);
 
-	for (int i = 0; i < numStripes; i++)
+	for (int i = 0; i < numReqStripes; ++i)
 	{
-		EV << m_state[i] << " ";
-	}
-	EV << endl;
+		int stripe = treePkt->getStripes(i);
 
-	bool allIdleWaiting = true;
-
-	if(stripe == -1)
-	{
-		for (int i = 0; i < numStripes; i++)
+		switch (m_state[stripe])
 		{
-			if(m_state[i] != TREE_JOIN_STATE_IDLE_WAITING)
+			case TREE_JOIN_STATE_IDLE_WAITING:
 			{
-				allIdleWaiting = false;
-				break;
-			}
-		}
-	}
-	else
-	{
-		allIdleWaiting = (m_state[stripe] == TREE_JOIN_STATE_IDLE_WAITING);
-	}
+				// A node rejected my ConnectRequest
 
-	if(allIdleWaiting)
-	{
-		// A node rejected my ConnectRequest
-		IPvXAddress alternativeNode = treePkt->getAlternativeNode();
+				m_state[stripe] = TREE_JOIN_STATE_IDLE;
 
-		if(stripe == -1)
-		{
-			for (int i = 0; i < numStripes; i++)
-			{
-				m_state[i] = TREE_JOIN_STATE_IDLE;
-			}
-		}
-		else
-		{
-			m_state[stripe] = TREE_JOIN_STATE_IDLE;
-		}
+				IPvXAddress alternativeNode = treePkt->getAlternativeNode();
 
-		if(alternativeNode.isUnspecified())
-		{
-			if(stripe == -1)
-			{
-				// Wait and try to connect later
-				EV << "Node " << senderAddress << " refused to let me join. No alternative node given. Retrying in " << param_intervalReconnect << "s" << endl;
-				scheduleAt(simTime() + param_intervalReconnect, timer_join);
-			}
-			else
-			{
-				connectVia(m_apTable->getARandPeer(getNodeAddress()), stripe);
-			}
-		}
-		else
-		{
+				EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
 
-			EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
-
-			if(m_partnerList->hasChild(stripe, alternativeNode)) // To avoid connecting to a child
-			{
-				// TODO: better check my remaining parents (but make sure its not the one that wants to disconnect)
-				IPvXAddress addr = m_apTable->getARandPeer(getNodeAddress());
-				while(m_partnerList->hasChild(stripe, alternativeNode))
+				if(alternativeNode.isUnspecified())
 				{
-					addr = m_apTable->getARandPeer(getNodeAddress());
+					// TODO how is this happening?!
+					connectVia(m_apTable->getARandPeer(getNodeAddress()), stripe);
+				}
+				else if(m_partnerList->hasChild(stripe, alternativeNode)) // To avoid connecting to a child
+				{
+					EV << "Node passed me my child as alternative node." << endl;
+					// TODO: what's best here? Try to connect to child and let him give me another node, reconnect to the node that just suggested connecting to my child?
+					connectVia(senderAddress, stripe);
+					return;
+				}
+				else
+				{
+					connectVia(alternativeNode, stripe);
 				}
 
-				connectVia(addr, stripe);
-				return;
+				break;
 			}
+			case TREE_JOIN_STATE_ACTIVE:
+			{
+				// A node wants to disconnect from me
 
-			connectVia(alternativeNode, stripe);
-		}
-	}
-	else if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
-	{
-		EV << "Child " << senderAddress << " connected to new parent in stripe " << stripe << endl;
-		// I have sent a DR to a child node and that node finally disconnects
-		m_partnerList->removeChild(stripe, senderAddress);
+				if( m_partnerList->hasChild(stripe, senderAddress) )
+				{
+					disconnectFromChild(stripe, senderAddress);
+				}
+				else if( m_partnerList->hasParent(stripe, senderAddress) )
+				{
+					disconnectFromParent(stripe, treePkt->getAlternativeNode());
+				}
+				else
+				{
+					EV << "Received a DisconnectRequest (stripe " << stripe << ") from a node (" << senderAddress << " that is neither child nor parent." << endl;
+					
+					//const char *sAddr = senderAddress.str().c_str();
+					//throw cException("Received a DisconnectRequest (stripe %d) from a node (%s) that is neither child nor parent.", sAddr, stripe);
 
-		if(m_partnerList->getChildren(stripe).empty())
-		{
-			EV << "No more children in stripe: " << stripe << "... Disconnecting from parent." << endl;
-		    // No more children for this stripe -> disconnect from my parent
-			TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+					//EV << "Received a DRQ from a node thats neither parent nor child. Sending DisconnectRequest to that node." << endl;
+					//TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+					//reqPkt->setStripe(stripe);
+					//sendToDispatcher(reqPkt, m_localPort, senderAddress, m_destPort);
+				}
+				break;
+			}
+			case TREE_JOIN_STATE_LEAVING:
+			{
+				// I have sent a DR to a child node and that node finally disconnects
 
-			IPvXAddress parent = m_partnerList->getParent(stripe);
-			reqPkt->setStripe(stripe);
-			sendToDispatcher(reqPkt, m_localPort, parent, m_destPort);
+				EV << "Child " << senderAddress << " connected to new parent in stripe " << stripe << endl;
+				m_partnerList->removeChild(stripe, senderAddress);
 
-			// Better not remove the parent so I can forward other nodes to my
-			// parent when they want to connect
-			//m_partnerList->removeParent(stripe);
-			
+				if(m_partnerList->getChildren(stripe).empty())
+				{
+					EV << "No more children in stripe: " << stripe << "... Disconnecting from parent." << endl;
+					// No more children for this stripe -> disconnect from my parent
+					IPvXAddress parent = m_partnerList->getParent(stripe);
 
-			// We already have to stop the player as soon as I disconnect from
-			// one parent, because I will miss all packets from that parents
-			// (and that would be counted as packet loss).
-			if(m_player->getState() == PLAYER_STATE_PLAYING)
-				m_player->scheduleStopPlayer();
-		}
+					TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+					reqPkt->setStripesArraySize(1);
+					reqPkt->setStripes(0, stripe);
+					sendToDispatcher(reqPkt, m_localPort, parent, m_destPort);
 
-		EV << getNodeAddress();
-		m_partnerList->printPartnerList();
+					// Don't remove the parent here. It is still needed to forward other nodes to my
+					// parent when they want to connect
 
-		if(!m_partnerList->hasChildren())
-		{
-			leave();
-		}
-	
-	}
-	else if(m_state[stripe] == TREE_JOIN_STATE_ACTIVE) // in this case stripe should always be >= 0
-	{
-		// A node wants to disconnect from me
+					// We already have to stop the player as soon as I disconnect from
+					// one parent, because I will miss all packets from that parents
+					// (and that would be counted as packet loss).
+					if(m_player->getState() == PLAYER_STATE_PLAYING)
+						m_player->scheduleStopPlayer();
+				}
 
-		if( m_partnerList->hasChild(stripe, senderAddress) )
-		{
-			disconnectFromChild(stripe, senderAddress);
-		}
-		else if( m_partnerList->hasParent(stripe, senderAddress) )
-		{
-			disconnectFromParent(stripe, treePkt->getAlternativeNode());
-		}
-		else
-		{
-			// Something is wrong here..
-			EV << "Received a DRQ from a node thats neither parent nor child. Sending DRQ to that node." << endl;
-			TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-			reqPkt->setStripe(stripe);
-			sendToDispatcher(reqPkt, m_localPort, senderAddress, m_destPort);
+				EV << getNodeAddress();
+				m_partnerList->printPartnerList();
+
+				if(!m_partnerList->hasChildren())
+				{
+					leave();
+				}
+
+				break;
+			}
+			default:
+			{
+				throw cException("This happens!");
+				break;
+			}
 		}
 	}
 }
@@ -603,8 +582,11 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 void MultitreePeer::leave(void)
 {
 	EV << "No more parents, nor children. I am outta here!" << endl;
-	if(m_player->getState() == PLAYER_STATE_PLAYING)
-		m_player->scheduleStopPlayer();
+
+	// Player should already be stopped here...
+	//if(m_player->getState() == PLAYER_STATE_PLAYING)
+	//	m_player->scheduleStopPlayer();
+
 	cancelAllTimer();
 }
 
@@ -636,8 +618,26 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode)
 {
 	// TODO even though a node always has parents it might be good to use
 	// children as alternative nodes
-	int reqStripe = (stripe == -1) ? intrand(numStripes) : stripe;
-	if(m_partnerList->getParent(reqStripe).isUnspecified())
-		throw cException("Getting <unspec> as alternative parent.");
-	return m_partnerList->getParent(reqStripe);
+	
+	IPvXAddress candidate = m_partnerList->getParent(stripe);
+
+	if(candidate.isUnspecified())
+	{
+		for (int i = 0; i < numStripes; ++i)
+		{
+			if(i == stripe)
+				continue;
+			else
+				candidate = m_partnerList->getParent(i);
+
+			if(!candidate.isUnspecified())
+				break;
+		}
+	}
+
+	if(candidate.isUnspecified())
+		throw cException("STILL <unspec>");
+
+	EV << "Giving alternative parent: " <<  candidate << endl;
+	return candidate;
 }

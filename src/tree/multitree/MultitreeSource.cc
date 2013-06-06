@@ -89,10 +89,15 @@ void MultitreeSource::processDisconnectRequest(cPacket* pkt)
 	IPvXAddress address;
 	getSender(pkt, address);
 
-	int stripe = treePkt->getStripe();
+	size_t numReqStripes = treePkt->getStripesArraySize();
 
-	EV << "Removing " << address.str() << " (stripe " << stripe << ")" << endl;
-	disconnectFromChild(stripe, address);
+	for (size_t i = 0; i < numReqStripes; ++i)
+	{
+		int stripe = treePkt->getStripes(i);
+		EV << "Removing " << address.str() << " (stripe " << stripe << ")" << endl;
+		disconnectFromChild(stripe, address);
+	}
+
 }
  
 

@@ -36,8 +36,8 @@ public:
     virtual void processPacket(cPacket *pkt) = 0;
     virtual void handleTimerMessage(cMessage *msg) = 0;
 
-
 	virtual int numInitStages() const { return 4; }
+
 protected:
     MultitreePartnerList    *m_partnerList;
     Forwarder				*m_forwarder;
@@ -82,8 +82,8 @@ protected:
 private:
 
 	void getAppSetting(void);
-	void acceptConnectRequest(TreeConnectRequestPacket *pkt);
-	void rejectConnectRequest(TreeConnectRequestPacket *pkt);
+	void acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors);
+	void rejectConnectRequest(int stripe, IPvXAddress address);
 
 	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode) = 0;
 

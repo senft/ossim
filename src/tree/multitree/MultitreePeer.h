@@ -32,6 +32,8 @@ private:
 
 	virtual int getMaxOutConnections(void);
 	virtual bool isPreferredStripe(int stripe);
+
+	void connectVia(IPvXAddress address, int numReqStripes, int stripes[]);
 	void connectVia(IPvXAddress address, int stripe);
 
     void bindToGlobalModule(void);
