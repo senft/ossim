@@ -508,17 +508,23 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 
 		if(alternativeNode.isUnspecified())
 		{
-			// Wait and try to connect later
-			EV << "Node " << senderAddress << " refused to let me join. No alternative node given. Retrying in " << param_intervalReconnect << "s" << endl;
-
-			scheduleAt(simTime() + param_intervalReconnect, timer_join);
+			if(stripe == -1)
+			{
+				// Wait and try to connect later
+				EV << "Node " << senderAddress << " refused to let me join. No alternative node given. Retrying in " << param_intervalReconnect << "s" << endl;
+				scheduleAt(simTime() + param_intervalReconnect, timer_join);
+			}
+			else
+			{
+				connectVia(m_apTable->getARandPeer(getNodeAddress()), stripe);
+			}
 		}
 		else
 		{
 
 			EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
 
-			if(m_partnerList->hasChild(stripe, alternativeNode))
+			if(m_partnerList->hasChild(stripe, alternativeNode)) // To avoid connecting to a child
 			{
 				// TODO: better check my remaining parents (but make sure its not the one that wants to disconnect)
 				IPvXAddress addr = m_apTable->getARandPeer(getNodeAddress());
@@ -628,6 +634,10 @@ bool MultitreePeer::isPreferredStripe(int stripe)
 
 IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode)
 {
-	int reqStripe = stripe == -1 ? 0 : stripe;
+	// TODO even though a node always has parents it might be good to use
+	// children as alternative nodes
+	int reqStripe = (stripe == -1) ? intrand(numStripes) : stripe;
+	if(m_partnerList->getParent(reqStripe).isUnspecified())
+		throw cException("Getting <unspec> as alternative parent.");
 	return m_partnerList->getParent(reqStripe);
 }

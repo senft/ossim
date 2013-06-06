@@ -138,31 +138,47 @@ bool MultitreeSource::isPreferredStripe(int stripe)
 
 IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode)
 {
-	m_partnerList->printPartnerList();
+	if(m_partnerList->getNumChildren() == 0)
+		return getNodeAddress();
 
-	int reqStripe = (stripe == -1) ? 0 : stripe;
-	std::vector<IPvXAddress> children = m_partnerList->getChildren(reqStripe);
-
-	if(children.size() < 2)
+	if(stripe == -1)
 	{
-		for (int i = 0; i < numStripes; ++i)
+		// TODO Pick a child that is forwarding something..
+		std::vector<IPvXAddress> children = m_partnerList->getChildren(intrand(numStripes));
+		if(children.size() == 1)
 		{
-			if(i == stripe)
-				continue;
-
-			children = m_partnerList->getChildren(i);
-
-			if(children.size() > 0)
-				break;
+			if(children[0].equals(forNode))
+				return getNodeAddress();
+			else
+				return children[0];
 		}
-		if(children.size() == 0)
+		else if(children.size() > 1)
 		{
-			// No children at all
-			IPvXAddress null_node;
-			return null_node;
+			IPvXAddress candidate = children[intrand(children.size())];
+			while(candidate.equals(forNode))
+				candidate = children[intrand(children.size())];
+			return candidate;
 		}
 	}
-	
-	// TODO better select a random child
-	return children[children[0].equals(forNode)];
+	else
+	{
+		// TODO Pick a child that is forwarding that stripe..
+
+		std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
+		if(children.size() == 1)
+		{
+			if(children[0].equals(forNode))
+				return getNodeAddress();
+			else
+				return children[0];
+		}
+		else if(children.size() > 1)
+		{
+			IPvXAddress candidate = children[intrand(children.size())];
+			while(candidate.equals(forNode))
+				// TODO: this hangs
+				candidate = children[intrand(children.size())];
+			return candidate;
+		}
+	}
 }
