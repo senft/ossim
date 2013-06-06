@@ -514,7 +514,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		else
 		{
 
-			EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << "). But no alternative peer was given." << endl;
+			EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
 
 			if(m_partnerList->hasChild(stripe, alternativeNode))
 			{

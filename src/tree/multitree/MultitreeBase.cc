@@ -108,7 +108,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
         {
             if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
             {
-                EV << "CR in for unconnected stripe " << stripe << " Rejecting..." << endl;
+                EV << "CR in for unconnected (not yet connected or leaving) stripe " << stripe << " Rejecting..." << endl;
                 rejectConnectRequest(treePkt);
                 return;
             }
@@ -118,7 +118,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
     {
         if (m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
         {
-            EV << "CR in for unconnected stripe " << stripe << " Rejecting..." << endl;
+            EV << "CR in for unconnected (not yet connected or leaving) stripe " << stripe << " Rejecting..." << endl;
             rejectConnectRequest(treePkt);
             return;
         }
@@ -156,8 +156,6 @@ void MultitreeBase::rejectConnectRequest(TreeConnectRequestPacket *pkt)
 	TreeDisconnectRequestPacket *rejPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
     rejPkt->setStripe(stripe);
 
-	// TODO: choose a better alternative peer
-	//rejPkt->setAlternativeNode(m_apTable->getARandPeer(getNodeAddress()));
 	rejPkt->setAlternativeNode(getAlternativeNode(stripe, senderAddress));
 
     sendToDispatcher(rejPkt, m_localPort, senderAddress, m_destPort);
