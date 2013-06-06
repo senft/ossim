@@ -18,7 +18,7 @@ network Multitree_Network extends BasicNetwork
         int nNodePerRouter;
         string churnModel = default("UniformChurn");
         string statisticModule = default("MultitreeStatistic");
-        @display("bgb=472,295");
+        @display("bgb=472,324");
 
     types:
         channel Channel_9M_up extends ned.DatarateChannel
@@ -47,13 +47,13 @@ network Multitree_Network extends BasicNetwork
             @display("p=77,96");
         }
         appSetting: AppSettingMultitree {
-            @display("p=77,254;i=block/wheelbarrow");
+            @display("p=77,281;i=block/wheelbarrow");
         }
         globalStatistic: <statisticModule> like IStreamingStatistic {
-            @display("p=77,195;i=device/disk");
+            @display("p=77,161;i=device/disk");
         }
         churnModerator: <churnModel> like IChurnModel {
-            @display("p=77,171");
+            @display("p=77,220");
         }
 
     connections:
