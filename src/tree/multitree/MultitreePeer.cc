@@ -548,7 +548,16 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			reqPkt->setStripe(stripe);
 			sendToDispatcher(reqPkt, m_localPort, parent, m_destPort);
 
-			m_partnerList->removeParent(stripe);
+			// Better not remove the parent so I can forward other nodes to my
+			// parent when they want to connect
+			//m_partnerList->removeParent(stripe);
+			
+
+			// We already have to stop the player as soon as I disconnect from
+			// one parent, because I will miss all packets from that parents
+			// (and that would be counted as packet loss).
+			if(m_player->getState() == PLAYER_STATE_PLAYING)
+				m_player->scheduleStopPlayer();
 		}
 
 		EV << getNodeAddress();
@@ -586,7 +595,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 void MultitreePeer::leave(void)
 {
 	EV << "No more parents, nor children. I am outta here!" << endl;
-	m_player->scheduleStopPlayer();
+	if(m_player->getState() == PLAYER_STATE_PLAYING)
+		m_player->scheduleStopPlayer();
 	cancelAllTimer();
 }
 
