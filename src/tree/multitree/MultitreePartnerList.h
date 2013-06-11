@@ -17,9 +17,11 @@ public:
 
 	void clear(void);
 
-	int getNumChildren(void);
-	int getNumChildren(int stripe);
+	int getNumOutgoingConnections(void);
+	int getNumOutgoingConnections(int stripe);
 
+	int getNumChildren(void);
+	int getNumSuccessors();
 	int getNumSuccessors(int stripe);
     int getNumChildsSuccessors(int stripe, IPvXAddress address);
 
@@ -39,6 +41,7 @@ public:
 	void addChild(int stripe, IPvXAddress address, int successors);
 	void removeChild(IPvXAddress address);
 	void removeChild(int stripe, IPvXAddress address);
+	std::set<IPvXAddress> getChildren();
 	std::vector<IPvXAddress> getChildren(int stripe);
 
 	IPvXAddress getRandomNodeFor(int stripe, IPvXAddress forNode);

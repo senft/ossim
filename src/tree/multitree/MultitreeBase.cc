@@ -103,8 +103,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
 	int numReqStripes = treePkt->getStripesArraySize();
 
-	EV << getNodeAddress();
-	m_partnerList->printPartnerList();
+	printStatus();
 
 	if(hasBWLeft(numReqStripes))
 	{
@@ -308,7 +307,7 @@ const IPvXAddress& MultitreeBase::getSender(const cPacket *pkt) const
 
 bool MultitreeBase::hasBWLeft(int additionalConnections)
 {
-    int outConnections = m_partnerList->getNumChildren();
+    int outConnections = m_partnerList->getNumOutgoingConnections();
 	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }
 
@@ -445,7 +444,7 @@ double MultitreeBase::getCosts(int stripe, IPvXAddress child)
 
 double MultitreeBase::getStripeDensityCosts(int stripe) // K_sel ,K_1
 {
-	int fanout = m_partnerList->getNumChildren(stripe);
+	int fanout = m_partnerList->getNumOutgoingConnections(stripe);
 	int outCapacity = getMaxOutConnections() / numStripes;
 	//EV << fanout << " " << outCapacity << endl;
 	return 1 - (fanout / outCapacity);
@@ -459,13 +458,13 @@ int MultitreeBase::getForwardingCosts(int stripe, IPvXAddress child) // K_forw, 
 double MultitreeBase::getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress childToDrop) // K_bal, K_3
 {
     int mySuccessors = m_partnerList->getNumSuccessors(stripe);
-    int myChildren = m_partnerList->getNumChildren(stripe);
+    int myChildren = m_partnerList->getNumOutgoingConnections(stripe);
 
 	if(childToDrop.isUnspecified())
 	{
 		myChildren--;
-	//	mySuccessors -= m_partnerList->getNumChildsSuccessors(stripe, childToDrop);
-		//mySuccessors = mySuccessors - m_partnerList->getNumChildsSuccessors(stripe, childToDrop);
+	//	mySuccessors -= m_partnerList->getNumOutgoingConnections(stripe, childToDrop);
+		//mySuccessors = mySuccessors - m_partnerList->getNumOutgoingConnections(stripe, childToDrop);
 	}
 
 	if(myChildren == 0) // TODO is this ok?
@@ -475,7 +474,7 @@ double MultitreeBase::getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress
 
 	//EV << "mySucc: " << mySuccessors << " " << "myChil: " << myChildren << " "
 	//	<< "bruch: " << x  << " " << "childsSucc: "
-	//	<< m_partnerList->getNumChildsSuccessors(stripe, child) << endl;
+	//	<< m_partnerList->getNumOutgoingConnections(stripe, child) << endl;
 
 	if(x == 0) // TODO is this ok?
 		return 0;
@@ -534,7 +533,7 @@ int MultitreeBase::getPreferredStripe()
 	int max = 0;
 	for (int i = 1; i < numStripes; i++)
 	{
-		if( m_partnerList->getNumChildren(max) < m_partnerList->getNumSuccessors(i) )
+		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumSuccessors(i) )
 			max = i;
 	}
 	return max;
@@ -583,4 +582,13 @@ IPvXAddress MultitreeBase::getAlternativeNode(int stripe, IPvXAddress forNode)
 		return getNodeAddress();
 	else
 		return node;
+}
+
+void MultitreeBase::printStatus(void)
+{
+	EV << "******************************" << endl;
+	EV << getNodeAddress() << " (" << m_partnerList->getNumChildren() << " children, " 
+		<< m_partnerList->getNumSuccessors() << " successors, " 
+		<<  m_apTable->getNumActivePeer() << " node(s) in the system)" << endl;
+	m_partnerList->printPartnerList();
 }

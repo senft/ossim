@@ -81,6 +81,8 @@ protected:
 
 	void optimize(void);
 
+	void printStatus(void);
+
 private:
 
 	void getAppSetting(void);

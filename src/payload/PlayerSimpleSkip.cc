@@ -284,6 +284,8 @@ void PlayerSimpleSkip::handleTimerMessage(cMessage *msg)
         }
         else // expected chunk is NOT in buffer
         {
+			EV << "Missing chunk: " << m_id_nextChunk;
+
            ++m_id_nextChunk;
            scheduleAt(simTime() + m_videoBuffer->getChunkInterval(), timer_nextChunk);
 

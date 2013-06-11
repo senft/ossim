@@ -127,8 +127,7 @@ void MultitreeSource::cancelAllTimer()
 void MultitreeSource::scheduleSuccessorInfo(void)
 { 
 	// Do nothing because a source has no parents...
-	EV << getNodeAddress();
-	m_partnerList->printPartnerList();
+	printStatus();
 }
 
 int MultitreeSource::getMaxOutConnections()

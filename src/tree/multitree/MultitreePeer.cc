@@ -142,8 +142,8 @@ void MultitreePeer::handleTimerLeave()
 		}
 	}
 
-	EV << getNodeAddress() << ": Leaving the system now." << endl;
-	m_partnerList->printPartnerList();
+	EV << "Leaving the system now." << endl;
+	printStatus();
 
 	// Remove myself from ActivePeerTable
 	m_apTable->removeAddress(getNodeAddress());
@@ -151,7 +151,7 @@ void MultitreePeer::handleTimerLeave()
 	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 	reqPkt->setStripesArraySize(1);
 
-	if(m_partnerList->getNumChildren() == 0)
+	if(m_partnerList->getNumOutgoingConnections() == 0)
 	{
 		EV << "I am leaving and have no children -> Just disconnect from parents." << endl;
 		// Disconnect from parents
@@ -244,8 +244,7 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 
 void MultitreePeer::scheduleSuccessorInfo(void)
 {
-	EV << getNodeAddress();
-	m_partnerList->printPartnerList();
+	printStatus();
 
     if(timer_successorInfo->isScheduled())
 		return;
@@ -387,7 +386,7 @@ void MultitreePeer::connectVia(IPvXAddress address, int numReqStripes, int strip
 	reqPkt->setNumSuccessorArraySize(numStripes);
 	for (int i = 0; i < numStripes; i++)
 	{
-		reqPkt->setNumSuccessor(i, m_partnerList->getNumChildren(i));
+		reqPkt->setNumSuccessor(i, m_partnerList->getNumOutgoingConnections(i));
 	}
 
 	EV << "Sending ConnectRequest for stripe(s) ";
@@ -467,8 +466,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		m_player->activate();
 	}
 
-    EV << getNodeAddress();
-    m_partnerList->printPartnerList();
+	printStatus();
 }
 
 void MultitreePeer::processDisconnectRequest(cPacket* pkt)
@@ -504,7 +502,9 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				else if(m_partnerList->hasChild(stripe, alternativeNode)) // To avoid connecting to a child
 				{
 					EV << "Node suggested an my child as an alternative node." << endl;
-					// TODO: what's best here? Try to connect to child and let him give me another node, reconnect to the node that just suggested connecting to my child?
+					// TODO: what's best here? Try to connect to child and let
+					// him give me another node, reconnect to the node that
+					// just suggested connecting to my child?
 					connectVia(senderAddress, stripe);
 				}
 				else
@@ -528,7 +528,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				}
 				else
 				{
-					EV << "Received a DisconnectRequest (stripe " << stripe << ") from a node (" << senderAddress << " that is neither child nor parent." << endl;
+					EV << "Received a DisconnectRequest (stripe " << stripe << ") from a node (" 
+						<< senderAddress << " that is neither child nor parent." << endl;
 					
 					//const char *sAddr = senderAddress.str().c_str();
 					//throw cException("Received a DisconnectRequest (stripe %d) from a node (%s) that is neither child nor parent.", sAddr, stripe);
@@ -568,8 +569,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 						m_player->scheduleStopPlayer();
 				}
 
-				EV << getNodeAddress();
-				m_partnerList->printPartnerList();
+				printStatus();
 
 				if(!m_partnerList->hasChildren())
 				{
@@ -641,10 +641,10 @@ int MultitreePeer::getMaxOutConnections()
 
 bool MultitreePeer::isPreferredStripe(int stripe)
 {
-	int numChildren = m_partnerList->getNumChildren(stripe);
+	int numChildren = m_partnerList->getNumOutgoingConnections(stripe);
 	for (int i = 0; i < numStripes; i++)
 	{
-		if(i != stripe && numChildren < m_partnerList->getNumChildren(i))
+		if(i != stripe && numChildren < m_partnerList->getNumOutgoingConnections(i))
 			return false;
 	}
 	return true;
