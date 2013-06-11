@@ -577,11 +577,21 @@ int MultitreeBase::getConnections(void)
 
 IPvXAddress MultitreeBase::getAlternativeNode(int stripe, IPvXAddress forNode)
 {
-	IPvXAddress node = m_partnerList->getRandomNodeFor(stripe, forNode);
-	if(node.isUnspecified())
-		return getNodeAddress();
+	IPvXAddress parent = m_partnerList->getParent(stripe);
+	if(!parent.isUnspecified())
+	{
+		// normal node
+		return parent;
+	}
 	else
-		return node;
+	{
+		// source node
+		IPvXAddress node = m_partnerList->getRandomNodeFor(stripe, forNode);
+		if(node.isUnspecified())
+			return getNodeAddress();
+		else
+			return node;
+	}
 }
 
 void MultitreeBase::printStatus(void)
