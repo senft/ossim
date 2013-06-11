@@ -86,7 +86,7 @@ protected:
 private:
 
 	void getAppSetting(void);
-	void acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors);
+	void acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors, int lastChunk);
 	void rejectConnectRequest(int stripe, IPvXAddress address);
 
 	IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);

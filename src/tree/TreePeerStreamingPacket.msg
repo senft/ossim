@@ -59,6 +59,7 @@ packet TreeConnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_REQUEST;
 
+	int			lastReceivedChunk = -1;
     int			stripes[];
     int			numSuccessor[];
 }

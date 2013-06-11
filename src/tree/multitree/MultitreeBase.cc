@@ -33,7 +33,7 @@ void MultitreeBase::initialize(int stage)
 		// -- Repeated timers
 
 		m_state = new TreeJoinState[numStripes];
-		lastSeqNumber = 0L;
+		lastSeqNumber = -1L;
 	}
 }
 
@@ -124,6 +124,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 		if(canAccept)
 		{
+			// TODO: refactor
 			TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 			acpPkt->setStripesArraySize(numReqStripes);
 			for (int i = 0; i < numReqStripes; ++i)
@@ -143,6 +144,17 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			EV << "of " << senderAddress << endl;
 
 			sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
+
+			int lastChunk = treePkt->getLastReceivedChunk();
+			if(lastChunk != -1)
+			{
+				// Send possibly lost chunks to new child
+				for (int i = lastChunk; i <= lastSeqNumber; i++)
+				{
+					if(m_videoBuffer->isInBuffer(i))
+						sendToDispatcher(m_videoBuffer->getChunk(i)->dup(), m_localPort, senderAddress, m_destPort);
+				}
+			}
 
 			scheduleSuccessorInfo();
 			return;
@@ -180,7 +192,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		}
 		else if(hasBWLeft(1))
 		{
-			acceptConnectRequest(stripe, senderAddress, treePkt->getNumSuccessor(i));
+			acceptConnectRequest(stripe, senderAddress, treePkt->getNumSuccessor(i), treePkt->getLastReceivedChunk());
 		}
 		else
 		{
@@ -214,7 +226,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		}
 		else if(hasBWLeft(1))
 		{
-			acceptConnectRequest(stripe, senderAddress, treePkt->getNumSuccessor(i));
+			acceptConnectRequest(stripe, senderAddress, treePkt->getNumSuccessor(i), treePkt->getLastReceivedChunk());
 			//optimize();
 		}
 		else
@@ -235,7 +247,7 @@ void MultitreeBase::rejectConnectRequest(int stripe, IPvXAddress address)
     sendToDispatcher(rejPkt, m_localPort, address, m_destPort);
 }
 
-void MultitreeBase::acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors)
+void MultitreeBase::acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors, int lastChunk)
 {
 	TreeConnectConfirmPacket *acpPkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 	acpPkt->setStripesArraySize(1);
@@ -246,6 +258,17 @@ void MultitreeBase::acceptConnectRequest(int stripe, IPvXAddress address, int nu
 	EV << "Accepting ConnectRequest for stripe " << stripe << " of " << address << endl;
 
     sendToDispatcher(acpPkt, m_localPort, address, m_destPort);
+
+	EV << "other lastChunk:" << lastChunk << " my lastChunk " << lastSeqNumber << endl;
+	if(lastChunk != -1)
+	{
+		// Send possibly lost chunks to new child
+		for (int i = lastChunk; i <= lastSeqNumber; i++)
+		{
+			if(m_videoBuffer->isInBuffer(i))
+				sendToDispatcher(m_videoBuffer->getChunk(i), m_localPort, address, m_destPort);
+		}
+	}
 
 	m_partnerList->addChild(stripe, address, numSuccessors);
 

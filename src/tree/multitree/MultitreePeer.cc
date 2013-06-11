@@ -389,6 +389,8 @@ void MultitreePeer::connectVia(IPvXAddress address, int numReqStripes, int strip
 		int numSucc = m_partnerList->getNumSuccessors(i);
 		reqPkt->setNumSuccessor(i, numSucc);
 	}
+	
+	reqPkt->setLastReceivedChunk(lastSeqNumber);
 
 	EV << "Sending ConnectRequest for stripe(s) ";
 	for (int i = 0; i < numReqStripes; i++)
