@@ -21,6 +21,7 @@ void MultitreeBase::initialize(int stage)
 
 		bwCapacity = par("bwCapacity");
 
+		requestedChildship = new IPvXAddress[numStripes];
 
 		m_videoBuffer->addListener(this);
 
@@ -102,6 +103,9 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
 	int numReqStripes = treePkt->getStripesArraySize();
 
+	EV << getNodeAddress();
+	m_partnerList->printPartnerList();
+
 	if(hasBWLeft(numReqStripes))
 	{
 		// See if I could accept all requests
@@ -111,7 +115,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			int stripe = treePkt->getStripes(i);
 			if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE
 					|| m_partnerList->hasParent(stripe, senderAddress) 
-					|| m_partnerList->hasChild(stripe, senderAddress) )
+					|| m_partnerList->hasChild(stripe, senderAddress) 
+					|| requestedChildship[stripe].equals(senderAddress))
 			{
 				canAccept = false;
 				break;
@@ -133,7 +138,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			acpPkt->setNextSequenceNumber(lastSeqNumber + 1);
 			acpPkt->setAlternativeNode(getAlternativeNode(0, senderAddress));
 
-			EV << "Accepting ConnectRequest for stripes ";
+			EV << "Accepting ConnectRequest for stripe(s) ";
 			for (int i = 0; i < numReqStripes; ++i)
 				EV << treePkt->getStripes(i) << " ";
 			EV << "of " << senderAddress << endl;
@@ -167,6 +172,12 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		else if( m_partnerList->hasChild(stripe, senderAddress) )
 		{
 			EV << "Received ConnectRequest from child " << senderAddress << " for stripe " << stripe << ". Ignoring..." << endl;
+		}
+		else if( requestedChildship[stripe].equals(senderAddress) )
+		{
+			// TODO: would be better to just queue this.. maybe the node rejects me
+			EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe " << stripe << ". Rejecting..." << endl;
+			rejectConnectRequest(stripe, senderAddress);
 		}
 		else if(hasBWLeft(1))
 		{
@@ -260,8 +271,6 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 
     scheduleSuccessorInfo();
 
-	// TODO: Maybe count the overall number of changes received here and only optimize if > X
-	// paper says "only on major changes"
 	// Optimize when a node detects "major changes" in the topology below
 	//optimize();
 }
@@ -379,17 +388,17 @@ double MultitreeBase::getGain(int stripe, IPvXAddress child)
 	return getBalanceCosts(stripe, child, IPvXAddress()) - getForwardingCosts(stripe, child);
 }
 
-double MultitreeBase::getGain(int stripe, IPvXAddress child, IPvXAddress dropChild)
+double MultitreeBase::getGain(int stripe, IPvXAddress child, IPvXAddress childToDrop)
 {
 	//EV << "********* GAIN WITH DROPCHILD ***********" << endl;
 	//EV << "Stripe: " << stripe << " Child: " << child << endl;
-	//EV << "K3: " << getBalanceCosts(stripe, child, dropChild) << endl;
+	//EV << "K3: " << getBalanceCosts(stripe, child, childToDrop) << endl;
 	//EV << "K2: " << getForwardingCosts(stripe, child) << endl;
-	//EV << "Total: " << getBalanceCosts(stripe, child, dropChild) - getForwardingCosts(stripe, child) << endl;
+	//EV << "Total: " << getBalanceCosts(stripe, child, childToDrop) - getForwardingCosts(stripe, child) << endl;
 	//EV << "****************************************" << endl;
 
 	// K_3 - K_2
-	return getBalanceCosts(stripe, child, dropChild) - getForwardingCosts(stripe, child);
+	return getBalanceCosts(stripe, child, childToDrop) - getForwardingCosts(stripe, child);
 }
 
 void MultitreeBase::getCostliestChild(int fromStripe, IPvXAddress &address)
@@ -447,16 +456,16 @@ int MultitreeBase::getForwardingCosts(int stripe, IPvXAddress child) // K_forw, 
     return (m_partnerList->getNumChildsSuccessors(stripe, child) == 0);
 }
 
-double MultitreeBase::getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress dropChild) // K_bal, K_3
+double MultitreeBase::getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress childToDrop) // K_bal, K_3
 {
     int mySuccessors = m_partnerList->getNumSuccessors(stripe);
     int myChildren = m_partnerList->getNumChildren(stripe);
 
-	if(dropChild.isUnspecified())
+	if(childToDrop.isUnspecified())
 	{
 		myChildren--;
-	//	mySuccessors -= m_partnerList->getNumChildsSuccessors(stripe, dropChild);
-		//mySuccessors = mySuccessors - m_partnerList->getNumChildsSuccessors(stripe, dropChild);
+	//	mySuccessors -= m_partnerList->getNumChildsSuccessors(stripe, childToDrop);
+		//mySuccessors = mySuccessors - m_partnerList->getNumChildsSuccessors(stripe, childToDrop);
 	}
 
 	if(myChildren == 0) // TODO is this ok?
@@ -472,7 +481,7 @@ double MultitreeBase::getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress
 		return 0;
 
     int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, child);
-	if(dropChild.isUnspecified())
+	if(childToDrop.isUnspecified())
 		childsSuccessors++;
 
     return   (x - childsSuccessors) / x;
@@ -548,7 +557,8 @@ void MultitreeBase::dropChild(int stripe, IPvXAddress address, IPvXAddress alter
 	reqPkt->setStripesArraySize(1);
 	reqPkt->setStripes(0, stripe);
 	sendToDispatcher(reqPkt, m_localPort, address, m_destPort);
-	m_partnerList->removeChild(stripe, address);
+
+	//m_partnerList->removeChild(stripe, address);
 }
 
 int MultitreeBase::getConnections(void)
@@ -566,5 +576,11 @@ int MultitreeBase::getConnections(void)
 	return result;
 }
 
-
-
+IPvXAddress MultitreeBase::getAlternativeNode(int stripe, IPvXAddress forNode)
+{
+	IPvXAddress node = m_partnerList->getRandomNodeFor(stripe, forNode);
+	if(node.isUnspecified())
+		return getNodeAddress();
+	else
+		return node;
+}

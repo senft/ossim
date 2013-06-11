@@ -60,6 +60,7 @@ void ActivePeerTable::initialize(int stage)
         }
         else if (stage==1)
         {
+			my_size = 0;
 
         }
         else if (stage==3)
@@ -77,6 +78,7 @@ void ActivePeerTable::initialize(int stage)
 
     //WATCH(m_activePeerList.size());
     //WATCH(m_activePeerList);
+	WATCH(my_size);
 
 }
 
@@ -267,6 +269,8 @@ void ActivePeerTable::addAddress(const IPvXAddress &address)
       info.m_joinTime = simTime().dbl();
 
     m_activePeerList.insert(pair<IPvXAddress, Struct_ActivePeerInfo>(address, info));
+
+	my_size = m_activePeerList.size();
 }
 
 void ActivePeerTable::removeAddress(const IPvXAddress &address)
@@ -274,6 +278,8 @@ void ActivePeerTable::removeAddress(const IPvXAddress &address)
    Enter_Method("removePeerAddress");
 
    m_activePeerList.erase(address);
+
+	my_size = m_activePeerList.size();
 }
 /*
 void ActivePeerTable::removePeerAddress(const IPvXAddress &address)
@@ -364,6 +370,7 @@ bool ActivePeerTable::deletePeerAddress(const IPvXAddress &address)
 
     //delete iter->second;
     m_activePeerList.erase(iter);
+	my_size = m_activePeerList.size();
     return true;
 }
 

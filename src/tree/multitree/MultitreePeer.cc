@@ -132,6 +132,7 @@ void MultitreePeer::handleTimerLeave()
 		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 		{
 			EV << "Leave scheduled for now, but I am inactive in one stripe. Rescheduling..." << endl;
+			EV << i << " = " << m_state[i] << endl;
 			// TODO make this a parameter
 			if(timer_leave->isScheduled())
 				cancelEvent(timer_leave);
@@ -364,7 +365,10 @@ void MultitreePeer::connectVia(IPvXAddress address, int numReqStripes, int strip
 	for (int i = 0; i < numReqStripes; i++)
 	{
 		if(m_state[stripes[i]] != TREE_JOIN_STATE_IDLE)
-			throw cException("Trying to connect in an invalid state in stripe %d.", stripes[i]);
+		{
+			const char *sAddr = address.str().c_str();
+			throw cException("Trying to connect to %s in an invalid state (%d) in stripe %d.", sAddr, m_state[stripes[i]], stripes[i]);
+		}
 	}
 
 	TreeConnectRequestPacket *reqPkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
@@ -373,7 +377,10 @@ void MultitreePeer::connectVia(IPvXAddress address, int numReqStripes, int strip
 	reqPkt->setStripesArraySize(numReqStripes);
 	for (int i = 0; i < numReqStripes; i++)
 	{
-		reqPkt->setStripes(i, stripes[i]);
+		int stripe = stripes[i];
+
+		requestedChildship[stripe] = address;
+		reqPkt->setStripes(i, stripe);
 	}
 
 	// Include my numbers of successors
@@ -433,6 +440,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			sendToDispatcher(rejPkt, m_localPort, m_partnerList->getParent(stripe), m_destPort);
 		}
 
+		requestedChildship[stripe] = IPvXAddress();
 		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
 		m_partnerList->addParent(stripe, address);
 	}
@@ -450,7 +458,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		// TODO: Include this loop to not start the player before I am connected in all stripes
 		// Doing so prevents packet loss in the case that I am accepted in one
 		// stripe but still looking for parents in all other stripes
-		for (size_t i = 0; i < numStripes; ++i)
+		for (int i = 0; i < numStripes; ++i)
 		{
 			if(m_partnerList->getParent(i).isUnspecified())
 				return;
@@ -482,6 +490,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				// A node rejected my ConnectRequest
 
 				m_state[stripe] = TREE_JOIN_STATE_IDLE;
+				requestedChildship[stripe] = IPvXAddress();
 
 				IPvXAddress alternativeNode = treePkt->getAlternativeNode();
 
@@ -494,10 +503,9 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				}
 				else if(m_partnerList->hasChild(stripe, alternativeNode)) // To avoid connecting to a child
 				{
-					EV << "Node passed me my child as alternative node." << endl;
+					EV << "Node suggested an my child as an alternative node." << endl;
 					// TODO: what's best here? Try to connect to child and let him give me another node, reconnect to the node that just suggested connecting to my child?
 					connectVia(senderAddress, stripe);
-					return;
 				}
 				else
 				{
@@ -592,9 +600,37 @@ void MultitreePeer::leave(void)
 
 void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativeParent)
 {
+	// TODO: refactor
 	EV << "Parent (stripe " << stripe << ") wants me to leave." << endl;
 	m_state[stripe] = TREE_JOIN_STATE_IDLE;
-	connectVia(alternativeParent, stripe);
+
+	IPvXAddress candidate;
+	// Make sure I am not connecting to a child of mine
+	if(m_partnerList->hasChild(stripe, alternativeParent))
+	{
+		EV << "Old parent wants me to connect to a child of mine." << endl;
+		for (int i = 0; i < numStripes; ++i)
+		{
+			candidate = m_partnerList->getParent(i);
+			if(!m_partnerList->hasChild(stripe, candidate))
+				break;
+		}
+
+		if(m_partnerList->hasChild(stripe, candidate))
+		{
+			EV << "Cannot connect to any of my other parents." << endl;
+			throw cException("FUCK THIS SHIT.");
+		}
+		else
+		{
+			connectVia(candidate, stripe);
+		}
+
+	}
+	else
+	{
+		connectVia(alternativeParent, stripe);
+	}
 }
 
 int MultitreePeer::getMaxOutConnections()
@@ -614,30 +650,4 @@ bool MultitreePeer::isPreferredStripe(int stripe)
 	return true;
 }
 
-IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode)
-{
-	// TODO even though a node always has parents it might be good to use
-	// children as alternative nodes
-	
-	IPvXAddress candidate = m_partnerList->getParent(stripe);
 
-	if(candidate.isUnspecified())
-	{
-		for (int i = 0; i < numStripes; ++i)
-		{
-			if(i == stripe)
-				continue;
-			else
-				candidate = m_partnerList->getParent(i);
-
-			if(!candidate.isUnspecified())
-				break;
-		}
-	}
-
-	if(candidate.isUnspecified())
-		throw cException("STILL <unspec>");
-
-	EV << "Giving alternative parent: " <<  candidate << endl;
-	return candidate;
-}

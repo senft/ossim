@@ -1,5 +1,7 @@
 #include <omnetpp.h>
 
+#include <algorithm>
+
 #include "MultitreePartnerList.h"
 #include "AppSettingMultitree.h"
 
@@ -200,6 +202,66 @@ int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address
 void MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors)
 {
 	children[stripe][address] =  numSuccessors;
+}
+
+IPvXAddress MultitreePartnerList::getRandomNodeFor(int stripe, IPvXAddress forNode)
+{
+	std::set<IPvXAddress> candidates;
+	if(!parents[stripe].isUnspecified() && !parents[stripe].equals(forNode))
+		candidates.insert(parents[stripe]);
+
+	for (int i = 0; i < numStripes; ++i)
+	{
+		std::map<IPvXAddress, int> curChildren = children[i];
+		for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		{
+			// Add all children that have at least 1 successor in this stripe
+			// to the list of potential candidates
+			if(it->second > 0)
+				candidates.insert(it->first);
+		}
+	}
+
+	// Add some more if there are too little children
+	if(candidates.size() < 3)
+	{
+		for (int i = 0; i < numStripes; ++i)
+		{
+			std::map<IPvXAddress, int> curChildren = children[i];
+			for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+			{
+				candidates.insert(it->first);
+			}
+		}
+	}
+
+	if(candidates.size() == 0)
+	{
+		return IPvXAddress();
+	}
+	else if(candidates.size() == 1)
+	{
+		if(candidates.begin()->equals(forNode))
+			return IPvXAddress();
+		else
+			return (IPvXAddress)*candidates.begin();
+	}
+	else
+	{
+		std::set<IPvXAddress>::const_iterator it(candidates.begin());
+		advance(it, intrand(candidates.size() - 1));
+		IPvXAddress child = (IPvXAddress)*it;
+
+		if(child.equals(forNode))
+		{
+			if(it == candidates.end())
+				it--;
+			else
+				it++;
+			child = (IPvXAddress)*it;
+		}
+		return child;
+	}
 }
 
 void MultitreePartnerList::printPartnerList(void)

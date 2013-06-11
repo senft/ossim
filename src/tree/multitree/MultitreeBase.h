@@ -45,6 +45,8 @@ protected:
     VideoBuffer				*m_videoBuffer;
     MultitreeStatistic 		*m_gstat;
 
+	IPvXAddress *requestedChildship;
+
     TreeJoinState     		*m_state;
 
     int m_localPort, m_destPort;
@@ -85,7 +87,7 @@ private:
 	void acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors);
 	void rejectConnectRequest(int stripe, IPvXAddress address);
 
-	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode) = 0;
+	IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
 
     virtual void scheduleSuccessorInfo(void) = 0;
     virtual int getMaxOutConnections(void) = 0;
@@ -99,7 +101,7 @@ private:
 
 	double getCosts(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child);
-	double getGain(int stripe, IPvXAddress child, IPvXAddress dropChild);
+	double getGain(int stripe, IPvXAddress child, IPvXAddress childToDrop);
 	double getGainThreshold(void);
 
 	void getCostliestChild(int fromStripe, IPvXAddress &address);
@@ -107,7 +109,7 @@ private:
 
 	double getStripeDensityCosts(int stripe); // K_sel, K_1
     int getForwardingCosts(int stripe, IPvXAddress child); // K_forw, K_2
-    double getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress dropChild); //K_bal, K_3
+    double getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress childToDrop); //K_bal, K_3
     double getDepencyCosts(IPvXAddress child); //K_4
 };
 

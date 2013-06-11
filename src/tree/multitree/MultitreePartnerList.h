@@ -41,6 +41,8 @@ public:
 	void removeChild(int stripe, IPvXAddress address);
 	std::vector<IPvXAddress> getChildren(int stripe);
 
+	IPvXAddress getRandomNodeFor(int stripe, IPvXAddress forNode);
+
 	void printPartnerList(void);
 protected:
 	int numStripes;

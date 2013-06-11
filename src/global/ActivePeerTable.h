@@ -153,6 +153,8 @@ protected:
     // Timer
     cMessage *timer_reportSize;
 
+	int my_size;
+
 };
 
 #endif /* ACTIVEPEERTABLE_H_ */

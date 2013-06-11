@@ -89,9 +89,9 @@ void MultitreeSource::processDisconnectRequest(cPacket* pkt)
 	IPvXAddress address;
 	getSender(pkt, address);
 
-	size_t numReqStripes = treePkt->getStripesArraySize();
+	int numReqStripes = treePkt->getStripesArraySize();
 
-	for (size_t i = 0; i < numReqStripes; ++i)
+	for (int i = 0; i < numReqStripes; ++i)
 	{
 		int stripe = treePkt->getStripes(i);
 		EV << "Removing " << address.str() << " (stripe " << stripe << ")" << endl;
@@ -139,51 +139,4 @@ int MultitreeSource::getMaxOutConnections()
 bool MultitreeSource::isPreferredStripe(int stripe)
 {
 	return true;
-}
-
-IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode)
-{
-	if(m_partnerList->getNumChildren() == 0)
-		return getNodeAddress();
-
-	if(stripe == -1)
-	{
-		// TODO Pick a child that is forwarding something..
-		std::vector<IPvXAddress> children = m_partnerList->getChildren(intrand(numStripes));
-		if(children.size() == 1)
-		{
-			if(children[0].equals(forNode))
-				return getNodeAddress();
-			else
-				return children[0];
-		}
-		else if(children.size() > 1)
-		{
-			IPvXAddress candidate = children[intrand(children.size())];
-			while(candidate.equals(forNode))
-				candidate = children[intrand(children.size())];
-			return candidate;
-		}
-	}
-	else
-	{
-		// TODO Pick a child that is forwarding that stripe..
-
-		std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
-		if(children.size() == 1)
-		{
-			if(children[0].equals(forNode))
-				return getNodeAddress();
-			else
-				return children[0];
-		}
-		else if(children.size() > 1)
-		{
-			IPvXAddress candidate = children[intrand(children.size())];
-			while(candidate.equals(forNode))
-				// TODO: this hangs
-				candidate = children[intrand(children.size())];
-			return candidate;
-		}
-	}
 }

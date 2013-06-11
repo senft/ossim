@@ -18,8 +18,6 @@ private:
 	double param_intervalReconnect;
 	double param_delaySuccessorInfo;
 
-	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
-
     virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
 
