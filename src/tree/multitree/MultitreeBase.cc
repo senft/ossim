@@ -513,28 +513,6 @@ double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
     return (double)numConnections / numStripes;
 }
 
-void MultitreeBase::onNewChunk(int sequenceNumber)
-{
-	Enter_Method("onNewChunk");
-
-	VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(sequenceNumber);
-	VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
-
-	int stripe = stripePkt->getStripe();
-	int hopcount = stripePkt->getHopCount();
-	lastSeqNumber = stripePkt->getSeqNumber();
-
-	m_gstat->reportChunkArrival(hopcount);
-
-	stripePkt->setHopCount(++hopcount);
-
-	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
-	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
-	{
-		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
-	}
-}
-
 int MultitreeBase::getPreferredStripe()
 {
 	int max = 0;

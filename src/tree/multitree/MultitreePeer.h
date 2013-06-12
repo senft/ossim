@@ -21,6 +21,8 @@ private:
     virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
 
+    void onNewChunk(int sequenceNumber);
+
 	void processConnectConfirm(cPacket* pkt);
 	void processDisconnectRequest(cPacket *pkt);
 

@@ -72,7 +72,7 @@ protected:
 	void getSender(cPacket *pkt, IPvXAddress &senderAddress);
 	const IPvXAddress& getSender(const cPacket *pkt) const;
 
-    virtual void onNewChunk(int sequenceNumber);
+    virtual void onNewChunk(int sequenceNumber) = 0;
 
 	void processSuccessorUpdate(cPacket *pkt);
 	void processConnectRequest(cPacket *pkt);

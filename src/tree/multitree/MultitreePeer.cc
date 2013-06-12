@@ -413,6 +413,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
 	int numReqStripes = treePkt->getStripesArraySize();
+	int nextSeq = treePkt->getNextSequenceNumber();
 
 	IPvXAddress address;
 	getSender(pkt, address);
@@ -443,33 +444,18 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			rejPkt->setStripes(0, stripe);
 			sendToDispatcher(rejPkt, m_localPort, m_partnerList->getParent(stripe), m_destPort);
 		}
+		else
+		{
+			EV << "New parent in stripe : " << stripe << " starts forwarding with chunk #" << nextSeq << endl;
+		}
 
 		requestedChildship[stripe] = IPvXAddress();
 		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
 		m_partnerList->addParent(stripe, address);
 	}
 
-
 	// Add myself to ActivePeerList so other peers can find me (to connect to me)
 	m_apTable->addAddress(getNodeAddress());
-
-	if(m_player->getState() == PLAYER_STATE_IDLE)
-	{
-		int nextSeq = treePkt->getNextSequenceNumber();
-		m_videoBuffer->initializeRangeVideoBuffer(nextSeq);
-		lastSeqNumber = nextSeq;
-
-		// TODO: Include this loop to not start the player before I am connected in all stripes
-		// Doing so prevents packet loss in the case that I am accepted in one
-		// stripe but still looking for parents in all other stripes
-		for (int i = 0; i < numStripes; ++i)
-		{
-			if(m_partnerList->getParent(i).isUnspecified())
-				return;
-		}
-
-		m_player->activate();
-	}
 
 	printStatus();
 }
@@ -656,6 +642,52 @@ bool MultitreePeer::isPreferredStripe(int stripe)
 			return false;
 	}
 	return true;
+}
+
+void MultitreePeer::onNewChunk(int sequenceNumber)
+{
+	Enter_Method("onNewChunk");
+
+	VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(sequenceNumber);
+	VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
+
+	int stripe = stripePkt->getStripe();
+	int hopcount = stripePkt->getHopCount();
+	lastSeqNumber = sequenceNumber;
+
+	m_gstat->reportChunkArrival(hopcount);
+
+	stripePkt->setHopCount(++hopcount);
+
+	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
+	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
+	{
+		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
+	}
+
+	// If node is "fully connected" (and not in the process of leaving),
+	// start playback (starting the chunk received just now)
+	for (int i = 0; i < numStripes; i++)
+	{
+		// If the node is leaving the player is already stopped and would
+		// be restarted if we don't return here
+		if(m_state[i] == TREE_JOIN_STATE_LEAVING)
+			return;
+	}
+	if(m_player->getState() == PLAYER_STATE_IDLE)
+	{
+		// TODO: Include this loop to not start the player before I am connected in all stripes
+		// Doing so prevents packet loss in the case that I am accepted in one
+		// stripe but still looking for parents in all other stripes
+		for (int i = 0; i < numStripes; ++i)
+		{
+			if(m_partnerList->getParent(i).isUnspecified())
+				return;
+		}
+
+		m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
+		m_player->activate();
+	}
 }
 
 
