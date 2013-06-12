@@ -146,15 +146,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
 
 			int lastChunk = treePkt->getLastReceivedChunk();
-			if(lastChunk != -1)
-			{
-				// Send possibly lost chunks to new child
-				for (int i = lastChunk; i <= lastSeqNumber; i++)
-				{
-					if(m_videoBuffer->isInBuffer(i))
-						sendToDispatcher(m_videoBuffer->getChunk(i)->dup(), m_localPort, senderAddress, m_destPort);
-				}
-			}
+			for (int i = 0; i < numReqStripes; ++i)
+				sendChunksToNewChild(treePkt->getStripes(i), senderAddress, lastChunk);
 
 			scheduleSuccessorInfo();
 			return;
@@ -259,16 +252,7 @@ void MultitreeBase::acceptConnectRequest(int stripe, IPvXAddress address, int nu
 
     sendToDispatcher(acpPkt, m_localPort, address, m_destPort);
 
-	EV << "other lastChunk:" << lastChunk << " my lastChunk " << lastSeqNumber << endl;
-	if(lastChunk != -1)
-	{
-		// Send possibly lost chunks to new child
-		for (int i = lastChunk; i <= lastSeqNumber; i++)
-		{
-			if(m_videoBuffer->isInBuffer(i))
-				sendToDispatcher(m_videoBuffer->getChunk(i), m_localPort, address, m_destPort);
-		}
-	}
+	sendChunksToNewChild(stripe, address, lastChunk);
 
 	m_partnerList->addChild(stripe, address, numSuccessors);
 
@@ -624,4 +608,28 @@ void MultitreeBase::printStatus(void)
 		<< m_partnerList->getNumSuccessors() << " successors, " 
 		<<  m_apTable->getNumActivePeer() << " node(s) in the system)" << endl;
 	m_partnerList->printPartnerList();
+}
+
+
+void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk)
+{
+	EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
+	if(lastChunk != -1)
+	{
+		for (int i = lastChunk; i <= lastSeqNumber; i++)
+		{
+			if(m_videoBuffer->isInBuffer(i))
+			{
+				VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(i);
+				VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
+
+				if(stripePkt->getStripe() == stripe)
+				{
+					EV << "Sending chunk: " << i << endl;
+					sendToDispatcher(stripePkt->dup(), m_localPort, address, m_destPort);
+				}
+			}
+		}
+	}
+
 }

@@ -95,6 +95,8 @@ private:
     virtual int getMaxOutConnections(void) = 0;
 	int getConnections(void);
 
+	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);
+
 	virtual bool isPreferredStripe(int stripe) = 0;
 	int getPreferredStripe();
 
