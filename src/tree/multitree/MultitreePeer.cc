@@ -127,18 +127,20 @@ void MultitreePeer::handleTimerJoin()
 
 void MultitreePeer::handleTimerLeave()
 {
-	for (int i = 0; i < numStripes; i++)
+	if(m_partnerList->hasChildren())
 	{
-		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
+		for (int i = 0; i < numStripes; i++)
 		{
-			EV << "Leave scheduled for now, but I am inactive in one stripe. Rescheduling..." << endl;
-			EV << i << " = " << m_state[i] << endl;
-			// TODO make this a parameter
-			if(timer_leave->isScheduled())
-				cancelEvent(timer_leave);
-			scheduleAt(simTime() + 2, timer_leave);
+			if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
+			{
+				EV << "Leave scheduled for now, but I am inactive in one stripe. Rescheduling..." << endl;
+				// TODO make this a parameter
+				if(timer_leave->isScheduled())
+					cancelEvent(timer_leave);
+				scheduleAt(simTime() + 2, timer_leave);
 
-			return;
+				return;
+			}
 		}
 	}
 
@@ -151,7 +153,7 @@ void MultitreePeer::handleTimerLeave()
 	TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 	reqPkt->setStripesArraySize(1);
 
-	if(m_partnerList->getNumOutgoingConnections() == 0)
+	if(!m_partnerList->hasChildren())
 	{
 		EV << "I am leaving and have no children -> Just disconnect from parents." << endl;
 		// Disconnect from parents
@@ -484,6 +486,13 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 	{
 		int stripe = treePkt->getStripes(i);
 
+		if( m_partnerList->hasChild(stripe, senderAddress) )
+		{
+			// If the DisconnectRequest comes from a child, just drop it.. regardless of state
+			disconnectFromChild(stripe, senderAddress);
+			return;
+		}
+
 		switch (m_state[stripe])
 		{
 			case TREE_JOIN_STATE_IDLE_WAITING:
@@ -521,11 +530,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			{
 				// A node wants to disconnect from me
 
-				if( m_partnerList->hasChild(stripe, senderAddress) )
-				{
-					disconnectFromChild(stripe, senderAddress);
-				}
-				else if( m_partnerList->hasParent(stripe, senderAddress) )
+				if( m_partnerList->hasParent(stripe, senderAddress) )
 				{
 					disconnectFromParent(stripe, treePkt->getAlternativeNode());
 				}
@@ -534,8 +539,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 					EV << "Received a DisconnectRequest (stripe " << stripe << ") from a node (" 
 						<< senderAddress << " that is neither child nor parent." << endl;
 					
-					//const char *sAddr = senderAddress.str().c_str();
-					//throw cException("Received a DisconnectRequest (stripe %d) from a node (%s) that is neither child nor parent.", sAddr, stripe);
+					const char *sAddr = senderAddress.str().c_str();
+					throw cException("Received a DisconnectRequest from a node (%s) (stripe %d) that is neither child nor parent.", sAddr, stripe);
 
 					//EV << "Received a DRQ from a node thats neither parent nor child. Sending DisconnectRequest to that node." << endl;
 					//TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
