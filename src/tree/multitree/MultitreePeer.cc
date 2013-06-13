@@ -454,10 +454,17 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		m_partnerList->addParent(stripe, address);
 	}
 
-	// Add myself to ActivePeerList so other peers can find me (to connect to me)
-	m_apTable->addAddress(getNodeAddress());
-
 	printStatus();
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_partnerList->getParent(i).isUnspecified())
+			return;
+
+		// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me (to connect to me)
+		m_apTable->addAddress(getNodeAddress());
+	}
+
 }
 
 void MultitreePeer::processDisconnectRequest(cPacket* pkt)
