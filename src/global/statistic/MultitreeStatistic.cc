@@ -35,7 +35,7 @@ void MultitreeStatistic::handleMessage(cMessage *msg)
     }
     else
     {
-        throw cException("ActivePeerTable doesn't process messages!");
+        throw cException("MultitreeStatistic doesn't process messages!");
     }
 }
 
