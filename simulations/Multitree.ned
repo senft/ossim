@@ -30,6 +30,24 @@ network Multitree_Network extends BasicNetwork
             datarate = 40Mbps;
         }
 
+		channel DSL1k_up extends ned.DatarateChannel
+        {
+            datarate = 128kbps;
+        }
+        channel DSL1k_down extends ned.DatarateChannel
+        {
+            datarate = 1024kbps;
+        }
+
+		channel channel_100mbit_up extends ned.DatarateChannel
+        {
+            datarate = 5Mbps;
+        }
+        channel channel_100mbit_down extends ned.DatarateChannel
+        {
+            datarate = 100Mbps;
+        }
+
     submodules:
         sourceNode: MultitreeSourceNode {
             @display("p=395,51;i=device/server");
@@ -63,6 +81,9 @@ network Multitree_Network extends BasicNetwork
 
         // -- Connect peers
         for i=0..nNodePerRouter-1 {
-            peerNode[i].pppg++ <--> ethernetline <--> router.pppg++;
+            //peerNode[i].pppg++ <--> ethernetline <--> router.pppg++;
+
+			peerNode[i].pppg$o++ --> channel_100mbit_up --> router.pppg$i++;
+			peerNode[i].pppg$i++ <-- channel_100mbit_down <-- router.pppg$o++;
         }
 }
