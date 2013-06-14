@@ -34,6 +34,26 @@ void MultitreeBase::initialize(int stage)
 
 		m_state = new TreeJoinState[numStripes];
 		lastSeqNumber = -1L;
+
+
+	double rate;
+    cModule* nodeModule = getParentModule();
+
+    int gateSize = nodeModule->gateSize("pppg$o");
+
+    for (int i = 0; i < gateSize; i++)
+    {
+        cGate* currentGate = nodeModule->gate("pppg$o", i);
+        if(currentGate->isConnected())
+        {
+            rate = check_and_cast<cDatarateChannel *>(currentGate->getChannel())->getDatarate();
+        }
+    }
+
+	EV << m_appSetting->getVideoStreamBitRate() << endl;
+	EV << "rate: " << rate << endl;
+	EV << m_appSetting->getVideoStreamBitRate() / rate << endl;
+
 	}
 }
 
