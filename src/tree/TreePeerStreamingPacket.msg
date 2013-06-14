@@ -84,6 +84,11 @@ packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_PASS_NODE_REQUEST;
+
+	int stripe;
+	int remainingBW;
+	float threshold;
+	float dependencyFactor;
 }
 
 packet TreeSuccessorInfoPacket extends TreePeerStreamingPacket

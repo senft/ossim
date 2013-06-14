@@ -43,6 +43,7 @@ public:
 	void removeChild(int stripe, IPvXAddress address);
 	std::set<IPvXAddress> getChildren();
 	std::vector<IPvXAddress> getChildren(int stripe);
+	IPvXAddress getBusiestChild(int stripe);
 
 	IPvXAddress getRandomNodeFor(int stripe, IPvXAddress forNode);
 

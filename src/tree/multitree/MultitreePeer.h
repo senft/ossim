@@ -25,6 +25,7 @@ private:
 
 	void processConnectConfirm(cPacket* pkt);
 	void processDisconnectRequest(cPacket *pkt);
+	void processPassNodeRequest(cPacket *pkt);
 
 	void leave(void);
 

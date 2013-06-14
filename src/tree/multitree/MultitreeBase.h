@@ -83,6 +83,9 @@ protected:
 
 	void printStatus(void);
 
+	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
+	int getPreferredStripe();
+
 private:
 
 	void getAppSetting(void);
@@ -98,11 +101,8 @@ private:
 	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);
 
 	virtual bool isPreferredStripe(int stripe) = 0;
-	int getPreferredStripe();
 
 	// Optimization functions
-	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
-
 	double getCosts(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child, IPvXAddress childToDrop);

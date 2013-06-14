@@ -140,7 +140,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 			EV << "Accepting ConnectRequest for stripe(s) ";
 			for (int i = 0; i < numReqStripes; ++i)
-				EV << treePkt->getStripes(i) << " ";
+				EV << treePkt->getStripes(i) << ", ";
 			EV << "of " << senderAddress << endl;
 
 			sendToDispatcher(acpPkt, m_localPort, senderAddress, m_destPort);
@@ -278,17 +278,19 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
     scheduleSuccessorInfo();
 
 	// Optimize when a node detects "major changes" in the topology below
-	//optimize();
+	optimize();
 }
 
 void MultitreeBase::disconnectFromChild(IPvXAddress address)
 {
+	EV << "Removing child: " << address << " (all stripes)" << endl;
 	m_partnerList->removeChild(address);
     scheduleSuccessorInfo();
 }
 
 void MultitreeBase::disconnectFromChild(int stripe, IPvXAddress address)
 {
+	EV << "Removing child: " << address << " (stripe: " << stripe << endl;
 	m_partnerList->removeChild(stripe, address);
     scheduleSuccessorInfo();
 }
@@ -320,39 +322,86 @@ bool MultitreeBase::hasBWLeft(int additionalConnections)
 
 void MultitreeBase::optimize(void)
 {
+	int stripe;
 
-	bool gain = true;
-	int stripe = getPreferredStripe();
-
-	EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
-
-	while(gain && m_partnerList->getChildren(stripe).size() > 1)
+	// TODO maybe start with a random stripe here, so not every node picks stripe 0 as its preferred
+	for (stripe = 0; stripe < numStripes; stripe++)
 	{
-		gain = false;
+		// This loop runs only 1 time in normal nodes, but multiple times in the source
+		if(!isPreferredStripe(stripe))
+			continue;
 
-		IPvXAddress linkToDrop;	
-		getCostliestChild(stripe, linkToDrop);
+		bool gain = true;
 
-		IPvXAddress alternativeParent;	
-		getCheapestChild(stripe, alternativeParent, linkToDrop);
+		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
-		EV << "COSTLIEST CHILD: " << linkToDrop << endl;
-		EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+		//while(gain && m_partnerList->getChildren(stripe).size() > 1)
+		//{
+		//	gain = false;
 
-		EV << "GAIN: " << getGain(stripe, alternativeParent) << " drop " << linkToDrop << " to " << alternativeParent << endl;
-		EV << "THRESHOLD: " << getGainThreshold() << endl;
+		//	IPvXAddress linkToDrop;	
+		//	getCostliestChild(stripe, linkToDrop);
 
-		double gain = getGain(stripe, alternativeParent);
+		//	IPvXAddress alternativeParent;	
+		//	getCheapestChild(stripe, alternativeParent, linkToDrop);
 
-		if( gain >= getGainThreshold() )
+		//	EV << "COSTLIEST CHILD: " << linkToDrop << endl;
+		//	EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+
+		//	EV << "GAIN: " << getGain(stripe, alternativeParent) << " drop " << linkToDrop << " to " << alternativeParent << endl;
+		//	EV << "THRESHOLD: " << getGainThreshold() << endl;
+
+		//	double gain = getGain(stripe, alternativeParent);
+
+		//	if( gain >= getGainThreshold() )
+		//	{
+		//		// Drop costliest to cheapest
+		//		EV << "DROP" << endl;
+		//		dropChild(stripe, linkToDrop, alternativeParent);
+		//		gain = true;
+		//	}
+		//}
+
+		// TODO while hasBWLeft() -> requestNode
+		
+		int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
+		EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
+			" outgoing connections. Max: " << getMaxOutConnections() << endl;
+
+		while(remainingBW > 0)
 		{
-			// Drop costliest to cheapest
-			EV << "DROP" << endl;
-			dropChild(stripe, linkToDrop, alternativeParent);
-			gain = true;
+			IPvXAddress busiestChild = m_partnerList->getBusiestChild(stripe);
+			int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, busiestChild);
+			if(childsSuccessors > 0)
+			{
+				// Only request nodes if the child HAS successors
+				TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
+
+				if(childsSuccessors <= remainingBW)
+				{
+					reqPkt->setRemainingBW(childsSuccessors);
+					remainingBW = remainingBW - childsSuccessors;
+					remainingBW = 0;
+				}
+				else
+				{
+					reqPkt->setRemainingBW(remainingBW);
+					remainingBW = 0;
+				}
+
+				reqPkt->setStripe(stripe);
+				reqPkt->setThreshold(getGainThreshold());
+				reqPkt->setDependencyFactor( (m_partnerList->getNumSuccessors(stripe) / 
+							m_partnerList->getNumOutgoingConnections(stripe)) - 1 );
+
+				sendToDispatcher(reqPkt, m_localPort, busiestChild, m_localPort);
+			}	
+			else
+			{
+				break;
+			}
 		}
 	}
-	// TODO while hasBWLeft() -> requestNode
 }
 
 void MultitreeBase::getCheapestChild(int fromStripe, IPvXAddress &address, IPvXAddress skipAddress)
@@ -518,7 +567,7 @@ int MultitreeBase::getPreferredStripe()
 	int max = 0;
 	for (int i = 1; i < numStripes; i++)
 	{
-		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumSuccessors(i) )
+		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumOutgoingConnections(i) )
 			max = i;
 	}
 	return max;
@@ -591,7 +640,7 @@ void MultitreeBase::printStatus(void)
 
 void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk)
 {
-	EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
+	//EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
 	if(lastChunk != -1)
 	{
 		for (int i = lastChunk; i <= lastSeqNumber; i++)
@@ -603,7 +652,7 @@ void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int la
 
 				if(stripePkt->getStripe() == stripe)
 				{
-					EV << "Sending chunk: " << i << endl;
+					//EV << "Sending chunk: " << i << endl;
 					sendToDispatcher(stripePkt->dup(), m_localPort, address, m_destPort);
 				}
 			}

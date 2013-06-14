@@ -344,6 +344,11 @@ void MultitreePeer::processPacket(cPacket *pkt)
 		processSuccessorUpdate(treeMsg);
 		break;
 	}
+	case TREE_PASS_NODE_REQUEST:
+	{
+		processPassNodeRequest(treeMsg);
+		break;
+	}
     default:
     {
         throw cException("MultitreePeer::processPacket: Unrecognized packet types! %d", treeMsg->getPacketType());
@@ -530,15 +535,12 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				else
 				{
 					EV << "Received a DisconnectRequest (stripe " << stripe << ") from a node (" 
-						<< senderAddress << " that is neither child nor parent." << endl;
+						<< senderAddress << " that is neither child nor parent. "
+					   	<< "Probably a PassNodeRequest arriving too late." << endl;
 					
-					const char *sAddr = senderAddress.str().c_str();
-					throw cException("Received a DisconnectRequest from a node (%s) (stripe %d) that is neither child nor parent.", sAddr, stripe);
-
-					//EV << "Received a DRQ from a node thats neither parent nor child. Sending DisconnectRequest to that node." << endl;
-					//TreeDisconnectRequestPacket *reqPkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-					//reqPkt->setStripe(stripe);
-					//sendToDispatcher(reqPkt, m_localPort, senderAddress, m_destPort);
+					//const char *sAddr = senderAddress.str().c_str();
+					//throw cException("Received a DisconnectRequest from a node (%s) (stripe %d) that is neither child nor parent.",
+						   	//sAddr, stripe);
 				}
 				break;
 			}
@@ -586,6 +588,29 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			}
 		}
 	}
+}
+
+void MultitreePeer::processPassNodeRequest(cPacket* pkt)
+{
+	IPvXAddress senderAddress;
+	getSender(pkt, senderAddress);
+
+	TreePassNodeRequestPacket *treePkt = check_and_cast<TreePassNodeRequestPacket *>(pkt);
+
+	int stripe = treePkt->getStripe();
+	int remainingBW = treePkt->getRemainingBW();
+	float threshold = treePkt->getThreshold();
+	float dependencyFactor = treePkt->getDependencyFactor();
+
+	EV << "PassNodeRequest from parent " << senderAddress << " (stripe: " << stripe << ") (remainingBW: "
+		<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
+		dependencyFactor << endl;
+
+	m_partnerList->printPartnerList();
+
+	// TODO pick a node the parent "can handle"
+	if(m_partnerList->getChildren(stripe).size() > 0)
+		dropChild(stripe, m_partnerList->getBusiestChild(stripe), senderAddress);
 }
 
 void MultitreePeer::leave(void)
@@ -642,13 +667,14 @@ int MultitreePeer::getMaxOutConnections()
 
 bool MultitreePeer::isPreferredStripe(int stripe)
 {
-	int numChildren = m_partnerList->getNumOutgoingConnections(stripe);
-	for (int i = 0; i < numStripes; i++)
-	{
-		if(i != stripe && numChildren < m_partnerList->getNumOutgoingConnections(i))
-			return false;
-	}
-	return true;
+	return stripe == getPreferredStripe();
+	//int numChildren = m_partnerList->getNumOutgoingConnections(stripe);
+	//for (int i = 0; i < numStripes; i++)
+	//{
+	//	if(i != stripe && numChildren < m_partnerList->getNumOutgoingConnections(i))
+	//		return false;
+	//}
+	//return true;
 }
 
 void MultitreePeer::onNewChunk(int sequenceNumber)
