@@ -77,7 +77,6 @@ protected:
 	void processSuccessorUpdate(cPacket *pkt);
 	void processConnectRequest(cPacket *pkt);
 	void disconnectFromChild(int stripe, IPvXAddress address); 
-	void disconnectFromChild(IPvXAddress address);
 
 	void optimize(void);
 
@@ -94,7 +93,7 @@ private:
 	void acceptConnectRequests(std::map<int, int> stripes, IPvXAddress address, int lastChunk);
 	void rejectConnectRequests(std::vector<int> stripes, IPvXAddress address);
 
-    virtual void scheduleSuccessorInfo(void) = 0;
+    virtual void scheduleSuccessorInfo(int stripe) = 0;
     virtual int getMaxOutConnections(void) = 0;
 	int getConnections(void);
 

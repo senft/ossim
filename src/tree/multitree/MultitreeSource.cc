@@ -123,7 +123,7 @@ void MultitreeSource::cancelAllTimer()
 }
 
 
-void MultitreeSource::scheduleSuccessorInfo(void)
+void MultitreeSource::scheduleSuccessorInfo(int stripe)
 { 
 	// Do nothing because a source has no parents...
 	printStatus();

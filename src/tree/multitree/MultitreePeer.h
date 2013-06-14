@@ -15,6 +15,8 @@ protected:
     virtual void finish(void);
 
 private:
+	bool *numSuccChanged;
+
 	double param_intervalReconnect;
 	double param_delaySuccessorInfo;
 
@@ -40,7 +42,7 @@ private:
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
 
-	virtual void scheduleSuccessorInfo(void);
+	virtual void scheduleSuccessorInfo(int);
 
 	void handleTimerJoin(void);
 	void handleTimerLeave(void);

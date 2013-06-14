@@ -48,6 +48,8 @@ void MultitreePeer::initialize(int stage)
 			m_state[i] = TREE_JOIN_STATE_IDLE;
 		}
 
+		numSuccChanged = new bool[numStripes];
+
 		m_count_prev_chunkMiss = 0L;
 		m_count_prev_chunkHit = 0L;
 
@@ -215,30 +217,37 @@ void MultitreePeer::handleTimerReportStatistic()
 void MultitreePeer::handleTimerSuccessorInfo(void)
 {
     TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_SUCCESSOR_INFO");
-	pkt->setNumSuccessorArraySize(numStripes);
 
 	for (int i = 0; i < numStripes; i++)
 	{
-		int numSucc = m_partnerList->getNumSuccessors(i);
-		pkt->setNumSuccessor(i, numSucc);
+		if(numSuccChanged[i])
+		{
+			int numSucc = m_partnerList->getNumSuccessors(i);
+			pkt->getStripes().insert( std::pair<int, int>( i, numSucc ) );
+		}
 	}
 
 	set<IPvXAddress> sentTo;
 	for (int i = 0; i < numStripes; i++)
 	{
-		IPvXAddress address = m_partnerList->getParent(i);
-        if( !address.isUnspecified() && sentTo.find(address) == sentTo.end() )
+		if(numSuccChanged[i])
 		{
-			sentTo.insert(address);
-			sendToDispatcher(pkt->dup(), m_localPort, address, m_destPort);
-        }
+			IPvXAddress parent = m_partnerList->getParent(i);
+        	if( !parent.isUnspecified() && sentTo.find(parent) == sentTo.end() )
+			{
+				sentTo.insert(parent);
+				sendToDispatcher(pkt->dup(), m_localPort, parent, m_destPort);
+        	}
+		}
 	}
 
 	delete pkt;
 }
 
-void MultitreePeer::scheduleSuccessorInfo(void)
+void MultitreePeer::scheduleSuccessorInfo(int stripe)
 {
+	numSuccChanged[stripe] = true;
+
 	printStatus();
 
     if(timer_successorInfo->isScheduled())
@@ -411,7 +420,6 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
 	std::map<int, IPvXAddress> stripes = treePkt->getStripes();
-	int numReqStripes = stripes.size();
 
 	IPvXAddress address;
 	getSender(pkt, address);
@@ -472,7 +480,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 	TreeDisconnectRequestPacket *treePkt = check_and_cast<TreeDisconnectRequestPacket *>(pkt);
 
 	std::map<int, IPvXAddress> stripes = treePkt->getStripes();
-	int numReqStripes = stripes.size();
 
 	IPvXAddress senderAddress;
 	getSender(pkt, senderAddress);

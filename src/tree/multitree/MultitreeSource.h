@@ -21,7 +21,7 @@ private:
 
 	void processDisconnectRequest(cPacket *pkt);
 
-	virtual void scheduleSuccessorInfo(void);
+	virtual void scheduleSuccessorInfo(int stripe);
 
 	virtual int getMaxOutConnections(void);
 

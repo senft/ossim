@@ -106,5 +106,5 @@ packet TreeSuccessorInfoPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_SUCCESSOR_INFO;
 
-    int		numSuccessor[];
+	IntIntMap   stripes;
 }

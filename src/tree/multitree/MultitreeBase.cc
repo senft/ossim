@@ -245,11 +245,11 @@ void MultitreeBase::rejectConnectRequests(std::vector<int> stripes, IPvXAddress 
 void MultitreeBase::acceptConnectRequests(std::map<int, int> stripes, IPvXAddress address, int lastChunk)
 {
 	TreeConnectConfirmPacket *pkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
+	pkt->setNextSequenceNumber(lastSeqNumber + 1);
 
 	EV << "Accepting ConnectRequest for stripe(s) ";
 	for (std::map<int, int>::iterator it = stripes.begin(); it != stripes.end(); ++it)
 	{
-
 		int stripe = it->first;
 		int numSucc = it->second;
 		IPvXAddress alternativeParent = getAlternativeNode(stripe, address);
@@ -262,54 +262,55 @@ void MultitreeBase::acceptConnectRequests(std::map<int, int> stripes, IPvXAddres
 	}
 	EV << " of node " << address << endl;
 
-	pkt->setNextSequenceNumber(lastSeqNumber + 1);
-
-
     sendToDispatcher(pkt, m_localPort, address, m_destPort);
 
 	for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
 	{
 		int stripe = it->first;
+		scheduleSuccessorInfo(stripe);
 		sendChunksToNewChild(stripe, address, lastChunk);
 	}
 
-    scheduleSuccessorInfo();
 }
 
 void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 {
     TreeSuccessorInfoPacket *treePkt = check_and_cast<TreeSuccessorInfoPacket *>(pkt);
-	int arraySize = treePkt->getNumSuccessorArraySize();
-	if(arraySize != numStripes)
-		throw cException("Received invalid SuccessorInfo. Contains %d numbers of successors. Should be %d.",
-				arraySize, numStripes);
+
+	std::map<int, int> stripes = treePkt->getStripes();
 
 	IPvXAddress address;
 	getSender(pkt, address);
 
-	for (int i = 0; i < numStripes; i++)
+	bool changes = false;
+
+	for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
 	{
-        m_partnerList->updateNumChildsSuccessors(i, address, treePkt->getNumSuccessor(i));
+		int stripe = it->first;
+		if(m_partnerList->hasChild(stripe, address))
+		{
+			int numSucc = it->second;
+			int oldSucc = m_partnerList->getNumChildsSuccessors(stripe, address);
+
+			if(numSucc != oldSucc)
+			{
+				changes = true;
+				scheduleSuccessorInfo(stripe);
+				m_partnerList->updateNumChildsSuccessors(stripe, address, numSucc);
+			}
+		}
 	}
 
-    scheduleSuccessorInfo();
-
-	// Optimize when a node detects "major changes" in the topology below
-	optimize();
-}
-
-void MultitreeBase::disconnectFromChild(IPvXAddress address)
-{
-	EV << "Removing child: " << address << " (all stripes)" << endl;
-	m_partnerList->removeChild(address);
-    scheduleSuccessorInfo();
+	if(changes)
+		// Optimize when a node detects "major changes" in the topology below
+		optimize();
 }
 
 void MultitreeBase::disconnectFromChild(int stripe, IPvXAddress address)
 {
 	EV << "Removing child: " << address << " (stripe: " << stripe << endl;
 	m_partnerList->removeChild(stripe, address);
-    scheduleSuccessorInfo();
+    scheduleSuccessorInfo(stripe);
 }
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
