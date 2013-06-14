@@ -86,13 +86,13 @@ protected:
 	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
 	int getPreferredStripe();
 
+	IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
+
 private:
 
 	void getAppSetting(void);
-	void acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors, int lastChunk);
-	void rejectConnectRequest(int stripe, IPvXAddress address);
-
-	IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
+	void acceptConnectRequests(std::map<int, int> stripes, IPvXAddress address, int lastChunk);
+	void rejectConnectRequests(std::vector<int> stripes, IPvXAddress address);
 
     virtual void scheduleSuccessorInfo(void) = 0;
     virtual int getMaxOutConnections(void) = 0;
