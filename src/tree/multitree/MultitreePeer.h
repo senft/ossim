@@ -15,6 +15,8 @@ protected:
     virtual void finish(void);
 
 private:
+	bool *numSuccChanged;
+
 	double param_intervalReconnect;
 	double param_delaySuccessorInfo;
 
@@ -25,6 +27,7 @@ private:
 
 	void processConnectConfirm(cPacket* pkt);
 	void processDisconnectRequest(cPacket *pkt);
+	void processPassNodeRequest(cPacket *pkt);
 
 	void leave(void);
 
@@ -33,13 +36,13 @@ private:
 	virtual int getMaxOutConnections(void);
 	virtual bool isPreferredStripe(int stripe);
 
-	void connectVia(IPvXAddress address, int numReqStripes, int stripes[]);
-	void connectVia(IPvXAddress address, int stripe);
+	void connectVia(IPvXAddress address, std::vector<int> stripes);
+	//void connectVia(IPvXAddress address, int stripe);
 
     void bindToGlobalModule(void);
     void bindToTreeModule(void);
 
-	virtual void scheduleSuccessorInfo(void);
+	virtual void scheduleSuccessorInfo(int);
 
 	void handleTimerJoin(void);
 	void handleTimerLeave(void);

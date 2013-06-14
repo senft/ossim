@@ -17,6 +17,7 @@ def main():
     v = [n for n in v if n > 0]
 
     bins = sorted(set(n for n in v))
+    bins.append(bins[-1] + 1)
 
     fig, ax = plt.subplots(1, 1)
 

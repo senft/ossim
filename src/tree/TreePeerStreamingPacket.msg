@@ -32,10 +32,16 @@
 cplusplus {{
 #include <PeerStreamingPacket_m.h>
 #include <IPvXAddress.h>
+
+typedef std::map<int, int> IntIntMap;
+typedef std::map<int, IPvXAddress> IntAddrMap;
 }}
 
 class PeerStreamingPacket;
 class IPvXAddress extends void;
+
+class noncobject IntIntMap;
+class noncobject IntAddrMap;
 
 enum TreePeerStreamingPacketType
 {
@@ -60,35 +66,45 @@ packet TreeConnectRequestPacket extends TreePeerStreamingPacket
     packetType = TREE_CONNECT_REQUEST;
 
 	int			lastReceivedChunk = -1;
-    int			stripes[];
-    int			numSuccessor[];
+	IntIntMap   stripes;
+    //int			stripes[];
+    //int			numSuccessor[];
 }
 
 packet TreeConnectConfirmPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_CONNECT_CONFIRM;
 
-    int			stripes[];
+	IntAddrMap	    stripes;
+
+    //int			stripes[];
+	//IPvXAddress alternativeNode;
+
     int			nextSequenceNumber = -1;
-	IPvXAddress alternativeNode;
 }
 
 packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_DISCONNECT_REQUEST;
 
-	IPvXAddress alternativeNode;
-    int			stripes[];
+	IntAddrMap	    stripes;
+	//IPvXAddress alternativeNode;
+    //int			stripes[];
 }
 
 packet TreePassNodeRequestPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_PASS_NODE_REQUEST;
+
+	int stripe;
+	int remainingBW;
+	float threshold;
+	float dependencyFactor;
 }
 
 packet TreeSuccessorInfoPacket extends TreePeerStreamingPacket
 {
     packetType = TREE_SUCCESSOR_INFO;
 
-    int		numSuccessor[];
+	IntIntMap   stripes;
 }

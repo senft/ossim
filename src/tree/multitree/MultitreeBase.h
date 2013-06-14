@@ -77,32 +77,31 @@ protected:
 	void processSuccessorUpdate(cPacket *pkt);
 	void processConnectRequest(cPacket *pkt);
 	void disconnectFromChild(int stripe, IPvXAddress address); 
-	void disconnectFromChild(IPvXAddress address);
 
 	void optimize(void);
 
 	void printStatus(void);
 
-private:
-
-	void getAppSetting(void);
-	void acceptConnectRequest(int stripe, IPvXAddress address, int numSuccessors, int lastChunk);
-	void rejectConnectRequest(int stripe, IPvXAddress address);
+	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
+	int getPreferredStripe();
 
 	IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
 
-    virtual void scheduleSuccessorInfo(void) = 0;
+private:
+
+	void getAppSetting(void);
+	void acceptConnectRequests(std::map<int, int> stripes, IPvXAddress address, int lastChunk);
+	void rejectConnectRequests(std::vector<int> stripes, IPvXAddress address);
+
+    virtual void scheduleSuccessorInfo(int stripe) = 0;
     virtual int getMaxOutConnections(void) = 0;
 	int getConnections(void);
 
 	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);
 
 	virtual bool isPreferredStripe(int stripe) = 0;
-	int getPreferredStripe();
 
 	// Optimization functions
-	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
-
 	double getCosts(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child, IPvXAddress childToDrop);
