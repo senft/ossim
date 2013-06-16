@@ -42,12 +42,16 @@ void MultitreePeer::initialize(int stage)
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 
+		stat_retrys = new int[numStripes];
+		numSuccChanged = new bool[numStripes];
+
 		for (int i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_IDLE;
+			stat_retrys[i] = 0;
+			numSuccChanged[i] = false;
 		}
 
-		numSuccChanged = new bool[numStripes];
 
 		m_count_prev_chunkMiss = 0L;
 		m_count_prev_chunkHit = 0L;
@@ -66,6 +70,7 @@ void MultitreePeer::finish(void)
 
 	cancelAndDeleteTimer();
 
+	delete[] stat_retrys;
 	delete[] numSuccChanged;
 }
 
@@ -448,6 +453,9 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		requestedChildship[stripe] = IPvXAddress();
 		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
 		m_partnerList->addParent(stripe, address);
+
+		m_gstat->reportConnectionRetry(stat_retrys[stripe]);
+		stat_retrys[stripe] = 0;
 	}
 
 	printStatus();
@@ -500,6 +508,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				}
 
 				// A node rejected my ConnectRequest
+				
+				stat_retrys[stripe]++;
 
 				m_state[stripe] = TREE_JOIN_STATE_IDLE;
 				requestedChildship[stripe] = IPvXAddress();

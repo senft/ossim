@@ -11,7 +11,8 @@ void MultitreeStatistic::initialize(int stage)
 {
     if (stage == 0)
     {
-        sig_chunkArrival    = registerSignal("Signal_Chunk_Arrival");
+        sig_chunkArrival		= registerSignal("Signal_Chunk_Arrival");
+        sig_connectionRetry     = registerSignal("Signal_Connection_Retry");
 	}
 
     if (stage != 3)
@@ -47,6 +48,11 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 void MultitreeStatistic::reportChunkArrival(const int hopcount)
 {
     emit(sig_chunkArrival, hopcount);
+}
+
+void MultitreeStatistic::reportConnectionRetry(const int count)
+{
+    emit(sig_connectionRetry, count);
 }
 
 void MultitreeStatistic::increaseChunkHit(const int &delta)

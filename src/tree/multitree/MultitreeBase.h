@@ -88,7 +88,6 @@ protected:
 	IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
 
 private:
-
 	double getBWCapacity(void);
 
 	void getAppSetting(void);

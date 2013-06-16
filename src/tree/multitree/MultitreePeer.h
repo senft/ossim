@@ -15,6 +15,8 @@ protected:
     virtual void finish(void);
 
 private:
+	int *stat_retrys;
+
 	bool *numSuccChanged;
 
 	double param_retryLeave;

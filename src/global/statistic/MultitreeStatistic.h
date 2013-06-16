@@ -24,24 +24,21 @@ public:
 
     virtual void handleMessage(cMessage *msg);
 
-void increaseChunkHit(const int &delta);
-void increaseChunkMiss(const int &delta);
+	void increaseChunkHit(const int &delta);
+	void increaseChunkMiss(const int &delta);
 
-virtual void receiveChangeNotification(int category, const cPolymorphic *details);
+	virtual void receiveChangeNotification(int category, const cPolymorphic *details);
 
-private:
-void handleTimerMessage(cMessage *msg);
-
-public:
-void reportChunkArrival(const int hopcount);
+	void reportChunkArrival(const int hopcount);
+	void reportConnectionRetry(const int count);
 
 private:
+	void handleTimerMessage(cMessage *msg);
 
-private:
-ActivePeerTable *m_apTable;
+	ActivePeerTable *m_apTable;
 
-simsignal_t sig_chunkArrival;
-
+	simsignal_t sig_chunkArrival;
+	simsignal_t sig_connectionRetry;
 
 	long m_count_chunkHit;
 	long m_count_chunkMiss;
