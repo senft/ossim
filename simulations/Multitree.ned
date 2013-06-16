@@ -3,7 +3,6 @@ package so.simulations;
 import inet.networklayer.autorouting.FlatNetworkConfigurator;
 import inet.nodes.inet.Router;
 import so.global.ActivePeerTable;
-//import so.global.AppSettingDonet;
 import so.global.AppSettingMultitree;
 import so.global.churn.IChurnModel;
 import so.tree.multitree.MultitreePeerNode;
@@ -15,21 +14,18 @@ import so.global.statistic.IStreamingStatistic;
 network Multitree_Network extends BasicNetwork
 {
     parameters:
-        int nNodePerRouter;
         string churnModel = default("UniformChurn");
         string statisticModule = default("MultitreeStatistic");
         @display("bgb=472,324");
 
-    types:
-        channel Channel_9M_up extends ned.DatarateChannel
-        {
-            datarate = 9Mbps;
-        }
-        channel Channel_9M_down extends ned.DatarateChannel
-        {
-            datarate = 40Mbps;
-        }
+        int nNodePerRouter;
 
+		double percentGroup1;
+        double percentGroup2;
+        double percentGroup3;
+        double percentGroup4;
+
+    types:
 		channel DSL1k_up extends ned.DatarateChannel
         {
             datarate = 128kbps;
@@ -48,13 +44,22 @@ network Multitree_Network extends BasicNetwork
             datarate = 6016kbps;
         }
 
-		channel channel_100mbit_up extends ned.DatarateChannel
+		channel DSL16k_up extends ned.DatarateChannel
         {
-            datarate = 5Mbps;
+            datarate = 1024kbps;
         }
-        channel channel_100mbit_down extends ned.DatarateChannel
+        channel DSL16k_down extends ned.DatarateChannel
         {
-            datarate = 100Mbps;
+            datarate = 16000kbps;
+        }
+
+		channel Channel_50M_up extends ned.DatarateChannel
+        {
+            datarate = 10Mbps;
+        }
+        channel Channel_50M_down extends ned.DatarateChannel
+        {
+            datarate = 50Mbps;
         }
 
     submodules:
@@ -85,12 +90,31 @@ network Multitree_Network extends BasicNetwork
 
     connections:
         // -- Connect source
-        sourceNode.pppg$o++ --> DSL6k_up --> router.pppg$i++;
-        sourceNode.pppg$i++ <-- DSL6k_down <-- router.pppg$o++;
+        sourceNode.pppg$o++ --> DSL16k_up --> router.pppg$i++;
+        sourceNode.pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
 
         // -- Connect peers
-        for i=0..nNodePerRouter-1 {
-			peerNode[i].pppg$o++ --> DSL1k_up --> router.pppg$i++;
-			peerNode[i].pppg$i++ <-- channel_100mbit_down <-- router.pppg$o++;
+		// -- -- Group 1
+		for i=0..(nNodePerRouter-1) * percentGroup1 {
+            peerNode[i].pppg$o++ --> DSL1k_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- DSL1k_down <-- router.pppg$o++;
+        }
+
+		// -- -- Group 2
+		for i=(nNodePerRouter-1) * percentGroup1..(nNodePerRouter-1) * percentGroup2{
+            peerNode[i].pppg$o++ --> DSL6k_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- DSL6k_down <-- router.pppg$o++;
+        }
+
+        // -- -- Group 3
+		for i=(nNodePerRouter-1) * percentGroup2..(nNodePerRouter-1) * percentGroup3{
+            peerNode[i].pppg$o++ --> DSL16k_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
+        }
+
+        // -- -- Group 4
+		for i=(nNodePerRouter-1) * percentGroup3..(nNodePerRouter-1){
+            peerNode[i].pppg$o++ --> Channel_50M_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
         }
 }
