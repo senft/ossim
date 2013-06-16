@@ -312,22 +312,20 @@ void MultitreeBase::optimize(void)
 		//	EV << "COSTLIEST CHILD: " << linkToDrop << endl;
 		//	EV << "CHEAPEST CHILD: " << alternativeParent << endl;
 
-		//	EV << "GAIN: " << getGain(stripe, alternativeParent) << " drop " << linkToDrop << " to " << alternativeParent << endl;
+		//	EV << "GAIN: " << getGain(stripe, alternativeParent, linkToDrop) << endl;
 		//	EV << "THRESHOLD: " << getGainThreshold() << endl;
 
-		//	double gain = getGain(stripe, alternativeParent);
+		//	double gain = getGain(stripe, alternativeParent, linkToDrop);
 
-		//	if( gain >= getGainThreshold() )
+		//	if(gain >= getGainThreshold())
 		//	{
 		//		// Drop costliest to cheapest
-		//		EV << "DROP" << endl;
-		//		dropChild(stripe, linkToDrop, alternativeParent);
+		//		EV << "DROP " << linkToDrop << " (stripe: " << stripe << ") to " << alternativeParent << endl;
+		//		//dropChild(stripe, linkToDrop, alternativeParent);
 		//		gain = true;
 		//	}
 		//}
 
-		// TODO while hasBWLeft() -> requestNode
-		
 		int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
 		EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 			" outgoing connections. Max: " << getMaxOutConnections() << endl;
@@ -382,7 +380,9 @@ void MultitreeBase::getCheapestChild(int fromStripe, IPvXAddress &address, IPvXA
 		if(curAddress.equals(skipAddress))
 			continue;
 
-		int curGain = getGain(fromStripe, curAddress);
+		double curGain = getGain(fromStripe, curAddress, IPvXAddress());
+
+		//EV << "checking: " << curAddress << ", gain: " << curGain << endl;
 
 		if(curMaxGain < curGain)
 		{
@@ -391,20 +391,6 @@ void MultitreeBase::getCheapestChild(int fromStripe, IPvXAddress &address, IPvXA
 		}
 	}
 	address = curMaxAddress;
-}
-
-
-double MultitreeBase::getGain(int stripe, IPvXAddress child)
-{
-	//EV << "*************** GAIN ******************" << endl;
-	//EV << "Stripe: " << stripe << " Child: " << child << endl;
-	//EV << "K3: " << getBalanceCosts(stripe, child, IPvXAddress()) << endl;
-	//EV << "K2: " << getForwardingCosts(stripe, child) << endl;
-	//EV << "Total: " << getBalanceCosts(stripe, child, IPvXAddress()) - getForwardingCosts(stripe, child) << endl;
-	//EV << "****************************************" << endl;
-
-	// K_3 - K_2
-	return getBalanceCosts(stripe, child, IPvXAddress()) - getForwardingCosts(stripe, child);
 }
 
 double MultitreeBase::getGain(int stripe, IPvXAddress child, IPvXAddress childToDrop)
@@ -428,7 +414,7 @@ void MultitreeBase::getCostliestChild(int fromStripe, IPvXAddress &address)
 
 	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it) {
 		IPvXAddress curAddress = (IPvXAddress)*it;
-		int curCosts = getCosts(fromStripe, curAddress);
+		double curCosts = getCosts(fromStripe, curAddress);
 
 		//EV << "checking: " << curAddress << ", costs: " << curCosts << endl;
 
@@ -445,10 +431,10 @@ double MultitreeBase::getCosts(int stripe, IPvXAddress child)
 {
 	//EV << "****************************************" << endl;
 	//EV << "Stripe: " << stripe << " Child: " << child << endl;
-	//EV << "K1: " << getStripeDensityCosts(stripe) << endl;
-	//EV << "K2: " << getForwardingCosts(stripe, child) << endl;
-	//EV << "K3: " << getBalanceCosts(stripe, child, IPvXAddress()) << endl;
-	//EV << "K4: " << getDepencyCosts(child) << endl;
+	//EV << "K1: " << getStripeDensityCosts(stripe);
+	//EV << " K2: " << getForwardingCosts(stripe, child);
+	//EV << " K3: " << getBalanceCosts(stripe, child, IPvXAddress());
+	//EV << " K4: " << getDepencyCosts(child);
 	//EV << "Total: " << getStripeDensityCosts(stripe)
 	//	+ 2 * getForwardingCosts(stripe, child)
 	//	+ 3 * getBalanceCosts(stripe, child, IPvXAddress())
@@ -465,8 +451,8 @@ double MultitreeBase::getCosts(int stripe, IPvXAddress child)
 double MultitreeBase::getStripeDensityCosts(int stripe) // K_sel ,K_1
 {
 	int fanout = m_partnerList->getNumOutgoingConnections(stripe);
-	int outCapacity = getMaxOutConnections() / numStripes;
-	//EV << fanout << " " << outCapacity << endl;
+	float outCapacity = bwCapacity - 1;
+	//EV << "K1: " << fanout << " " << outCapacity << endl;
 	return 1 - (fanout / outCapacity);
 }
 
@@ -477,33 +463,28 @@ int MultitreeBase::getForwardingCosts(int stripe, IPvXAddress child) // K_forw, 
 
 double MultitreeBase::getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress childToDrop) // K_bal, K_3
 {
-    int mySuccessors = m_partnerList->getNumSuccessors(stripe);
-    int myChildren = m_partnerList->getNumOutgoingConnections(stripe);
+    double mySuccessors = m_partnerList->getNumSuccessors(stripe);
+    double myChildren = m_partnerList->getNumOutgoingConnections(stripe);
 
-	if(childToDrop.isUnspecified())
-	{
+    int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, child);
+
+	// EV << "fanout: " << myChildren << " mySucc: " << mySuccessors << " childsSucc: " << childsSuccessors << endl; 
+
+	if(!childToDrop.isUnspecified())
 		myChildren--;
-	//	mySuccessors -= m_partnerList->getNumOutgoingConnections(stripe, childToDrop);
-		//mySuccessors = mySuccessors - m_partnerList->getNumOutgoingConnections(stripe, childToDrop);
-	}
 
 	if(myChildren == 0) // TODO is this ok?
 		return 0;
 
     double x = (mySuccessors / myChildren) - 1.0;
 
-	//EV << "mySucc: " << mySuccessors << " " << "myChil: " << myChildren << " "
-	//	<< "bruch: " << x  << " " << "childsSucc: "
-	//	<< m_partnerList->getNumOutgoingConnections(stripe, child) << endl;
-
 	if(x == 0) // TODO is this ok?
 		return 0;
 
-    int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, child);
-	if(childToDrop.isUnspecified())
+	if(!childToDrop.isUnspecified())
 		childsSuccessors++;
 
-    return   (x - childsSuccessors) / x;
+    return  (x - childsSuccessors) / x;
 }
 
 double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
@@ -539,8 +520,11 @@ int MultitreeBase::getPreferredStripe()
 
 double MultitreeBase::getGainThreshold(void)
 {
-	double t = 0.2;
-	int b = getConnections() / bwCapacity;
+	float t = 0.2;
+	float b = getConnections() / (bwCapacity * numStripes);
+
+	//EV << "deg: " << getConnections() << " max: " << (bwCapacity * numStripes) << " b: " << b << endl;
+
 	if(b == 1)
 		return INT_MIN;
 
@@ -553,8 +537,6 @@ void MultitreeBase::dropChild(int stripe, IPvXAddress address, IPvXAddress alter
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 	pkt->getStripes().insert( std::pair<int, IPvXAddress>( stripe, alternativeParent ) );
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
-
-	//m_partnerList->removeChild(stripe, address);
 }
 
 int MultitreeBase::getConnections(void)

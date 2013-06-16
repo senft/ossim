@@ -105,7 +105,6 @@ private:
 
 	// Optimization functions
 	double getCosts(int stripe, IPvXAddress child);
-	double getGain(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child, IPvXAddress childToDrop);
 	double getGainThreshold(void);
 
