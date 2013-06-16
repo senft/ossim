@@ -19,8 +19,6 @@ void MultitreeBase::initialize(int stage)
 		getAppSetting();
 		findNodeAddress();
 
-		bwCapacity = par("bwCapacity");
-
 		requestedChildship = new IPvXAddress[numStripes];
 
 		m_videoBuffer->addListener(this);
@@ -34,26 +32,7 @@ void MultitreeBase::initialize(int stage)
 
 		m_state = new TreeJoinState[numStripes];
 		lastSeqNumber = -1L;
-
-
-	double rate;
-    cModule* nodeModule = getParentModule();
-
-    int gateSize = nodeModule->gateSize("pppg$o");
-
-    for (int i = 0; i < gateSize; i++)
-    {
-        cGate* currentGate = nodeModule->gate("pppg$o", i);
-        if(currentGate->isConnected())
-        {
-            rate = check_and_cast<cDatarateChannel *>(currentGate->getChannel())->getDatarate();
-        }
-    }
-
-	EV << m_appSetting->getVideoStreamBitRate() << endl;
-	EV << "rate: " << rate << endl;
-	EV << m_appSetting->getVideoStreamBitRate() / rate << endl;
-
+		bwCapacity = getBWCapacity();
 	}
 }
 
@@ -676,4 +655,25 @@ void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int la
 		}
 	}
 
+}
+
+double MultitreeBase::getBWCapacity(void)
+{
+	double rate;
+    cModule* nodeModule = getParentModule();
+
+    int gateSize = nodeModule->gateSize("pppg$o");
+
+    for (int i = 0; i < gateSize; i++)
+    {
+        cGate* currentGate = nodeModule->gate("pppg$o", i);
+        if(currentGate->isConnected())
+        {
+            rate = check_and_cast<cDatarateChannel *>(currentGate->getChannel())->getDatarate();
+        }
+    }
+
+	double capacity = (rate / m_appSetting->getVideoStreamBitRate()) + 1;
+	EV << "Detected bandwidth capacity of " << capacity << endl;
+	return capacity;
 }

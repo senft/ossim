@@ -89,6 +89,8 @@ protected:
 
 private:
 
+	double getBWCapacity(void);
+
 	void getAppSetting(void);
 	void acceptConnectRequests(std::map<int, int> stripes, IPvXAddress address, int lastChunk);
 	void rejectConnectRequests(std::vector<int> stripes, IPvXAddress address);
