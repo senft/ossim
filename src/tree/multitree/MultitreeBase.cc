@@ -96,7 +96,6 @@ void MultitreeBase::bindToStatisticModule(void)
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
-	// TODO: Refactor?!
 	IPvXAddress senderAddress;
     getSender(pkt, senderAddress);
 
@@ -132,11 +131,11 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					<< ". Rejecting..." << endl;
 				reject.push_back(stripe);
 			}
-			else if( m_partnerList->hasChild(stripe, senderAddress) )
-			{
-				EV << "Received ConnectRequest from child " << senderAddress << " for stripe " << stripe 
-					<< ". Ignoring..." << endl;
-			}
+			//else if( m_partnerList->hasChild(stripe, senderAddress) )
+			//{
+			//	EV << "Received ConnectRequest from child " << senderAddress << " for stripe " << stripe 
+			//		<< ". Ignoring..." << endl;
+			//}
 			else if( requestedChildship[stripe].equals(senderAddress) )
 			{
 				// TODO: would be better to just queue this.. maybe the node rejects me
@@ -333,6 +332,7 @@ void MultitreeBase::optimize(void)
 		while(remainingBW > 0)
 		{
 			IPvXAddress busiestChild = m_partnerList->getBusiestChild(stripe);
+			// TODO this should request nodes from all children
 			int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, busiestChild);
 			if(childsSuccessors > 0)
 			{

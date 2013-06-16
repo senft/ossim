@@ -428,14 +428,17 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		int stripe = it->first;
 		IPvXAddress alternativeParent = it->second;
 
-		if(!m_partnerList->getParent(stripe).isUnspecified())
+		IPvXAddress oldParent = m_partnerList->getParent(stripe);
+		if(!oldParent.isUnspecified())
 		{
 			// There already is another parent for this stripe (I disconnected from it, though).
 			// So now I should tell him that it can stop forwarding packets to me
-			EV << "Switching parent in stripe: " << stripe << " old: " << m_partnerList->getParent(stripe) << " new: " << address << endl;
+			EV << "Switching parent in stripe: " << stripe << " old: " << m_partnerList->getParent(stripe)
+				<< " new: " << address << endl;
 
-			// No need to give an alternative when disconnecting from a parent
-			dropChild(stripe, m_partnerList->getParent(stripe), IPvXAddress());
+			if(address.equals(oldParent))
+				// No need to give an alternative when disconnecting from a parent
+				dropChild(stripe, m_partnerList->getParent(stripe), IPvXAddress());
 		}
 		else
 		{
@@ -489,6 +492,13 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		{
 			case TREE_JOIN_STATE_IDLE_WAITING:
 			{
+				if(m_partnerList->hasParent(stripe, senderAddress))
+				{
+					EV << "Received another DisconnectRequest (stripe " << stripe << ") from parent ("
+						<< senderAddress << "). Ignoring..." << endl;
+					return;
+				}
+
 				// A node rejected my ConnectRequest
 
 				m_state[stripe] = TREE_JOIN_STATE_IDLE;
@@ -578,15 +588,19 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 
 void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 {
-	IPvXAddress senderAddress;
-	getSender(pkt, senderAddress);
-
 	TreePassNodeRequestPacket *treePkt = check_and_cast<TreePassNodeRequestPacket *>(pkt);
 
 	int stripe = treePkt->getStripe();
+
+	if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
+		return;
+
 	int remainingBW = treePkt->getRemainingBW();
 	float threshold = treePkt->getThreshold();
 	float dependencyFactor = treePkt->getDependencyFactor();
+
+	IPvXAddress senderAddress;
+	getSender(pkt, senderAddress);
 
 	EV << "PassNodeRequest from parent " << senderAddress << " (stripe: " << stripe << ") (remainingBW: "
 		<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
