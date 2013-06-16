@@ -20,6 +20,8 @@ void MultitreePeer::initialize(int stage)
 	if(stage == 3)
 	{
 
+		param_retryLeave = par("retryLeave");
+
 		param_intervalReconnect =  m_appSetting->getIntervalReconnect();
 		param_delaySuccessorInfo = m_appSetting->getDelaySuccessorInfo();
 
@@ -138,10 +140,9 @@ void MultitreePeer::handleTimerLeave()
 			if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 			{
 				EV << "Leave scheduled for now, but I am inactive in one stripe. Rescheduling..." << endl;
-				// TODO make this a parameter
 				if(timer_leave->isScheduled())
 					cancelEvent(timer_leave);
-				scheduleAt(simTime() + 2, timer_leave);
+				scheduleAt(simTime() + param_retryLeave, timer_leave);
 
 				return;
 			}

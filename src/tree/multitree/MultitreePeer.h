@@ -17,6 +17,8 @@ protected:
 private:
 	bool *numSuccChanged;
 
+	double param_retryLeave;
+
 	double param_intervalReconnect;
 	double param_delaySuccessorInfo;
 
