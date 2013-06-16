@@ -39,7 +39,8 @@ void MultitreeBase::initialize(int stage)
 void MultitreeBase::finish(void)
 {
 	m_partnerList->clear();
-	delete [] m_state;
+	delete[] m_state;
+	delete[] requestedChildship;
 }
 
 void MultitreeBase::handleMessage(cMessage *msg)

@@ -66,6 +66,8 @@ void MultitreePeer::finish(void)
 	MultitreeBase::finish();
 
 	cancelAndDeleteTimer();
+
+	delete[] numSuccChanged;
 }
 
 
