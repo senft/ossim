@@ -94,8 +94,7 @@ void MultitreeSource::processDisconnectRequest(cPacket* pkt)
 	for (std::map<int, IPvXAddress>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
 	{
 		int stripe = it->first;
-		EV << "Removing " << address.str() << " (stripe " << stripe << ")" << endl;
-		disconnectFromChild(stripe, address);
+		removeChild(stripe, address);
 	}
 }
  
@@ -126,7 +125,6 @@ void MultitreeSource::cancelAllTimer()
 void MultitreeSource::scheduleSuccessorInfo(int stripe)
 { 
 	// Do nothing because a source has no parents...
-	printStatus();
 }
 
 int MultitreeSource::getMaxOutConnections()

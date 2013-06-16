@@ -178,7 +178,6 @@ IPvXAddress MultitreePartnerList::getParent(int stripe)
 
 void MultitreePartnerList::removeParent(int stripe)
 {
-	// TODO: maybe a check would be better?!
 	IPvXAddress address;
 	parents[stripe] = address;
 }

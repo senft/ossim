@@ -42,9 +42,6 @@ void MultitreePeer::initialize(int stage)
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 
-		// TODO: maybe schedule this first when connected to the system
-		scheduleAt(simTime() + 2, timer_reportStatistic);
-
 		for (int i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_IDLE;
@@ -256,7 +253,6 @@ void MultitreePeer::scheduleSuccessorInfo(int stripe)
     if(timer_successorInfo->isScheduled())
 		return;
 
-	// TODO this only happens in forwarding nodes
 	EV << "SCHEDULING SUCC_INFO to: " << simTime() + param_delaySuccessorInfo << endl;
     scheduleAt(simTime() + param_delaySuccessorInfo, timer_successorInfo);
 }
@@ -364,14 +360,7 @@ void MultitreePeer::processPacket(cPacket *pkt)
     delete pkt;
 }
 
-//void MultitreePeer::connectVia(IPvXAddress address, int stripe)
-//{
-//	int reqStripes[1];
-//	reqStripes[0] = stripe;
-//	connectVia(address, 1, reqStripes);
-//}
-
-void MultitreePeer::connectVia(IPvXAddress address, std::vector<int> stripes)
+void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stripes)
 {
 	int numReqStripes = stripes.size();
 
@@ -389,8 +378,8 @@ void MultitreePeer::connectVia(IPvXAddress address, std::vector<int> stripes)
 	TreeConnectRequestPacket *pkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
 	pkt->setLastReceivedChunk(lastSeqNumber);
 
-	// Set requested stripes
 	EV << "Sending ConnectRequest for stripe(s) ";
+
 	for (int i = 0; i < numReqStripes; i++)
 	{
 		int stripe = stripes[i];
@@ -401,20 +390,12 @@ void MultitreePeer::connectVia(IPvXAddress address, std::vector<int> stripes)
 		requestedChildship[stripe] = address;
 		m_state[stripe] = TREE_JOIN_STATE_IDLE_WAITING;
 
-		EV << stripe << " ";
+		EV << stripe << ", ";
 	}
+
 	EV << "to " << address << " " << endl;
 
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
-
-	// Include my numbers of successors
-	//reqPkt->setNumSuccessorArraySize(numStripes);
-	//for (int i = 0; i < numStripes; i++)
-	//{
-	//	int numSucc = m_partnerList->getNumSuccessors(i);
-	//	reqPkt->setNumSuccessor(i, numSucc);
-	//}
-	
 }
 
 void MultitreePeer::processConnectConfirm(cPacket* pkt)
@@ -458,7 +439,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		}
 		else
 		{
-			EV << "New parent in stripe : " << stripe << " starts forwarding with chunk #" << nextSeq << endl;
+			EV << "New parent in stripe: " << stripe << endl;
 		}
 
 		requestedChildship[stripe] = IPvXAddress();
@@ -475,6 +456,10 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 		// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me (to connect to me)
 		m_apTable->addAddress(getNodeAddress());
+
+		// Start collecting statistics
+		if(!timer_reportStatistic->isScheduled())
+			scheduleAt(simTime() + 2, timer_reportStatistic);
 	}
 }
 
@@ -496,7 +481,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		{
 			// If the DisconnectRequest comes from a child, just remove it from
 			// my PartnerList it.. regardless of state
-			disconnectFromChild(stripe, senderAddress);
+			removeChild(stripe, senderAddress);
 			return;
 		}
 
@@ -518,9 +503,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				else if(m_partnerList->hasChild(stripe, alternativeParent)) // To avoid connecting to a child
 				{
 					EV << "Node suggested my child as an alternative node." << endl;
-					// TODO: what's best here? Try to connect to child and let
-					// him give me another node, reconnect to the node that
-					// just suggested connecting to my child?
 					std::vector<int> connect;
 					connect.push_back(stripe);
 					connectVia(senderAddress, connect);
@@ -547,10 +529,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 					EV << "Received a DisconnectRequest (stripe " << stripe << ") from a node (" 
 						<< senderAddress << " that is neither child nor parent. "
 					   	<< "Probably a PassNodeRequest arriving too late." << endl;
-					
-					//const char *sAddr = senderAddress.str().c_str();
-					//throw cException("Received a DisconnectRequest from a node (%s) (stripe %d) that is neither child nor parent.",
-						   	//sAddr, stripe);
 				}
 				break;
 			}
@@ -612,9 +590,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 	EV << "PassNodeRequest from parent " << senderAddress << " (stripe: " << stripe << ") (remainingBW: "
 		<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
-		dependencyFactor << endl;
-
-	m_partnerList->printPartnerList();
+		dependencyFactor << ")" << endl;
 
 	// TODO pick a node the parent "can handle"
 	if(m_partnerList->getChildren(stripe).size() > 0)
@@ -634,13 +610,12 @@ void MultitreePeer::leave(void)
 
 void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativeParent)
 {
-	// TODO: refactor
 	EV << "Parent (stripe " << stripe << ") wants me to leave." << endl;
 	m_state[stripe] = TREE_JOIN_STATE_IDLE;
 
-	IPvXAddress candidate;
+	IPvXAddress candidate = alternativeParent;
 	// Make sure I am not connecting to a child of mine
-	if(m_partnerList->hasChild(stripe, alternativeParent))
+	if(m_partnerList->hasChild(stripe, candidate))
 	{
 		EV << "Old parent wants me to connect to a child of mine." << endl;
 		for (int i = 0; i < numStripes; ++i)
@@ -653,22 +628,13 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 		if(m_partnerList->hasChild(stripe, candidate))
 		{
 			EV << "Cannot connect to any of my other parents." << endl;
-			throw cException("FUCK THIS SHIT.");
+			throw cException("WHAT?!.");
 		}
-		else
-		{
-			std::vector<int> connect;
-			connect.push_back(stripe);
-			connectVia(candidate, connect);
-		}
+	}
 
-	}
-	else
-	{
-		std::vector<int> connect;
-		connect.push_back(stripe);
-		connectVia(alternativeParent, connect);
-	}
+	std::vector<int> connect;
+	connect.push_back(stripe);
+	connectVia(alternativeParent, connect);
 }
 
 int MultitreePeer::getMaxOutConnections()
@@ -680,13 +646,6 @@ int MultitreePeer::getMaxOutConnections()
 bool MultitreePeer::isPreferredStripe(int stripe)
 {
 	return stripe == getPreferredStripe();
-	//int numChildren = m_partnerList->getNumOutgoingConnections(stripe);
-	//for (int i = 0; i < numStripes; i++)
-	//{
-	//	if(i != stripe && numChildren < m_partnerList->getNumOutgoingConnections(i))
-	//		return false;
-	//}
-	//return true;
 }
 
 void MultitreePeer::onNewChunk(int sequenceNumber)
@@ -721,7 +680,6 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 	}
 	if(m_player->getState() == PLAYER_STATE_IDLE)
 	{
-		// TODO: Include this loop to not start the player before I am connected in all stripes
 		// Doing so prevents packet loss in the case that I am accepted in one
 		// stripe but still looking for parents in all other stripes
 		for (int i = 0; i < numStripes; ++i)

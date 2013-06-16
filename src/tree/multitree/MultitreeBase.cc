@@ -103,111 +103,71 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
 	std::map<int, int> stripes = treePkt->getStripes();
 
-	printStatus();
-
 	std::map<int, int> accept;
 	std::vector<int> reject;
 
-	// Cannot accept all requests, so process them one-by-one:
-	// First process the preferred stripes
-	//for (int i = 0; i < numReqStripes; ++i)
-	for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
+	bool onlyPreferredStripes = true;
+	for (int i = 0; i < 2; i++)
 	{
-		int stripe = it->first;
-		int numSucc = it->second;
+		// 2 runs: 1 for the preferred stripes, 1 for the remaining
 
-		if(!isPreferredStripe(stripe))
-			continue;
+		for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
+		{
+			int stripe = it->first;
+			int numSucc = it->second;
 
-		if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
-		{
-			EV << "Received ConnectRequest in for unconnected (not yet connected or leaving) stripe " 
-				<< stripe << " Rejecting..." << endl;
-			reject.push_back(stripe);
-		}
-		else if( m_partnerList->hasParent(stripe, senderAddress) )
-		{
-			EV << "Received ConnectRequest from parent " << senderAddress << " for stripe " << stripe 
-				<< ". Rejecting..." << endl;
-			reject.push_back(stripe);
-		}
-		else if( m_partnerList->hasChild(stripe, senderAddress) )
-		{
-			EV << "Received ConnectRequest from child " << senderAddress << " for stripe " << stripe 
-				<< ". Ignoring..." << endl;
-		}
-		else if( requestedChildship[stripe].equals(senderAddress) )
-		{
-			// TODO: would be better to just queue this.. maybe the node rejects me
-			EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe "
-				<< stripe << ". Rejecting..." << endl;
-			reject.push_back(stripe);
-		}
-		else if(hasBWLeft(1))
-		{
-			accept.insert( std::pair<int,int>(stripe, numSucc) );
-		}
-		else
-		{
-			EV << "Received ConnectRequest but no bandwidth left. Rejecting..." << endl;
-			reject.push_back(stripe);
-			//optimize();
-		}
-	}
+			if( (onlyPreferredStripes && !isPreferredStripe(stripe))
+					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
+				continue;
 
-	// Then process the un-preferred stripes
-	for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
-	{
-		int stripe = it->first;
-		int numSucc = it->second;
+			if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
+			{
+				EV << "Received ConnectRequest in for unconnected (not yet connected or leaving) stripe " 
+					<< stripe << " Rejecting..." << endl;
+				reject.push_back(stripe);
+			}
+			else if( m_partnerList->hasParent(stripe, senderAddress) )
+			{
+				EV << "Received ConnectRequest from parent " << senderAddress << " for stripe " << stripe 
+					<< ". Rejecting..." << endl;
+				reject.push_back(stripe);
+			}
+			else if( m_partnerList->hasChild(stripe, senderAddress) )
+			{
+				EV << "Received ConnectRequest from child " << senderAddress << " for stripe " << stripe 
+					<< ". Ignoring..." << endl;
+			}
+			else if( requestedChildship[stripe].equals(senderAddress) )
+			{
+				// TODO: would be better to just queue this.. maybe the node rejects me
+				EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe "
+					<< stripe << ". Rejecting..." << endl;
+				reject.push_back(stripe);
+			}
+			else if(hasBWLeft(1))
+			{
+				accept.insert( std::pair<int,int>(stripe, numSucc) );
+				//if(!isPreferredStripe(stripe))
+					//optimize();
+			}
+			else
+			{
+				EV << "Received ConnectRequest but no bandwidth left. Rejecting..." << endl;
+				reject.push_back(stripe);
+				//optimize();
+			}
+		}
 
-		if(isPreferredStripe(stripe))
-			continue;
-
-		if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
-		{
-			EV << "Received ConnectRequest in for unconnected (not yet connected or leaving) stripe "
-				<< stripe << " Rejecting..." << endl;
-			reject.push_back(stripe);
-		}
-		else if( m_partnerList->hasParent(stripe, senderAddress) )
-		{
-			EV << "Received ConnectRequest from parent " << senderAddress << " for stripe " << stripe
-				<< ". Rejecting..." << endl;
-			reject.push_back(stripe);
-		}
-		else if( m_partnerList->hasChild(stripe, senderAddress) )
-		{
-			EV << "Received ConnectRequest from child " << senderAddress << " for stripe " << stripe 
-				<< ". Ignoring..." << endl;
-		}
-		else if( requestedChildship[stripe].equals(senderAddress) )
-		{
-			// TODO: would be better to just queue this.. maybe the node rejects me
-			EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe "
-				<< stripe << ". Rejecting..." << endl;
-			reject.push_back(stripe);
-		}
-		else if(hasBWLeft(1))
-		{
-			accept.insert( std::pair<int,int>(stripe, numSucc) );
-			//optimize();
-		}
-		else
-		{
-			EV << "Received ConnectRequest but no bandwidth left. Rejecting..." << endl;
-			reject.push_back(stripe);
-			//optimize();
-		}
+		onlyPreferredStripes = false;
 	}
 
 	if(!accept.empty())
 		acceptConnectRequests(accept, senderAddress, treePkt->getLastReceivedChunk());
 	if(!reject.empty())
-	rejectConnectRequests(reject, senderAddress);
+		rejectConnectRequests(reject, senderAddress);
 }
 
-void MultitreeBase::rejectConnectRequests(std::vector<int> stripes, IPvXAddress address)
+void MultitreeBase::rejectConnectRequests(const std::vector<int> &stripes, IPvXAddress address)
 {
 	int numStripes = stripes.size();
 
@@ -222,13 +182,13 @@ void MultitreeBase::rejectConnectRequests(std::vector<int> stripes, IPvXAddress 
     sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
-void MultitreeBase::acceptConnectRequests(std::map<int, int> stripes, IPvXAddress address, int lastChunk)
+void MultitreeBase::acceptConnectRequests(const std::map<int, int> &stripes, IPvXAddress address, int lastChunk)
 {
 	TreeConnectConfirmPacket *pkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 	pkt->setNextSequenceNumber(lastSeqNumber + 1);
 
 	EV << "Accepting ConnectRequest for stripe(s) ";
-	for (std::map<int, int>::iterator it = stripes.begin(); it != stripes.end(); ++it)
+	for (std::map<int, int>::const_iterator it = stripes.begin(); it != stripes.end(); ++it)
 	{
 		int stripe = it->first;
 		int numSucc = it->second;
@@ -244,13 +204,14 @@ void MultitreeBase::acceptConnectRequests(std::map<int, int> stripes, IPvXAddres
 
     sendToDispatcher(pkt, m_localPort, address, m_destPort);
 
-	for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
+	for (std::map<int, int>::const_iterator it = stripes.begin() ; it != stripes.end(); ++it)
 	{
 		int stripe = it->first;
 		scheduleSuccessorInfo(stripe);
 		sendChunksToNewChild(stripe, address, lastChunk);
 	}
 
+	printStatus();
 }
 
 void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
@@ -286,7 +247,7 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 		optimize();
 }
 
-void MultitreeBase::disconnectFromChild(int stripe, IPvXAddress address)
+void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 {
 	EV << "Removing child: " << address << " (stripe: " << stripe << endl;
 	m_partnerList->removeChild(stripe, address);
@@ -320,6 +281,11 @@ bool MultitreeBase::hasBWLeft(int additionalConnections)
 
 void MultitreeBase::optimize(void)
 {
+	if(!m_partnerList->hasChildren() || m_partnerList->getNumSuccessors() < 2)
+		return;
+
+	printStatus();
+
 	int stripe;
 
 	// TODO maybe start with a random stripe here, so not every node picks stripe 0 as its preferred
