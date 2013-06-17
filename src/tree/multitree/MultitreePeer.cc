@@ -44,12 +44,14 @@ void MultitreePeer::initialize(int stage)
 
 		stat_retrys = new int[numStripes];
 		numSuccChanged = new bool[numStripes];
+		receivedChunk = new bool[numStripes];
 
 		for (int i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_IDLE;
 			stat_retrys[i] = 0;
 			numSuccChanged[i] = false;
+			receivedChunk[i] = false;
 		}
 
 
@@ -72,6 +74,7 @@ void MultitreePeer::finish(void)
 
 	delete[] stat_retrys;
 	delete[] numSuccChanged;
+	delete[] receivedChunk;
 }
 
 
@@ -683,6 +686,9 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 	int hopcount = stripePkt->getHopCount();
 	lastSeqNumber = sequenceNumber;
 
+	if(receivedChunk[stripe] == false)
+		receivedChunk[stripe] = true;
+
 	m_gstat->reportChunkArrival(hopcount);
 
 	stripePkt->setHopCount(++hopcount);
@@ -708,10 +714,11 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 		// stripe but still looking for parents in all other stripes
 		for (int i = 0; i < numStripes; ++i)
 		{
-			if(m_partnerList->getParent(i).isUnspecified())
+			if(m_partnerList->getParent(i).isUnspecified() || receivedChunk[i] == false)
 				return;
 		}
 
+		EV << "Init buffer at: " << sequenceNumber << endl;
 		m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
 		m_player->activate();
 	}

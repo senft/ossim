@@ -17,6 +17,8 @@ protected:
 private:
 	int *stat_retrys;
 
+	bool *receivedChunk;
+
 	bool *numSuccChanged;
 
 	double param_retryLeave;
