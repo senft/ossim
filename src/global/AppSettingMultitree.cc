@@ -30,4 +30,5 @@ void AppSettingMultitree::initialize()
 	WATCH(param_chunkSize);
 	WATCH(param_videoStreamBitRate);
 	WATCH(param_intervalNewChunk);
+	WATCH(m_videoStreamChunkRate);
 }

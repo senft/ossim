@@ -629,7 +629,7 @@ double MultitreeBase::getBWCapacity(void)
         }
     }
 
-	double capacity = (rate / m_appSetting->getVideoStreamBitRate()) + 1;
+	double capacity = (rate / m_appSetting->getVideoStreamBitRate()) - 1;// + 1;
 	EV << "Detected bandwidth capacity of " << capacity << endl;
 	return capacity;
 }

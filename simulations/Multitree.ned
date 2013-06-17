@@ -23,16 +23,24 @@ network Multitree_Network extends BasicNetwork
 		double percentGroup1;
         double percentGroup2;
         double percentGroup3;
-        double percentGroup4;
 
     types:
-		channel DSL1k_up extends ned.DatarateChannel
+		channel Source_up extends ned.DatarateChannel
         {
-            datarate = 128kbps;
+            datarate = 1000kbps;
         }
-        channel DSL1k_down extends ned.DatarateChannel
+        channel Source_down extends ned.DatarateChannel
         {
-            datarate = 1024kbps;
+            datarate = 10Mbps;
+        }
+
+		channel DSL2k_up extends ned.DatarateChannel
+        {
+            datarate = 256kbps;
+        }
+        channel DSL2k_down extends ned.DatarateChannel
+        {
+            datarate = 2048kbps;
         }
 
 		channel DSL6k_up extends ned.DatarateChannel
@@ -90,14 +98,14 @@ network Multitree_Network extends BasicNetwork
 
     connections:
         // -- Connect source
-        sourceNode.pppg$o++ --> DSL16k_up --> router.pppg$i++;
-        sourceNode.pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
+        sourceNode.pppg$o++ --> Source_up --> router.pppg$i++;
+        sourceNode.pppg$i++ <-- Source_down <-- router.pppg$o++;
 
         // -- Connect peers
 		// -- -- Group 1
 		for i=0..(nNodePerRouter-1) * percentGroup1 {
-            peerNode[i].pppg$o++ --> DSL1k_up --> router.pppg$i++;
-            peerNode[i].pppg$i++ <-- DSL1k_down <-- router.pppg$o++;
+            peerNode[i].pppg$o++ --> DSL2k_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- DSL2k_down <-- router.pppg$o++;
         }
 
 		// -- -- Group 2
