@@ -44,15 +44,15 @@ void MultitreePeer::initialize(int stage)
 
 		stat_retrys = new int[numStripes];
 		numSuccChanged = new bool[numStripes];
-		receivedChunk = new bool[numStripes];
 
 		for (int i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_IDLE;
 			stat_retrys[i] = 0;
 			numSuccChanged[i] = false;
-			receivedChunk[i] = false;
 		}
+
+		firstSequenceNumber = -1L;
 
 
 		m_count_prev_chunkMiss = 0L;
@@ -63,6 +63,7 @@ void MultitreePeer::initialize(int stage)
 		WATCH(m_destPort);
 		WATCH(param_delaySuccessorInfo);
 		WATCH(param_intervalReconnect);
+		WATCH(lastSeqNumber);
 	}
 }
 
@@ -74,7 +75,6 @@ void MultitreePeer::finish(void)
 
 	delete[] stat_retrys;
 	delete[] numSuccChanged;
-	delete[] receivedChunk;
 }
 
 
@@ -684,10 +684,19 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 
 	int stripe = stripePkt->getStripe();
 	int hopcount = stripePkt->getHopCount();
-	lastSeqNumber = sequenceNumber;
 
-	if(receivedChunk[stripe] == false)
-		receivedChunk[stripe] = true;
+	if(firstSequenceNumber == -1)
+	{
+		EV << "First chunk received. Init buffer at: " << sequenceNumber << endl;
+		m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
+		firstSequenceNumber = sequenceNumber;
+		lastSeqNumber = sequenceNumber;
+	}
+	else
+	{
+		if(sequenceNumber > firstSequenceNumber)
+			lastSeqNumber = sequenceNumber;
+	}
 
 	m_gstat->reportChunkArrival(hopcount);
 
@@ -714,14 +723,15 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 		// stripe but still looking for parents in all other stripes
 		for (int i = 0; i < numStripes; ++i)
 		{
-			if(m_partnerList->getParent(i).isUnspecified() || receivedChunk[i] == false)
+			if(m_partnerList->getParent(i).isUnspecified())
 				return;
+
+			if(!m_videoBuffer->inBuffer(firstSequenceNumber + i))
+				// Do not start until we have <numStripes> consecutive chunks
+				return;
+
 		}
 
-		EV << "Init buffer at: " << sequenceNumber << endl;
-		m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
 		m_player->activate();
 	}
 }
-
-

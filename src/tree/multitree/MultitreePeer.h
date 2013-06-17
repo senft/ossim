@@ -17,7 +17,7 @@ protected:
 private:
 	int *stat_retrys;
 
-	bool *receivedChunk;
+	long firstSequenceNumber;
 
 	bool *numSuccChanged;
 
