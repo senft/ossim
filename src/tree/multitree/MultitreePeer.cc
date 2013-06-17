@@ -63,7 +63,10 @@ void MultitreePeer::initialize(int stage)
 		WATCH(m_destPort);
 		WATCH(param_delaySuccessorInfo);
 		WATCH(param_intervalReconnect);
-		WATCH(lastSeqNumber);
+		for (int i = 0; i < numStripes; i++)
+		{
+			WATCH(lastSeqNumber[i]);
+		}
 	}
 }
 
@@ -384,7 +387,7 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 	}
 
 	TreeConnectRequestPacket *pkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
-	pkt->setLastReceivedChunk(lastSeqNumber);
+	pkt->setLastReceivedChunk(lastSeqNumber[stripes[0]]);
 
 	EV << "Sending ConnectRequest for stripe(s) ";
 
@@ -690,12 +693,16 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 		EV << "First chunk received. Init buffer at: " << sequenceNumber << endl;
 		m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
 		firstSequenceNumber = sequenceNumber;
-		lastSeqNumber = sequenceNumber;
+
+		for (int i = 0; i < numStripes; i++)
+		{
+			lastSeqNumber[i] = sequenceNumber;
+		}
 	}
 	else
 	{
-		if(sequenceNumber > firstSequenceNumber)
-			lastSeqNumber = sequenceNumber;
+		if(sequenceNumber > lastSeqNumber[stripe])
+			lastSeqNumber[stripe] = sequenceNumber;
 	}
 
 	m_gstat->reportChunkArrival(hopcount);

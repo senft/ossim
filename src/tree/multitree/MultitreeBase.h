@@ -60,7 +60,7 @@ protected:
 	 */
 	double bwCapacity;
 
-	long lastSeqNumber;
+	long *lastSeqNumber;
 
 	bool hasBWLeft(int additionalConnections);
 

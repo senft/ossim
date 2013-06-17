@@ -31,7 +31,13 @@ void MultitreeBase::initialize(int stage)
 		// -- Repeated timers
 
 		m_state = new TreeJoinState[numStripes];
-		lastSeqNumber = -1L;
+
+		lastSeqNumber = new long[numStripes];
+		for (int i = 0; i < numStripes; i++)
+		{
+			lastSeqNumber[i] = -1L;
+		}
+
 		bwCapacity = getBWCapacity();
 	}
 }
@@ -183,7 +189,7 @@ void MultitreeBase::rejectConnectRequests(const std::vector<int> &stripes, IPvXA
 void MultitreeBase::acceptConnectRequests(const std::map<int, int> &stripes, IPvXAddress address, int lastChunk)
 {
 	TreeConnectConfirmPacket *pkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
-	pkt->setNextSequenceNumber(lastSeqNumber + 1);
+	pkt->setNextSequenceNumber(lastSeqNumber[stripes.begin()->first] + 1);
 
 	EV << "Accepting ConnectRequest for stripe(s) ";
 	for (std::map<int, int>::const_iterator it = stripes.begin(); it != stripes.end(); ++it)
@@ -589,7 +595,7 @@ void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int la
 	//EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
 	if(lastChunk != -1)
 	{
-		for (int i = lastChunk; i <= lastSeqNumber; i++)
+		for (int i = lastChunk; i <= lastSeqNumber[stripe]; i++)
 		{
 			if(m_videoBuffer->isInBuffer(i))
 			{

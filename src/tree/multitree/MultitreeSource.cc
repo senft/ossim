@@ -146,7 +146,7 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 
 	int stripe = stripePkt->getStripe();
 	int hopcount = stripePkt->getHopCount();
-	lastSeqNumber = stripePkt->getSeqNumber();
+	lastSeqNumber[stripe] = stripePkt->getSeqNumber();
 
 	stripePkt->setHopCount(++hopcount);
 
