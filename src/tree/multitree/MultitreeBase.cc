@@ -106,10 +106,9 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	std::vector<int> reject;
 
 	bool onlyPreferredStripes = true;
+	// 2 runs: 1 for the preferred stripes, 1 for the remaining
 	for (int i = 0; i < 2; i++)
 	{
-		// 2 runs: 1 for the preferred stripes, 1 for the remaining
-
 		for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
 		{
 			int stripe = it->first;
@@ -143,7 +142,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					<< stripe << ". Rejecting..." << endl;
 				reject.push_back(stripe);
 			}
-			else if(hasBWLeft(1))
+			else if(hasBWLeft(accept.size() + 1))
 			{
 				accept.insert( std::pair<int,int>(stripe, numSucc) );
 				//if(!isPreferredStripe(stripe))
@@ -275,6 +274,8 @@ const IPvXAddress& MultitreeBase::getSender(const cPacket *pkt) const
 bool MultitreeBase::hasBWLeft(int additionalConnections)
 {
     int outConnections = m_partnerList->getNumOutgoingConnections();
+	EV << "BW: current: " << outConnections << ", req: " << additionalConnections << ", max: " << getMaxOutConnections() << endl;
+	// TODO why is +4 neccessary?
 	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }
 

@@ -23,6 +23,10 @@ void MultitreeStatistic::initialize(int stage)
     m_apTable = check_and_cast<ActivePeerTable *>(temp);
     EV << "Binding to activePeerTable is completed successfully" << endl;
 
+	m_count_chunkHit = 0;
+	m_count_allChunk = 0;
+	m_count_chunkMiss = 0;
+
 	WATCH(m_count_chunkHit);
 	WATCH(m_count_chunkMiss);
 	WATCH(m_count_allChunk);

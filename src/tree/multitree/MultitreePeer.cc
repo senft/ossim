@@ -441,7 +441,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			EV << "Switching parent in stripe: " << stripe << " old: " << m_partnerList->getParent(stripe)
 				<< " new: " << address << endl;
 
-			if(address.equals(oldParent))
+			if(!address.equals(oldParent))
 				// No need to give an alternative when disconnecting from a parent
 				dropChild(stripe, m_partnerList->getParent(stripe), IPvXAddress());
 		}
