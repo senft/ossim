@@ -61,22 +61,9 @@ bool MultitreePartnerList::hasChildren(void)
 
 bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
 {
-	if(stripe == -1)
-		return hasChild(address);
-
 	std::map<IPvXAddress, int> currentChildren = children[stripe];
 	std::map<IPvXAddress, int>::const_iterator it = currentChildren.find(address);
 	return it != currentChildren.end();
-}
-
-bool MultitreePartnerList::hasChild(IPvXAddress address)
-{
-	for (int i = 0; i < numStripes; i++)
-	{
-		if(hasChild(i, address))
-			return true;
-	}
-	return false;
 }
 
 void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int successors)

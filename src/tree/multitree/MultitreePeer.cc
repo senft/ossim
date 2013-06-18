@@ -54,7 +54,6 @@ void MultitreePeer::initialize(int stage)
 
 		firstSequenceNumber = -1L;
 
-
 		m_count_prev_chunkMiss = 0L;
 		m_count_prev_chunkHit = 0L;
 
@@ -258,8 +257,6 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 void MultitreePeer::scheduleSuccessorInfo(int stripe)
 {
 	numSuccChanged[stripe] = true;
-
-	printStatus();
 
     if(timer_successorInfo->isScheduled())
 		return;

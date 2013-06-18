@@ -212,6 +212,7 @@ void MultitreeBase::acceptConnectRequests(const std::map<int, int> &stripes, IPv
 	{
 		int stripe = it->first;
 		scheduleSuccessorInfo(stripe);
+		// TODO check if the first maybe can be skipped
 		sendChunksToNewChild(stripe, address, lastChunk);
 	}
 
@@ -253,7 +254,7 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 
 void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 {
-	EV << "Removing child: " << address << " (stripe: " << stripe << endl;
+	EV << "Removing child: " << address << " (stripe: " << stripe << ")" << endl;
 	m_partnerList->removeChild(stripe, address);
     scheduleSuccessorInfo(stripe);
 }
@@ -280,7 +281,7 @@ const IPvXAddress& MultitreeBase::getSender(const cPacket *pkt) const
 bool MultitreeBase::hasBWLeft(int additionalConnections)
 {
     int outConnections = m_partnerList->getNumOutgoingConnections();
-	EV << "BW: current: " << outConnections << ", req: " << additionalConnections << ", max: " << getMaxOutConnections() << endl;
+	//EV << "BW: current: " << outConnections << ", req: " << additionalConnections << ", max: " << getMaxOutConnections() << endl;
 	// TODO why is +4 neccessary?
 	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }

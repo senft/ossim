@@ -36,7 +36,6 @@ public:
 	IPvXAddress getParent(int stripe);
 
 	bool hasChildren(void);
-	bool hasChild(IPvXAddress address);
 	bool hasChild(int stripe, IPvXAddress address);
 	void addChild(int stripe, IPvXAddress address, int successors);
 	void removeChild(IPvXAddress address);
