@@ -8,4 +8,5 @@ simple MultitreeBase extends CommBase
         @class(MultitreeBase);
         @display("i=block/app;bgb=250,410");
 
+		double delayOptimization @unit(s) = default(1s);
 }

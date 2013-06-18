@@ -112,6 +112,10 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
 	{
         handleTimerSuccessorInfo();
 	}
+	else if (msg == timer_optimization)
+	{
+        handleTimerOptimization();
+	}
 	else if (msg == timer_reportStatistic)
     {
        handleTimerReportStatistic();

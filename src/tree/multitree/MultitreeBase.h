@@ -78,7 +78,7 @@ protected:
 	void processConnectRequest(cPacket *pkt);
 	void removeChild(int stripe, IPvXAddress address); 
 
-	void optimize(void);
+	void scheduleOptimization(void);
 
 	void printStatus(void);
 
@@ -86,6 +86,9 @@ protected:
 	int getPreferredStripe();
 
 	IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
+
+    void handleTimerOptimization();
+	cMessage *timer_optimization;
 
 private:
 	double getBWCapacity(void);
@@ -103,6 +106,7 @@ private:
 	virtual bool isPreferredStripe(int stripe) = 0;
 
 	// Optimization functions
+	void optimize(void);
 	double getCosts(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child, IPvXAddress childToDrop);
 	double getGainThreshold(void);
@@ -114,6 +118,8 @@ private:
     int getForwardingCosts(int stripe, IPvXAddress child); // K_forw, K_2
     double getBalanceCosts(int stripe, IPvXAddress child, IPvXAddress childToDrop); //K_bal, K_3
     double getDepencyCosts(IPvXAddress child); //K_4
+
+	double param_delayOptimization;
 };
 
 #endif

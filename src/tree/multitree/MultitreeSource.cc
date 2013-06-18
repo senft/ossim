@@ -101,6 +101,10 @@ void MultitreeSource::processDisconnectRequest(cPacket* pkt)
 
 void MultitreeSource::handleTimerMessage(cMessage *msg)
 {
+	if (msg == timer_optimization)
+	{
+        handleTimerOptimization();
+	}
 }
 
 void MultitreeSource::bindToGlobalModule(void)

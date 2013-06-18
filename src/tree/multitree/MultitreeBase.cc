@@ -29,6 +29,7 @@ void MultitreeBase::initialize(int stage)
 		// -- One-time timers
 		
 		// -- Repeated timers
+		timer_optimization = new cMessage("TIMER_OPTIMIZATION");
 
 		m_state = new TreeJoinState[numStripes];
 
@@ -37,6 +38,8 @@ void MultitreeBase::initialize(int stage)
 		{
 			lastSeqNumber[i] = -1L;
 		}
+
+		param_delayOptimization = par("delayOptimization");
 
 		bwCapacity = getBWCapacity();
 	}
@@ -59,6 +62,11 @@ void MultitreeBase::handleMessage(cMessage *msg)
     {
         processPacket(PK(msg));
     }
+}
+
+void MultitreeBase::handleTimerOptimization(void)
+{
+	optimize();
 }
 
 void MultitreeBase::getAppSetting(void)
@@ -111,6 +119,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	std::map<int, int> accept;
 	std::vector<int> reject;
 
+	bool doOptimize = false;
+
 	bool onlyPreferredStripes = true;
 	// 2 runs: 1 for the preferred stripes, 1 for the remaining
 	for (int i = 0; i < 2; i++)
@@ -151,14 +161,14 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			else if(hasBWLeft(accept.size() + 1))
 			{
 				accept.insert( std::pair<int,int>(stripe, numSucc) );
-				//if(!isPreferredStripe(stripe))
-					//optimize();
+				if(!isPreferredStripe(stripe))
+					doOptimize  = true;
 			}
 			else
 			{
 				EV << "Received ConnectRequest but no bandwidth left. Rejecting..." << endl;
 				reject.push_back(stripe);
-				//optimize();
+				doOptimize  = true;
 			}
 		}
 
@@ -169,6 +179,9 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		acceptConnectRequests(accept, senderAddress, treePkt->getLastReceivedChunk());
 	if(!reject.empty())
 		rejectConnectRequests(reject, senderAddress);
+
+	if(doOptimize)
+		scheduleOptimization();
 }
 
 void MultitreeBase::rejectConnectRequests(const std::vector<int> &stripes, IPvXAddress address)
@@ -248,8 +261,12 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 	}
 
 	if(changes)
+	{
+		printStatus();
+
 		// Optimize when a node detects "major changes" in the topology below
-		optimize();
+		scheduleOptimization();
+	}
 }
 
 void MultitreeBase::removeChild(int stripe, IPvXAddress address)
@@ -286,6 +303,15 @@ bool MultitreeBase::hasBWLeft(int additionalConnections)
 	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }
 
+void MultitreeBase::scheduleOptimization(void)
+{
+	if(timer_optimization->isScheduled())
+		return;
+
+	EV << "SCHEDULING OPTIMIZATION to: " << simTime() + param_delayOptimization << endl;
+    scheduleAt(simTime() + param_delayOptimization, timer_optimization);
+}
+
 void MultitreeBase::optimize(void)
 {
 	if(!m_partnerList->hasChildren() || m_partnerList->getNumSuccessors() < 2)
@@ -306,32 +332,32 @@ void MultitreeBase::optimize(void)
 
 		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
-		//while(gain && m_partnerList->getChildren(stripe).size() > 1)
-		//{
-		//	gain = false;
+		while(gain && m_partnerList->getChildren(stripe).size() > 1)
+		{
+			gain = false;
 
-		//	IPvXAddress linkToDrop;	
-		//	getCostliestChild(stripe, linkToDrop);
+			IPvXAddress linkToDrop;	
+			getCostliestChild(stripe, linkToDrop);
 
-		//	IPvXAddress alternativeParent;	
-		//	getCheapestChild(stripe, alternativeParent, linkToDrop);
+			IPvXAddress alternativeParent;	
+			getCheapestChild(stripe, alternativeParent, linkToDrop);
 
-		//	EV << "COSTLIEST CHILD: " << linkToDrop << endl;
-		//	EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
+			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
 
-		//	EV << "GAIN: " << getGain(stripe, alternativeParent, linkToDrop) << endl;
-		//	EV << "THRESHOLD: " << getGainThreshold() << endl;
+			EV << "GAIN: " << getGain(stripe, alternativeParent, linkToDrop) << endl;
+			EV << "THRESHOLD: " << getGainThreshold() << endl;
 
-		//	double gain = getGain(stripe, alternativeParent, linkToDrop);
+			double gain = getGain(stripe, alternativeParent, linkToDrop);
 
-		//	if(gain >= getGainThreshold())
-		//	{
-		//		// Drop costliest to cheapest
-		//		EV << "DROP " << linkToDrop << " (stripe: " << stripe << ") to " << alternativeParent << endl;
-		//		//dropChild(stripe, linkToDrop, alternativeParent);
-		//		gain = true;
-		//	}
-		//}
+			if(gain >= getGainThreshold())
+			{
+				// Drop costliest to cheapest
+				EV << "DROP " << linkToDrop << " (stripe: " << stripe << ") to " << alternativeParent << endl;
+				dropChild(stripe, linkToDrop, alternativeParent);
+				gain = true;
+			}
+		}
 
 		int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
 		EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
