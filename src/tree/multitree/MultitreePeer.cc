@@ -625,7 +625,19 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 	// TODO pick a node the parent "can handle"
 	if(m_partnerList->getChildren(stripe).size() > 0)
-		dropChild(stripe, m_partnerList->getBusiestChild(stripe), senderAddress);
+	{
+		IPvXAddress child = m_partnerList->getBusiestChild(stripe);
+		double k3 = (dependencyFactor - m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
+		int k2 = m_partnerList->getNumChildsSuccessors(stripe, child) > 0 ? 0 : 1;
+		double gain = k3 - (double)k2;
+
+		EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
+
+		if(gain < threshold)
+			dropChild(stripe, child, senderAddress);
+		else
+			EV << "NOT GIVING CHILD: " << child << endl;
+	}
 }
 
 void MultitreePeer::leave(void)
