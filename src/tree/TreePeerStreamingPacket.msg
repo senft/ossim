@@ -80,7 +80,6 @@ packet TreeConnectConfirmPacket extends TreePeerStreamingPacket
     //int			stripes[];
 	//IPvXAddress alternativeNode;
 
-    int			nextSequenceNumber = -1;
 }
 
 packet TreeDisconnectRequestPacket extends TreePeerStreamingPacket

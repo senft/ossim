@@ -206,7 +206,6 @@ void MultitreeBase::rejectConnectRequests(const std::vector<int> &stripes, IPvXA
 void MultitreeBase::acceptConnectRequests(const std::map<int, int> &stripes, IPvXAddress address, int lastChunk)
 {
 	TreeConnectConfirmPacket *pkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
-	pkt->setNextSequenceNumber(lastSeqNumber[stripes.begin()->first] + 1);
 
 	EV << "Accepting ConnectRequest for stripe(s) ";
 	for (std::map<int, int>::const_iterator it = stripes.begin(); it != stripes.end(); ++it)
