@@ -91,6 +91,8 @@ protected:
 	cMessage *timer_optimization;
 
 private:
+	void cancelAndDeleteTimer(void);
+
 	double getBWCapacity(void);
 
 	void getAppSetting(void);

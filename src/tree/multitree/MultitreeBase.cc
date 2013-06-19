@@ -47,6 +47,8 @@ void MultitreeBase::initialize(int stage)
 
 void MultitreeBase::finish(void)
 {
+	cancelAndDeleteTimer();
+
 	m_partnerList->clear();
 	delete[] m_state;
 	delete[] requestedChildship;
@@ -640,4 +642,13 @@ double MultitreeBase::getBWCapacity(void)
 	double capacity = (rate / m_appSetting->getVideoStreamBitRate()) - 1;// + 1;
 	EV << "Detected bandwidth capacity of " << capacity << endl;
 	return capacity;
+}
+
+void MultitreeBase::cancelAndDeleteTimer(void)
+{
+	if(timer_optimization != NULL)
+	{
+		delete cancelEvent(timer_optimization);
+		timer_optimization = NULL;
+	}
 }
