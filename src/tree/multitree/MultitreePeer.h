@@ -59,6 +59,8 @@ private:
 	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
 
+	int getSmallestReceivedSeqNumber(void);
+
     PlayerBase *m_player;
 
 	cMessage *timer_getJoinTime;

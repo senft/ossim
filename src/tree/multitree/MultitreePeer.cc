@@ -713,12 +713,29 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 	int stripe = stripePkt->getStripe();
 	int hopcount = stripePkt->getHopCount();
 
-	if(firstSequenceNumber == -1)
-	{
-		EV << "First chunk received. Init buffer at: " << sequenceNumber << endl;
-		m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
-		firstSequenceNumber = sequenceNumber;
+	m_gstat->reportChunkArrival(hopcount);
 
+	stripePkt->setHopCount(++hopcount);
+
+	// Forward to children
+	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
+	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
+	{
+		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
+	}
+
+	EV << "Received " << sequenceNumber << " first: " << firstSequenceNumber << " smallest: " << getSmallestReceivedSeqNumber() << " last: ";
+	for (int i = 0; i < numStripes; i++)
+	{
+		EV << lastSeqNumber[i] << ", ";
+	}
+	EV << endl;
+
+
+	if(firstSequenceNumber == -1 || (m_player->getState() == PLAYER_STATE_IDLE && sequenceNumber >= getSmallestReceivedSeqNumber() + numStripes))
+	{
+		EV << "UPDATE FIRST" << endl;
+		firstSequenceNumber = sequenceNumber;
 		for (int i = 0; i < numStripes; i++)
 		{
 			lastSeqNumber[i] = sequenceNumber;
@@ -726,19 +743,44 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 	}
 	else
 	{
-		if(sequenceNumber > lastSeqNumber[stripe])
-			lastSeqNumber[stripe] = sequenceNumber;
+
+		bool haveConsecutiveChunks = true;
+		for (int i = 0; i < numStripes; ++i)
+		{
+			if(!m_videoBuffer->inBuffer(firstSequenceNumber + i))
+			{
+				haveConsecutiveChunks = false;
+			}
+		}
+
+		lastSeqNumber[stripe] = sequenceNumber;
+		EV << "INIT BUFFER AT: " << firstSequenceNumber << endl;
+		m_videoBuffer->initializeRangeVideoBuffer(firstSequenceNumber);
+
+		if(!haveConsecutiveChunks)
+		{
+			return;
+		}
+		
 	}
 
-	m_gstat->reportChunkArrival(hopcount);
+	//if(firstSequenceNumber == -1)
+	//{
+	//	EV << "First chunk received. Init buffer at: " << sequenceNumber << endl;
+	//	m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
+	//	firstSequenceNumber = sequenceNumber;
 
-	stripePkt->setHopCount(++hopcount);
+	//	for (int i = 0; i < numStripes; i++)
+	//	{
+	//		lastSeqNumber[i] = sequenceNumber;
+	//	}
+	//}
+	//else
+	//{
+	//	if(sequenceNumber > lastSeqNumber[stripe])
+	//		lastSeqNumber[stripe] = sequenceNumber;
+	//}
 
-	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
-	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
-	{
-		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
-	}
 
 	// If node is "fully connected" (and not in the process of leaving),
 	// start playback (starting the chunk received just now)
@@ -766,6 +808,17 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 
 		m_player->activate();
 	}
+}
+
+int MultitreePeer::getSmallestReceivedSeqNumber(void)
+{
+	int min = lastSeqNumber[0];
+	for (int i = 1; i < numStripes; i++)
+	{
+		if(lastSeqNumber[i] < min)
+			min = lastSeqNumber[i];
+	}
+	return min;
 }
 
 IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode)
