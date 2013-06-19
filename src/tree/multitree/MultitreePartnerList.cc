@@ -272,19 +272,6 @@ IPvXAddress MultitreePartnerList::getRandomNodeFor(int stripe, IPvXAddress forNo
 		}
 	}
 
-	// Add some more if there are too little children
-	if(candidates.size() < 3)
-	{
-		for (int i = 0; i < numStripes; ++i)
-		{
-			std::map<IPvXAddress, int> curChildren = children[i];
-			for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
-			{
-				candidates.insert(it->first);
-			}
-		}
-	}
-
 	if(candidates.size() == 0)
 	{
 		return IPvXAddress();

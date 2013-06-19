@@ -200,6 +200,9 @@ void MultitreePeer::handleTimerLeave()
 			{
 				int stripe = i;
 				IPvXAddress addr = (IPvXAddress)*it;
+				// TODO because the state is already LEAVING getAlternativeNodes only returns parent nodes.  It would be
+				// better to pass some nodes to my parent and the other nodes
+				// to those nodes that have been passed to my parent
 				dropChild(stripe, addr, getAlternativeNode(stripe, addr));
 			}
 		}
@@ -420,8 +423,6 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 	IPvXAddress address;
 	getSender(pkt, address);
-
-	int nextSeq = treePkt->getNextSequenceNumber();
 
 	for (std::map<int, IPvXAddress>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
 	{
@@ -761,6 +762,10 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 
 IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode)
 {
+	if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
+	{
+		return m_partnerList->getParent(stripe);
+	}
 
 	IPvXAddress node = m_partnerList->getRandomNodeFor(stripe, forNode);
 	if(node.isUnspecified())
