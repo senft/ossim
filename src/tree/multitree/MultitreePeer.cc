@@ -144,20 +144,19 @@ void MultitreePeer::handleTimerJoin()
 
 void MultitreePeer::handleTimerLeave()
 {
-	if(m_partnerList->hasChildren())
+	// It might happen, that I have sent a ConnectionRequest somewhere and
+	// before the ConnectConfirm arrived, my leave timer kicks in. Thats why
+	// the states have to be checked here.
+	for (int i = 0; i < numStripes; i++)
 	{
-		printStatus();
-		for (int i = 0; i < numStripes; i++)
+		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 		{
-			if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
-			{
-				EV << "Leave scheduled for now, but I am inactive in at least stripe " << i << ". Rescheduling..." << endl;
-				if(timer_leave->isScheduled())
-					cancelEvent(timer_leave);
-				scheduleAt(simTime() + param_retryLeave, timer_leave);
+			EV << "Leave scheduled for now, but I am inactive in at least stripe " << i << ". Rescheduling..." << endl;
+			if(timer_leave->isScheduled())
+				cancelEvent(timer_leave);
+			scheduleAt(simTime() + param_retryLeave, timer_leave);
 
-				return;
-			}
+			return;
 		}
 	}
 
@@ -179,6 +178,9 @@ void MultitreePeer::handleTimerLeave()
 				// No need to give an alternative when disconnecting from a parent
 				dropChild(i, address, IPvXAddress());
 			}
+
+			m_state[i] = TREE_JOIN_STATE_IDLE;
+
 		}
 
 		m_player->scheduleStopPlayer();
@@ -186,9 +188,9 @@ void MultitreePeer::handleTimerLeave()
 	}
 	else
 	{
-		// If I have children I have to tell them I will be leaving but still
+		// If I have children I have to tell them I will be leaving, but still
 		// forward packets to them until they are connected to the new parent
-
+		
 		// Disconnect from children
 		for (int i = 0; i < numStripes; i++)
 		{
@@ -550,7 +552,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			case TREE_JOIN_STATE_ACTIVE:
 			{
 				// A node wants to disconnect from me
-
 				if( m_partnerList->hasParent(stripe, senderAddress) )
 				{
 					disconnectFromParent(stripe, alternativeParent);
@@ -579,8 +580,10 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 					// No need to give an alternative when disconnecting from a parent
 					dropChild(stripe, parent, IPvXAddress());
 
+					m_state[stripe] = TREE_JOIN_STATE_IDLE;
+
 					// Don't remove the parent here. It is still needed to forward other nodes to my
-					// parent when they want to connect
+					// parent when they want to connect (alternative parent)
 
 					// We already have to stop the player as soon as I disconnect from
 					// one parent, because I will miss all packets from that parents
@@ -600,8 +603,9 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			}
 			default:
 			{
-				throw cException("This happens!");
-				break;
+				const char *sAddr = senderAddress.str().c_str();
+				throw cException("Received DisconnectRequest from %s (stripe %d) although I already left that tree.",
+						sAddr, stripe);
 			}
 		}
 	}
@@ -665,11 +669,15 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 	if(m_partnerList->hasChild(stripe, candidate))
 	{
 		EV << "Old parent wants me to connect to a child of mine." << endl;
+
 		for (int i = 0; i < numStripes; ++i)
 		{
 			candidate = m_partnerList->getParent(i);
-			if(!m_partnerList->hasChild(stripe, candidate))
+			if(!candidate.equals(alternativeParent) && !m_partnerList->hasChild(stripe, candidate))
+			{
+				EV << candidate << " is a good candidate." << endl;
 				break;
+			}
 		}
 
 		if(m_partnerList->hasChild(stripe, candidate))
@@ -681,7 +689,7 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 
 	std::vector<int> connect;
 	connect.push_back(stripe);
-	connectVia(alternativeParent, connect);
+	connectVia(candidate, connect);
 }
 
 int MultitreePeer::getMaxOutConnections()
