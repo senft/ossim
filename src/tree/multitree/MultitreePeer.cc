@@ -436,7 +436,6 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			throw cException("Received a ConnectConfirm (%s) although I am already connected (or haven't even requested) (stripe %d) (state %d).",
 					sAddr, stripe, m_state[stripe]);
 		}
-
 	}
 
 	for (std::map<int, IPvXAddress>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
@@ -603,9 +602,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			}
 			default:
 			{
-				const char *sAddr = senderAddress.str().c_str();
-				throw cException("Received DisconnectRequest from %s (stripe %d) although I already left that tree.",
-						sAddr, stripe);
+				EV << "Received DisconnectRequest from " << senderAddress << " (stripe " << stripe 
+					<< ") although I already left that tree." << endl;
 			}
 		}
 	}
@@ -639,6 +637,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 		int k2 = m_partnerList->getNumChildsSuccessors(stripe, child) > 0 ? 0 : 1;
 		double gain = k3 - (double)k2;
 
+		// TODO k2 and k3 are often -nan
 		EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
 		if(gain < threshold)
@@ -724,89 +723,49 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
 	}
 
-	EV << "Received " << sequenceNumber << " first: " << firstSequenceNumber << " smallest: " << getSmallestReceivedSeqNumber() << " last: ";
-	for (int i = 0; i < numStripes; i++)
-	{
-		EV << lastSeqNumber[i] << ", ";
-	}
-	EV << endl;
+	lastSeqNumber[stripe] = sequenceNumber;
 
-
-	if(firstSequenceNumber == -1 || (m_player->getState() == PLAYER_STATE_IDLE && sequenceNumber >= getSmallestReceivedSeqNumber() + numStripes))
+	if(firstSequenceNumber == -1 || sequenceNumber < firstSequenceNumber)
 	{
-		EV << "UPDATE FIRST" << endl;
+		//EV << "FIRST CHUNK: " << sequenceNumber << endl;
 		firstSequenceNumber = sequenceNumber;
-		for (int i = 0; i < numStripes; i++)
-		{
-			lastSeqNumber[i] = sequenceNumber;
-		}
 	}
-	else
-	{
 
-		bool haveConsecutiveChunks = true;
-		for (int i = 0; i < numStripes; ++i)
+	int max = lastSeqNumber[0];
+	for (int i = 1; i < numStripes; i++)
+	{
+		if(lastSeqNumber[i] > max)
+			max = lastSeqNumber[i];
+	}
+
+	//EV << "MAX SEQ: " << max << endl;
+
+	int current = firstSequenceNumber;
+	int currentStart = firstSequenceNumber;
+	int streak = 0;
+
+	while(m_player->getState() == PLAYER_STATE_IDLE && current <= max)
+	{
+		//EV << "Checking: " << current << endl;
+		if(m_videoBuffer->isInBuffer(current++))
 		{
-			if(!m_videoBuffer->inBuffer(firstSequenceNumber + i))
-			{
-				haveConsecutiveChunks = false;
-			}
+			//EV << "streak: " << streak << endl;
+			streak++;
+		}
+		else
+		{
+			//EV << "COMBOBREAKER" << endl;
+			streak = 0;
+			currentStart = current;
 		}
 
-		lastSeqNumber[stripe] = sequenceNumber;
-		EV << "INIT BUFFER AT: " << firstSequenceNumber << endl;
-		m_videoBuffer->initializeRangeVideoBuffer(firstSequenceNumber);
-
-		if(!haveConsecutiveChunks)
+		if(streak >= numStripes)
 		{
-			return;
+			//EV << "ACTIVATE AT: " << currentStart << endl;
+			m_videoBuffer->initializeRangeVideoBuffer(currentStart);
+			m_player->activate();
 		}
 		
-	}
-
-	//if(firstSequenceNumber == -1)
-	//{
-	//	EV << "First chunk received. Init buffer at: " << sequenceNumber << endl;
-	//	m_videoBuffer->initializeRangeVideoBuffer(sequenceNumber);
-	//	firstSequenceNumber = sequenceNumber;
-
-	//	for (int i = 0; i < numStripes; i++)
-	//	{
-	//		lastSeqNumber[i] = sequenceNumber;
-	//	}
-	//}
-	//else
-	//{
-	//	if(sequenceNumber > lastSeqNumber[stripe])
-	//		lastSeqNumber[stripe] = sequenceNumber;
-	//}
-
-
-	// If node is "fully connected" (and not in the process of leaving),
-	// start playback (starting the chunk received just now)
-	for (int i = 0; i < numStripes; i++)
-	{
-		// If the node is leaving the player is already stopped and would
-		// be restarted if we don't return here
-		if(m_state[i] == TREE_JOIN_STATE_LEAVING)
-			return;
-	}
-	if(m_player->getState() == PLAYER_STATE_IDLE)
-	{
-		// Doing so prevents packet loss in the case that I am accepted in one
-		// stripe but still looking for parents in all other stripes
-		for (int i = 0; i < numStripes; ++i)
-		{
-			if(m_partnerList->getParent(i).isUnspecified())
-				return;
-
-			if(!m_videoBuffer->inBuffer(firstSequenceNumber + i))
-				// Do not start until we have <numStripes> consecutive chunks
-				return;
-
-		}
-
-		m_player->activate();
 	}
 }
 
