@@ -35,6 +35,8 @@ void MultitreeSource::initialize(int stage)
 
 		// -- Repeated timers
 
+		if(bwCapacity < 1)
+			throw cException("The source has a bandwidth capacity < 1. This won't work.");
 
 	}
 }
