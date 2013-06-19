@@ -138,8 +138,10 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 			if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
 			{
-				EV << "Received ConnectRequest in for unconnected (not yet connected or leaving) stripe " 
-					<< stripe << " Rejecting..." << endl;
+				if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
+					EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
+				else 
+					EV << "Received ConnectRequest for not yet connected stripe " << stripe << " Rejecting..." << endl;
 				reject.push_back(stripe);
 			}
 			else if( m_partnerList->hasParent(stripe, senderAddress) )

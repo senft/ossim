@@ -146,11 +146,12 @@ void MultitreePeer::handleTimerLeave()
 {
 	if(m_partnerList->hasChildren())
 	{
+		printStatus();
 		for (int i = 0; i < numStripes; i++)
 		{
 			if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 			{
-				EV << "Leave scheduled for now, but I am inactive in one stripe. Rescheduling..." << endl;
+				EV << "Leave scheduled for now, but I am inactive in at least stripe " << i << ". Rescheduling..." << endl;
 				if(timer_leave->isScheduled())
 					cancelEvent(timer_leave);
 				scheduleAt(simTime() + param_retryLeave, timer_leave);
@@ -525,7 +526,9 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 
 				if(alternativeParent.isUnspecified())
 				{
-					throw cException("Received DisconnectRequest without alternative parent.");
+					const char *sAddr = senderAddress.str().c_str();
+					throw cException("Received DisconnectRequest from %s (stripe %d) without alternative parent.",
+							sAddr, stripe);
 				}
 				else if(m_partnerList->hasChild(stripe, alternativeParent)) // To avoid connecting to a child
 				{
