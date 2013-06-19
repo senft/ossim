@@ -14,6 +14,8 @@ protected:
     virtual void finish(void);
 
 private:
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode);
+
     virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);
 

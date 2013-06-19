@@ -755,3 +755,13 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 		m_player->activate();
 	}
 }
+
+IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode)
+{
+
+	IPvXAddress node = m_partnerList->getRandomNodeFor(stripe, forNode);
+	if(node.isUnspecified())
+		return getNodeAddress();
+	else
+		return node;
+}
