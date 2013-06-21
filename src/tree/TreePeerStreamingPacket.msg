@@ -76,9 +76,9 @@ packet TreeConnectConfirmPacket extends TreePeerStreamingPacket
     packetType = TREE_CONNECT_CONFIRM;
 
 	IntAddrMap	    stripes;
+	IPvXAddress     alternativeParent;
 
     //int			stripes[];
-	//IPvXAddress alternativeNode;
 
 }
 

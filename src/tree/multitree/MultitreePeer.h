@@ -15,6 +15,7 @@ protected:
     virtual void finish(void);
 
 private:
+	IPvXAddress *fallbackParent;
 	int *stat_retrys;
 
 	long firstSequenceNumber;

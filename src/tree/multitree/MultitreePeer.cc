@@ -44,6 +44,7 @@ void MultitreePeer::initialize(int stage)
 
 		stat_retrys = new int[numStripes];
 		numSuccChanged = new bool[numStripes];
+		fallbackParent = new IPvXAddress[numStripes];
 
 		for (int i = 0; i < numStripes; i++)
 		{
@@ -77,6 +78,7 @@ void MultitreePeer::finish(void)
 
 	delete[] stat_retrys;
 	delete[] numSuccChanged;
+	delete[] fallbackParent;
 }
 
 
@@ -467,6 +469,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			EV << "New parent in stripe: " << stripe << endl;
 		}
 
+		fallbackParent[stripe] = treePkt->getAlternativeParent();
 		requestedChildship[stripe] = IPvXAddress();
 		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
 		m_partnerList->addParent(stripe, address);
