@@ -53,7 +53,7 @@ void MultitreePartnerList::clear(void)
 bool MultitreePartnerList::hasChildren(void)
 {
 	for (int i = 0; i < numStripes; i++)
-		if(children[i].size() > 0)
+		if(hasChildren(i))
 			return true;
 
 	return false;
@@ -77,6 +77,7 @@ IPvXAddress MultitreePartnerList::getBusiestChild(int stripe)
 	int maxSucc = -1;
 	IPvXAddress busiestChild;
 	std::map<IPvXAddress, int> curChildren = children[stripe];
+
 	for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 	{
 		if(it->second > maxSucc)
@@ -245,7 +246,10 @@ int MultitreePartnerList::getNumSuccessors(int stripe)
 
 int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address)
 {
-    return children[stripe][address];
+	if(hasChild(stripe, address))
+		return children[stripe][address];
+	else
+		return -1;
 }
 
 void MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors)
