@@ -306,6 +306,12 @@ void MultitreePeer::cancelAndDeleteTimer(void)
 		delete cancelEvent(timer_reportStatistic);
 		timer_reportStatistic = NULL;
 	}
+
+	if(timer_optimization != NULL)
+	{
+		delete cancelEvent(timer_optimization);
+		timer_optimization = NULL;
+	}
 }
 
 void MultitreePeer::cancelAllTimer(void)
@@ -315,6 +321,7 @@ void MultitreePeer::cancelAllTimer(void)
 	cancelEvent(timer_leave);
     cancelEvent(timer_successorInfo);
     cancelEvent(timer_reportStatistic);
+	cancelEvent(timer_optimization);
 
 }
 
@@ -651,10 +658,6 @@ void MultitreePeer::leave(void)
 {
 	EV << "No more parents, nor children. I am outta here!" << endl;
 
-	// Player should already be stopped here...
-	//if(m_player->getState() == PLAYER_STATE_PLAYING)
-	//	m_player->scheduleStopPlayer();
-
 	cancelAllTimer();
 }
 
@@ -704,6 +707,10 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 	VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
 
 	int stripe = stripePkt->getStripe();
+
+	if(m_state[stripe] == TREE_JOIN_STATE_IDLE)
+		return;
+
 	int hopcount = stripePkt->getHopCount();
 
 	m_gstat->reportChunkArrival(hopcount);
