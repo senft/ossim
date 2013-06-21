@@ -50,6 +50,11 @@ void MultitreePartnerList::clear(void)
 	}
 }
 
+bool MultitreePartnerList::hasChildren(int stripe)
+{
+	return children[stripe].size() > 0;
+}
+
 bool MultitreePartnerList::hasChildren(void)
 {
 	for (int i = 0; i < numStripes; i++)
