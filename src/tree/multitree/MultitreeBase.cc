@@ -127,7 +127,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	// 2 runs: 1 for the preferred stripes, 1 for the remaining
 	for (int i = 0; i < 2; i++)
 	{
-		for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
+		for (std::map<int, int>::iterator it = stripes.begin(); it != stripes.end(); ++it)
 		{
 			int stripe = it->first;
 			int numSucc = it->second;
@@ -141,7 +141,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
 					EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
 				else 
-					EV << "Received ConnectRequest for not yet connected stripe " << stripe << " Rejecting..." << endl;
+					EV << "Received ConnectRequest for currently unconnected stripe " << stripe << " Rejecting..." << endl;
 				reject.push_back(stripe);
 			}
 			else if( m_partnerList->hasParent(stripe, senderAddress) )
@@ -170,7 +170,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				EV << "Received ConnectRequest but no bandwidth left. Rejecting..." << endl;
+				EV << "Received ConnectRequest (stripe " << stripe << ") but have no bandwidth left. Rejecting..." << endl;
 				reject.push_back(stripe);
 				doOptimize  = true;
 			}
@@ -302,7 +302,6 @@ bool MultitreeBase::hasBWLeft(int additionalConnections)
 {
     int outConnections = m_partnerList->getNumOutgoingConnections();
 	//EV << "BW: current: " << outConnections << ", req: " << additionalConnections << ", max: " << getMaxOutConnections() << endl;
-	// TODO why is +4 neccessary?
 	return (outConnections + additionalConnections) <= getMaxOutConnections();
 }
 
@@ -317,10 +316,12 @@ void MultitreeBase::scheduleOptimization(void)
 
 void MultitreeBase::optimize(void)
 {
+	for (int i = 0; i < numStripes; i++)
+		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
+			return;
+
 	if(!m_partnerList->hasChildren() || m_partnerList->getNumSuccessors() < 2)
 		return;
-
-	printStatus();
 
 	int stripe;
 
@@ -366,9 +367,11 @@ void MultitreeBase::optimize(void)
 		EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 			" outgoing connections. Max: " << getMaxOutConnections() << endl;
 
+
 		while(remainingBW > 0)
 		{
 			IPvXAddress busiestChild = m_partnerList->getBusiestChild(stripe);
+
 			// TODO this should request nodes from all children
 			int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, busiestChild);
 			if(childsSuccessors > 0)
