@@ -249,6 +249,7 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 	for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
 	{
 		int stripe = it->first;
+
 		if(m_partnerList->hasChild(stripe, address))
 		{
 			int numSucc = it->second;
@@ -491,7 +492,7 @@ double MultitreeBase::getCosts(int stripe, IPvXAddress child)
 double MultitreeBase::getStripeDensityCosts(int stripe) // K_sel ,K_1
 {
 	int fanout = m_partnerList->getNumOutgoingConnections(stripe);
-	float outCapacity = bwCapacity - 1;
+	float outCapacity = bwCapacity;
 	//EV << "K1: " << fanout << " " << outCapacity << endl;
 	return 1 - (fanout / outCapacity);
 }
@@ -561,9 +562,9 @@ int MultitreeBase::getPreferredStripe()
 double MultitreeBase::getGainThreshold(void)
 {
 	float t = 0.2;
-	float b = getConnections() / (bwCapacity * numStripes);
+	float b = getConnections() / ((bwCapacity + 1) * numStripes);
 
-	//EV << "deg: " << getConnections() << " max: " << (bwCapacity * numStripes) << " b: " << b << endl;
+	//EV << "deg: " << getConnections() << " max: " << ((bwCapacity + 1) * numStripes) << " b: " << b << endl;
 
 	if(b == 1)
 		return INT_MIN;
@@ -639,7 +640,7 @@ double MultitreeBase::getBWCapacity(void)
         cGate* currentGate = nodeModule->gate("pppg$o", i);
         if(currentGate->isConnected())
         {
-            rate = check_and_cast<cDatarateChannel *>(currentGate->getChannel())->getDatarate();
+            rate = 0.8 * (check_and_cast<cDatarateChannel *>(currentGate->getChannel())->getDatarate());
         }
     }
 
@@ -655,4 +656,9 @@ void MultitreeBase::cancelAndDeleteTimer(void)
 		delete cancelEvent(timer_optimization);
 		timer_optimization = NULL;
 	}
+}
+
+int MultitreeBase::getMaxOutConnections()
+{
+	return numStripes * (bwCapacity);
 }

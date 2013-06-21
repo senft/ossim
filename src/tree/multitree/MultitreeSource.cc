@@ -133,11 +133,6 @@ void MultitreeSource::scheduleSuccessorInfo(int stripe)
 	// Do nothing because a source has no parents...
 }
 
-int MultitreeSource::getMaxOutConnections()
-{
-	return numStripes * bwCapacity;
-}
-
 bool MultitreeSource::isPreferredStripe(int stripe)
 {
 	return true;

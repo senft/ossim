@@ -41,7 +41,6 @@ private:
 
 	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);
 
-	virtual int getMaxOutConnections(void);
 	virtual bool isPreferredStripe(int stripe);
 
 	void connectVia(IPvXAddress address, const std::vector<int> &stripes);

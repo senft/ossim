@@ -691,12 +691,6 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 	connectVia(candidate, connect);
 }
 
-int MultitreePeer::getMaxOutConnections()
-{
-	return numStripes * (bwCapacity - 1);
-}
-
-
 bool MultitreePeer::isPreferredStripe(int stripe)
 {
 	return stripe == getPreferredStripe();

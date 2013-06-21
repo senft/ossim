@@ -100,7 +100,7 @@ private:
 	void rejectConnectRequests(const std::vector<int> &stripes, IPvXAddress address);
 
     virtual void scheduleSuccessorInfo(int stripe) = 0;
-    virtual int getMaxOutConnections(void) = 0;
+    int getMaxOutConnections(void);
 	int getConnections(void);
 
 	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);
