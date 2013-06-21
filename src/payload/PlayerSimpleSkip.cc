@@ -448,8 +448,11 @@ void PlayerSimpleSkip::scheduleStopPlayer(void)
    //EV << "Player will be stopped after " << random_period << " seconds" << endl;
    //scheduleAt(simTime() + random_period, timer_playerStop);
 
-   EV << "Player will be stopped NOW" << endl;
-   scheduleAt(simTime() + 0.0, timer_playerStop);
+   if(!timer_playerStop->isScheduled())
+   {
+	   EV << "Player will be stopped NOW" << endl;
+	   scheduleAt(simTime() + 0.0, timer_playerStop);
+   }
 }
 
 void PlayerSimpleSkip::stopPlayer(void)
