@@ -202,9 +202,9 @@ void MultitreePeer::handleTimerLeave()
 
 				EV << "Im timer: " << alternativeParent << endl;
 
-					// TODO because the state is already LEAVING getAlternativeNodes only returns
-					// parent nodes.  It would be better to pass some nodes to my parent and the
-					// other nodes to those nodes that have been passed to my parent
+				// TODO because the state is already LEAVING getAlternativeNodes only returns parent
+				// nodes.  It would be better to pass some nodes to my parent and the other nodes to
+				// those nodes that have been passed to my parent
 				dropChild(stripe, addr, alternativeParent);
 			}
 
@@ -550,7 +550,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 						|| m_partnerList->hasChild(stripe, alternativeParent)
 						|| m_partnerList->hasParent(stripe, alternativeParent) )
 				{
-					EV << "Node gave an invalid alternative parent (unspecified, child or parent)." << endl;
+					EV << "Node gave an invalid alternative parent (" << alternativeParent 
+						<< ")(unspecified, child or parent)." << endl;
 
 					if(fallbackParent[stripe].isUnspecified())
 					{
@@ -677,7 +678,6 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 		<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
 		dependencyFactor << ")" << endl;
 
-	// TODO pick a node the parent "can handle"
 	if(m_partnerList->getChildren(stripe).size() > 0)
 	{
 		IPvXAddress child = m_partnerList->getBusiestChild(stripe);
@@ -698,7 +698,6 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 void MultitreePeer::leave(void)
 {
 	EV << "No more parents, nor children. I am outta here!" << endl;
-
 	cancelAllTimer();
 }
 
@@ -713,6 +712,7 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 	// Make sure I am not connecting to a child of mine
 	if(m_partnerList->hasChild(stripe, candidate))
 	{
+		throw cException("this happens.");
 		EV << "Old parent wants me to connect to a child of mine." << endl;
 
 		for (int i = 0; i < numStripes; ++i)

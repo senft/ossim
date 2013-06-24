@@ -177,7 +177,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe << ") but have no bandwidth left. Rejecting..." << endl;
+				EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+					<< ") but have no bandwidth left. Rejecting..." << endl;
 				reject.push_back(stripe);
 				doOptimize  = true;
 			}
