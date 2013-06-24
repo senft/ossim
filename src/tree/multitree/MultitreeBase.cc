@@ -325,6 +325,8 @@ void MultitreeBase::scheduleOptimization(void)
 
 void MultitreeBase::optimize(void)
 {
+	// TODO make sure the source never drops the last child in a tree
+
 	for (int i = 0; i < numStripes; i++)
 		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 			return;
@@ -336,6 +338,8 @@ void MultitreeBase::optimize(void)
 
 	int stripe;
 
+	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
+		
 	// TODO maybe start with a random stripe here, so not every node picks stripe 0 as its preferred
 	for (stripe = 0; stripe < numStripes; stripe++)
 	{
@@ -374,27 +378,28 @@ void MultitreeBase::optimize(void)
 			}
 		}
 
-		int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
 		EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
-			" outgoing connections. Max: " << getMaxOutConnections() << endl;
+			" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
 
 		while(remainingBW > 0)
 		{
 			IPvXAddress busiestChild = m_partnerList->getBusiestChild(stripe);
 
-			// TODO this should request nodes from all children
+			// TODO this should request nodes from all children (then also delete the remainingBW =
+			// 0 in the first if
 			int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, busiestChild);
+
+			// Only request nodes if the child HAS successors
 			if(childsSuccessors > 0)
 			{
-				// Only request nodes if the child HAS successors
 				TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
 
 				if(childsSuccessors <= remainingBW)
 				{
 					reqPkt->setRemainingBW(childsSuccessors);
 					remainingBW = remainingBW - childsSuccessors;
-					remainingBW = 0;
+					remainingBW = 0; // TODO delete this when requesting nodes from more than 1 child
 				}
 				else
 				{
