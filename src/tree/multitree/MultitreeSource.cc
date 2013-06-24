@@ -160,6 +160,9 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 
 IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode)
 {
+	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, forNode);
+	return address;
+	
 	IPvXAddress node = m_partnerList->getRandomNodeFor(stripe, forNode);
 	if(node.isUnspecified())
 		return getNodeAddress();

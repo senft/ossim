@@ -821,16 +821,15 @@ int MultitreePeer::getGreatestReceivedSeqNumber(void)
 
 IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode)
 {
-	IPvXAddress address;
+	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, forNode);
+
 	if( m_state[stripe] == TREE_JOIN_STATE_LEAVING
+			|| address.isUnspecified()
 			|| !m_partnerList->hasChildren(stripe)
-			|| (m_partnerList->getNumOutgoingConnections(stripe) == 1 && m_partnerList->hasChild(stripe, forNode)) )
+			|| (m_partnerList->getNumOutgoingConnections(stripe) == 1 && m_partnerList->hasChild(stripe, forNode)) 
+		)
 	{
 		address = m_partnerList->getParent(stripe);
-	}
-	else
-	{
-		address = m_partnerList->getChildWithLeastSuccessors(stripe, forNode);
 	}
 
 	//EV << "Giving alternative node: " << address << endl;
