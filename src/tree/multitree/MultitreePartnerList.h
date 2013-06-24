@@ -44,6 +44,7 @@ public:
 	std::set<IPvXAddress> getChildren();
 	std::vector<IPvXAddress> getChildren(int stripe);
 	IPvXAddress getBusiestChild(int stripe);
+	IPvXAddress getChildWithLeastSuccessors(int stripe, IPvXAddress skipNode);
 
 	IPvXAddress getRandomNodeFor(int stripe, IPvXAddress forNode);
 

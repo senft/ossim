@@ -1,6 +1,7 @@
 #include <omnetpp.h>
 
 #include <algorithm>
+#include <limits>
 
 #include "MultitreePartnerList.h"
 #include "AppSettingMultitree.h"
@@ -75,6 +76,27 @@ void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int success
 {
 	children[stripe].insert(
 			std::pair<IPvXAddress, int>(address, successors));
+}
+
+IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, IPvXAddress skipNode)
+{
+	IPvXAddress child;
+	std::map<IPvXAddress, int> curChildren = children[stripe];
+
+	int minSucc = INT_MAX;
+
+	for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+	{
+		if(!it->first.equals(skipNode))
+		{
+			if(it->second < minSucc)
+			{
+				minSucc = it->second;
+				child = it->first;
+			}
+		}
+	}
+	return child;
 }
 
 IPvXAddress MultitreePartnerList::getBusiestChild(int stripe)
