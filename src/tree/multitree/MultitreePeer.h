@@ -59,7 +59,7 @@ private:
 	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
 
-	int getSmallestReceivedSeqNumber(void);
+	int getGreatestReceivedSeqNumber(void);
 
     PlayerBase *m_player;
 

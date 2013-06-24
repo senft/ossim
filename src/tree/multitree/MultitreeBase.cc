@@ -136,14 +136,21 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
 
-			if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
-			{
+			//if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
+			//{
+
 				if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
+				{
 					EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
-				else 
-					EV << "Received ConnectRequest for currently unconnected stripe " << stripe << " Rejecting..." << endl;
-				reject.push_back(stripe);
-			}
+					reject.push_back(stripe);
+				}
+				//else 
+				//{
+				//	EV << "Received ConnectRequest for currently unconnected stripe " << stripe << " Rejecting..." << endl;
+				//}
+				//reject.push_back(stripe);
+
+			//}
 			else if( m_partnerList->hasParent(stripe, senderAddress) )
 			{
 				EV << "Received ConnectRequest from parent " << senderAddress << " for stripe " << stripe 
@@ -170,7 +177,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				EV << "Received ConnectRequest (stripe " << stripe << ") but have no bandwidth left. Rejecting..." << endl;
+				EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe << ") but have no bandwidth left. Rejecting..." << endl;
 				reject.push_back(stripe);
 				doOptimize  = true;
 			}
@@ -228,8 +235,9 @@ void MultitreeBase::acceptConnectRequests(const std::map<int, int> &stripes, IPv
 	{
 		int stripe = it->first;
 		scheduleSuccessorInfo(stripe);
-		// TODO check if the first maybe can be skipped
-		sendChunksToNewChild(stripe, address, lastChunk);
+		// TODO this might be obsolete since nodes usually are only passed to child nodes (so they
+		// only end of further down in the tree)
+		//sendChunksToNewChild(stripe, address, lastChunk);
 	}
 
 	printStatus();
@@ -323,6 +331,8 @@ void MultitreeBase::optimize(void)
 
 	if(!m_partnerList->hasChildren() || m_partnerList->getNumSuccessors() < 2)
 		return;
+
+	printStatus();
 
 	int stripe;
 
