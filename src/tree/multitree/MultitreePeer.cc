@@ -266,6 +266,7 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 				sentTo.insert(parent);
 				sendToDispatcher(pkt->dup(), m_localPort, parent, m_destPort);
         	}
+			numSuccChanged[i] = false;
 		}
 	}
 
