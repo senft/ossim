@@ -565,18 +565,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 						|| m_partnerList->hasParent(stripe, alternativeParent) )
 				{
 					EV << "Node gave an invalid alternative parent (" << alternativeParent 
-						<< ")(unspecified, child or parent)." << endl;
-
-					if(fallbackParent[stripe].isUnspecified())
-					{
-						EV << "No fallback parent. Reconnecting to sender." << endl;
+						<< ")(unspecified, child or parent). Reconnecting to sender..." << endl;
 						connectVia(senderAddress, connect);
-					}
-					else
-					{
-						connectVia(fallbackParent[stripe], connect);
-					}
-
 				}
 				else
 				{
