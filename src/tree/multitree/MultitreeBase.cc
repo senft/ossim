@@ -380,7 +380,7 @@ void MultitreeBase::optimize(void)
 
 					// Drop costliest to cheapest
 					EV << "DROP " << linkToDrop << " (stripe: " << stripe << ") to " << alternativeParent << endl;
-					dropChild(stripe, linkToDrop, alternativeParent);
+					dropNode(stripe, linkToDrop, alternativeParent);
 					gain = true;
 				}
 			}
@@ -594,9 +594,9 @@ double MultitreeBase::getGainThreshold(void)
 	return (1 - pow(b, pow(2 * t, 3)) * (1 - pow(t, 3))) + pow(t, 3);
 }
 
-// TODO rename to dropNode and make stripe a vector
-void MultitreeBase::dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
+void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
 {
+	// TODO make stripe a vector
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 
 	EV << "DROP " << address << " to " << alternativeParent << endl;

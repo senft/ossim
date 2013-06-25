@@ -178,7 +178,7 @@ void MultitreePeer::handleTimerLeave()
 			if(!address.isUnspecified())
 			{
 				// No need to give an alternative when disconnecting from a parent
-				dropChild(i, address, IPvXAddress());
+				dropNode(i, address, IPvXAddress());
 			}
 
 			m_state[i] = TREE_JOIN_STATE_LEAVING;
@@ -197,7 +197,7 @@ void MultitreePeer::handleTimerLeave()
 			std::set<IPvXAddress> skipNodes;
 			IPvXAddress laziestChild = m_partnerList->getChildWithLeastSuccessors(i, skipNodes);
 			// Drop the child with the least successors to my parent...
-			dropChild(i, laziestChild, m_partnerList->getParent(i));
+			dropNode(i, laziestChild, m_partnerList->getParent(i));
 
 			// ... and all other children to that 'lazy' node
 			for (std::vector<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
@@ -206,7 +206,7 @@ void MultitreePeer::handleTimerLeave()
 				if(addr.equals(laziestChild))
 					continue;
 
-				dropChild(i, addr, laziestChild);
+				dropNode(i, addr, laziestChild);
 			}
 
 		}
@@ -482,7 +482,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 			if(!address.equals(oldParent))
 				// No need to give an alternative when disconnecting from a parent
-				dropChild(stripe, m_partnerList->getParent(stripe), IPvXAddress());
+				dropNode(stripe, m_partnerList->getParent(stripe), IPvXAddress());
 		}
 		else
 		{
@@ -622,7 +622,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 						IPvXAddress parent = m_partnerList->getParent(stripe);
 
 						// No need to give an alternative when disconnecting from a parent
-						dropChild(stripe, parent, IPvXAddress());
+						dropNode(stripe, parent, IPvXAddress());
 
 						m_state[stripe] = TREE_JOIN_STATE_IDLE;
 
@@ -686,7 +686,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 		EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
 		if(gain < threshold)
-			dropChild(stripe, child, senderAddress);
+			dropNode(stripe, child, senderAddress);
 		else
 			EV << "NOT GIVING CHILD: " << child << endl;
 	}

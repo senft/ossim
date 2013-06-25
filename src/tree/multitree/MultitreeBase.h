@@ -84,7 +84,7 @@ protected:
 
 	void printStatus(void);
 
-	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
+	void dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
 	int getPreferredStripe();
 
 	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent) = 0;
