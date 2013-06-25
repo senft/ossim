@@ -389,7 +389,6 @@ void MultitreeBase::optimize(void)
 		EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 			" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
-
 		while(remainingBW > 0)
 		{
 			IPvXAddress busiestChild = m_partnerList->getBusiestChild(stripe);
@@ -599,6 +598,8 @@ double MultitreeBase::getGainThreshold(void)
 void MultitreeBase::dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
 {
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
+
+	EV << "DROP " << address << " to " << alternativeParent << endl;
 
 	DisconnectRequest request;
 	request.stripe = stripe;

@@ -165,7 +165,6 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
 
-	EV << endl << "Searching alt parent: for " << forNode << " curParent: " << currentParent << endl;
 	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
 	return address;
 }
