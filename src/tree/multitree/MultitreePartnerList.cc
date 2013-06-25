@@ -78,7 +78,7 @@ void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int success
 			std::pair<IPvXAddress, int>(address, successors));
 }
 
-IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, IPvXAddress skipNode)
+IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::set<IPvXAddress> &skipNodes)
 {
 	IPvXAddress child;
 	std::map<IPvXAddress, int> curChildren = children[stripe];
@@ -87,7 +87,8 @@ IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, IPvXAd
 
 	for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 	{
-		if(!it->first.equals(skipNode))
+		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+		if(!skipNode)
 		{
 			if(it->second < minSucc)
 			{
@@ -96,6 +97,7 @@ IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, IPvXAd
 			}
 		}
 	}
+
 	return child;
 }
 

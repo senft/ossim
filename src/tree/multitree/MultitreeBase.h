@@ -14,6 +14,8 @@
 
 #include "TreePeerStreamingPacket_m.h"
 
+#include <MultitreeMessages.h>
+
 enum TreeJoinState
 {
     TREE_JOIN_STATE_IDLE            = 0, // Not joined
@@ -85,7 +87,7 @@ protected:
 	void dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
 	int getPreferredStripe();
 
-	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode) = 0;
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent) = 0;
 
     void handleTimerOptimization();
 	cMessage *timer_optimization;
@@ -96,8 +98,8 @@ private:
 	double getBWCapacity(void);
 
 	void getAppSetting(void);
-	void acceptConnectRequests(const std::map<int, int> &stripes, IPvXAddress address, int lastChunk);
-	void rejectConnectRequests(const std::vector<int> &stripes, IPvXAddress address);
+	void acceptConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
+	void rejectConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
 
     virtual void scheduleSuccessorInfo(int stripe) = 0;
     int getMaxOutConnections(void);

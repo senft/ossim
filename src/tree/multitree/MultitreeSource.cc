@@ -91,11 +91,11 @@ void MultitreeSource::processDisconnectRequest(cPacket* pkt)
 	IPvXAddress address;
 	getSender(pkt, address);
 
-	std::map<int, IPvXAddress> stripes = treePkt->getStripes();
+	std::vector<DisconnectRequest> requests = treePkt->getRequests();
 
-	for (std::map<int, IPvXAddress>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
+	for(std::vector<DisconnectRequest>::iterator it = requests.begin(); it != requests.end(); ++it)
 	{
-		int stripe = it->first;
+		int stripe = ((DisconnectRequest)*it).stripe;
 		removeChild(stripe, address);
 	}
 }
@@ -152,20 +152,20 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 	stripePkt->setHopCount(++hopcount);
 
 	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
+
 	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
 	{
 		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
 	}
 }
 
-IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode)
+IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent)
 {
-	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, forNode);
+	std::set<IPvXAddress> skipNodes;
+	skipNodes.insert(forNode);
+	skipNodes.insert(currentParent);
+
+	EV << endl << "Searching alt parent: for " << forNode << " curParent: " << currentParent << endl;
+	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
 	return address;
-	
-	IPvXAddress node = m_partnerList->getRandomNodeFor(stripe, forNode);
-	if(node.isUnspecified())
-		return getNodeAddress();
-	else
-		return node;
 }

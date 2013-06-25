@@ -116,10 +116,10 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
     getSender(pkt, senderAddress);
 
 	TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
-	std::map<int, int> stripes = treePkt->getStripes();
+	std::vector<ConnectRequest> requests = treePkt->getRequests();
 
-	std::map<int, int> accept;
-	std::vector<int> reject;
+	std::vector<ConnectRequest> accept;
+	std::vector<ConnectRequest> reject;
 
 	bool doOptimize = false;
 
@@ -127,51 +127,36 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	// 2 runs: 1 for the preferred stripes, 1 for the remaining
 	for (int i = 0; i < 2; i++)
 	{
-		for (std::map<int, int>::iterator it = stripes.begin(); it != stripes.end(); ++it)
+		for(std::vector<ConnectRequest>::iterator it = requests.begin(); it != requests.end(); ++it)
 		{
-			int stripe = it->first;
-			int numSucc = it->second;
-
+			const ConnectRequest request = (ConnectRequest)*it;
+			int stripe = request.stripe;
+			
 			if( (onlyPreferredStripes && !isPreferredStripe(stripe))
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
 
-			//if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
-			//{
-
-				if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
-				{
-					EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
-					reject.push_back(stripe);
-				}
-				//else 
-				//{
-				//	EV << "Received ConnectRequest for currently unconnected stripe " << stripe << " Rejecting..." << endl;
-				//}
-				//reject.push_back(stripe);
-
-			//}
+			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
+			{
+				EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
+				reject.push_back(request);
+			}
 			else if( m_partnerList->hasParent(stripe, senderAddress) )
 			{
 				EV << "Received ConnectRequest from parent " << senderAddress << " for stripe " << stripe 
 					<< ". Rejecting..." << endl;
-				reject.push_back(stripe);
+				reject.push_back(request);
 			}
-			//else if( m_partnerList->hasChild(stripe, senderAddress) )
-			//{
-			//	EV << "Received ConnectRequest from child " << senderAddress << " for stripe " << stripe 
-			//		<< ". Ignoring..." << endl;
-			//}
 			else if( requestedChildship[stripe].equals(senderAddress) )
 			{
 				// TODO: would be better to just queue this.. maybe the node rejects me
 				EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe "
 					<< stripe << ". Rejecting..." << endl;
-				reject.push_back(stripe);
+				reject.push_back(request);
 			}
 			else if(hasBWLeft(accept.size() + 1))
 			{
-				accept.insert( std::pair<int,int>(stripe, numSucc) );
+				accept.push_back(request);
 				if(!isPreferredStripe(stripe))
 					doOptimize  = true;
 			}
@@ -179,7 +164,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			{
 				EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
 					<< ") but have no bandwidth left. Rejecting..." << endl;
-				reject.push_back(stripe);
+				reject.push_back(request);
 				doOptimize  = true;
 			}
 		}
@@ -188,7 +173,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	}
 
 	if(!accept.empty())
-		acceptConnectRequests(accept, senderAddress, treePkt->getLastReceivedChunk());
+		acceptConnectRequests(accept, senderAddress);
 	if(!reject.empty())
 		rejectConnectRequests(reject, senderAddress);
 
@@ -196,33 +181,51 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 		scheduleOptimization();
 }
 
-void MultitreeBase::rejectConnectRequests(const std::vector<int> &stripes, IPvXAddress address)
+void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address)
 {
-	int numStripes = stripes.size();
+	int numReqStripes = requests.size();
 
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 
-	for (int i = 0; i < numStripes; i++)
+	for (int i = 0; i < numReqStripes; i++)
 	{
-		int stripe = stripes[i];
-		pkt->getStripes().insert( std::pair<int, IPvXAddress>(stripe, getAlternativeNode(stripe, address)) );
+		ConnectRequest cRequest = requests[i];
+		int stripe = cRequest.stripe;
+		IPvXAddress currentParent = cRequest.currentParent;
+
+		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent);
+
+		DisconnectRequest dRequest;
+		dRequest.stripe = stripe;
+		dRequest.alternativeParent = alternativeParent;
+
+		EV << "Alternative parent for " << address << " (stripe " << stripe << ") is " << alternativeParent << endl;
+
+		pkt->getRequests().push_back(dRequest);
 	}
 
     sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
-void MultitreeBase::acceptConnectRequests(const std::map<int, int> &stripes, IPvXAddress address, int lastChunk)
+void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address)
 {
+	int numReqStripes = requests.size();
+
 	TreeConnectConfirmPacket *pkt = new TreeConnectConfirmPacket("TREE_CONECT_CONFIRM");
 
 	EV << "Accepting ConnectRequest for stripe(s) ";
-	for (std::map<int, int>::const_iterator it = stripes.begin(); it != stripes.end(); ++it)
+	for (int i = 0; i < numReqStripes; i++)
 	{
-		int stripe = it->first;
-		int numSucc = it->second;
-		IPvXAddress alternativeParent = getAlternativeNode(stripe, address);
+		ConnectRequest request = requests[i];
+		int stripe = request.stripe;
+		int numSucc = request.numSuccessors;
+		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, IPvXAddress());
 
-		pkt->getStripes().insert( std::pair<int, IPvXAddress>(stripe, alternativeParent) );
+		ConnectConfirm confirm;
+		confirm.stripe = stripe;
+		confirm.alternativeParent = alternativeParent;
+
+		pkt->getConfirms().push_back(confirm);
 
 		m_partnerList->addChild(stripe, address, numSucc);
 
@@ -232,13 +235,10 @@ void MultitreeBase::acceptConnectRequests(const std::map<int, int> &stripes, IPv
 
     sendToDispatcher(pkt, m_localPort, address, m_destPort);
 
-	for (std::map<int, int>::const_iterator it = stripes.begin() ; it != stripes.end(); ++it)
+	for (int i = 0; i < numReqStripes; i++)
 	{
-		int stripe = it->first;
+		int stripe = requests[i].stripe;
 		scheduleSuccessorInfo(stripe);
-		// TODO this might be obsolete since nodes usually are only passed to child nodes (so they
-		// only end of further down in the tree)
-		//sendChunksToNewChild(stripe, address, lastChunk);
 	}
 
 	printStatus();
@@ -248,20 +248,21 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 {
     TreeSuccessorInfoPacket *treePkt = check_and_cast<TreeSuccessorInfoPacket *>(pkt);
 
-	std::map<int, int> stripes = treePkt->getStripes();
+	std::vector<SuccessorInfo> updates = treePkt->getUpdates();
 
 	IPvXAddress address;
 	getSender(pkt, address);
 
 	bool changes = false;
 
-	for (std::map<int, int>::iterator it = stripes.begin() ; it != stripes.end(); ++it)
+	for(std::vector<SuccessorInfo>::iterator it = updates.begin(); it != updates.end(); ++it)
 	{
-		int stripe = it->first;
+		SuccessorInfo update = (SuccessorInfo)*it;
+		int stripe = update.stripe;
 
 		if(m_partnerList->hasChild(stripe, address))
 		{
-			int numSucc = it->second;
+			int numSucc = update.numSuccessors;
 			int oldSucc = m_partnerList->getNumChildsSuccessors(stripe, address);
 
 			if(numSucc != oldSucc)
@@ -598,7 +599,13 @@ double MultitreeBase::getGainThreshold(void)
 void MultitreeBase::dropChild(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
 {
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
-	pkt->getStripes().insert( std::pair<int, IPvXAddress>( stripe, alternativeParent ) );
+
+	DisconnectRequest request;
+	request.stripe = stripe;
+	request.alternativeParent = alternativeParent;
+
+	pkt->getRequests().push_back(request);
+
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
@@ -626,29 +633,6 @@ void MultitreeBase::printStatus(void)
 	m_partnerList->printPartnerList();
 }
 
-
-void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk)
-{
-	//EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
-	if(lastChunk != -1)
-	{
-		for (int i = lastChunk; i <= lastSeqNumber[stripe]; i++)
-		{
-			if(m_videoBuffer->isInBuffer(i))
-			{
-				VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(i);
-				VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
-
-				if(stripePkt->getStripe() == stripe)
-				{
-					//EV << "Sending chunk: " << i << endl;
-					sendToDispatcher(stripePkt->dup(), m_localPort, address, m_destPort);
-				}
-			}
-		}
-	}
-
-}
 
 double MultitreeBase::getBWCapacity(void)
 {
