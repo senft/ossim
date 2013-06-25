@@ -326,8 +326,6 @@ void MultitreeBase::scheduleOptimization(void)
 
 void MultitreeBase::optimize(void)
 {
-	// TODO make sure the source never drops the last child in a tree
-
 	for (int i = 0; i < numStripes; i++)
 		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 			return;
@@ -354,6 +352,8 @@ void MultitreeBase::optimize(void)
 
 		while(gain && m_partnerList->getChildren(stripe).size() > 1)
 		{
+			// TODO I probably need to keep track of how many nodes I already dropped, in order to
+			// calculate the costs correctly after dropping at least 1 node
 			gain = false;
 
 			IPvXAddress linkToDrop;	
@@ -365,17 +365,23 @@ void MultitreeBase::optimize(void)
 			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
 			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
 
-			EV << "GAIN: " << getGain(stripe, alternativeParent, linkToDrop) << endl;
-			EV << "THRESHOLD: " << getGainThreshold() << endl;
-
 			double gain = getGain(stripe, alternativeParent, linkToDrop);
+
+			//EV << "GAIN: " << gain << endl;
+			//EV << "THRESHOLD: " << getGainThreshold() << endl;
 
 			if(gain >= getGainThreshold())
 			{
-				// Drop costliest to cheapest
-				EV << "DROP " << linkToDrop << " (stripe: " << stripe << ") to " << alternativeParent << endl;
-				dropChild(stripe, linkToDrop, alternativeParent);
-				gain = true;
+				// Make sure the source doesnt drop it's last child of a stripe (the parent [in an
+				// optimizing node] should only be unspec in the source)
+				if(!(m_partnerList->getParent(stripe).isUnspecified() && m_partnerList->getNumOutgoingConnections(stripe)))
+				{
+
+					// Drop costliest to cheapest
+					EV << "DROP " << linkToDrop << " (stripe: " << stripe << ") to " << alternativeParent << endl;
+					dropChild(stripe, linkToDrop, alternativeParent);
+					gain = true;
+				}
 			}
 		}
 
