@@ -14,7 +14,7 @@ import so.global.statistic.IStreamingStatistic;
 network Multitree_Network extends BasicNetwork
 {
     parameters:
-        string churnModel = default("UniformChurn");
+        string churnModel = default("BoundedChurn");
         string statisticModule = default("MultitreeStatistic");
         @display("bgb=472,324");
 
