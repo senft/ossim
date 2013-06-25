@@ -194,16 +194,19 @@ void MultitreePeer::handleTimerLeave()
 
 			std::vector<IPvXAddress> children = m_partnerList->getChildren(i);
 
+			std::set<IPvXAddress> skipNodes;
+			IPvXAddress laziestChild = m_partnerList->getChildWithLeastSuccessors(i, skipNodes);
+			// Drop the child with the least successors to my parent...
+			dropChild(i, laziestChild, m_partnerList->getParent(i));
+
+			// ... and all other children to that 'lazy' node
 			for (std::vector<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
 			{
-				int stripe = i;
 				IPvXAddress addr = (IPvXAddress)*it;
-				IPvXAddress alternativeParent = m_partnerList->getParent(stripe);
+				if(addr.equals(laziestChild))
+					continue;
 
-				// TODO because the state is already LEAVING getAlternativeNodes only returns parent
-				// nodes.  It would be better to pass some nodes to my parent and the other nodes to
-				// those nodes that have been passed to my parent
-				dropChild(stripe, addr, alternativeParent);
+				dropChild(i, addr, laziestChild);
 			}
 
 		}
