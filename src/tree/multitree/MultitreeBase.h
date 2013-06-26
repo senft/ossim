@@ -92,6 +92,8 @@ protected:
     void handleTimerOptimization();
 	cMessage *timer_optimization;
 
+    int getMaxOutConnections(void);
+
 private:
 	void cancelAndDeleteTimer(void);
 
@@ -102,7 +104,6 @@ private:
 	void rejectConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
 
     virtual void scheduleSuccessorInfo(int stripe) = 0;
-    int getMaxOutConnections(void);
 	int getConnections(void);
 
 	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);

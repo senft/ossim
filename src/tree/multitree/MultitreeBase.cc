@@ -647,11 +647,11 @@ double MultitreeBase::getBWCapacity(void)
         cGate* currentGate = nodeModule->gate("pppg$o", i);
         if(currentGate->isConnected())
         {
-            rate = 0.8 * (check_and_cast<cDatarateChannel *>(currentGate->getChannel())->getDatarate());
+            rate = 0.9 * (check_and_cast<cDatarateChannel *>(currentGate->getChannel())->getDatarate());
         }
     }
 
-	double capacity = (rate / m_appSetting->getVideoStreamBitRate()) - 1;// + 1;
+	double capacity = (rate / m_appSetting->getVideoStreamBitRate());
 	EV << "Detected bandwidth capacity of " << capacity << endl;
 	return capacity;
 }

@@ -446,8 +446,6 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 
 void MultitreePeer::processConnectConfirm(cPacket* pkt)
 {
-	// TODO this contains an alternative "parent". save this in case your parent leaves
-
 	TreeConnectConfirmPacket *treePkt = check_and_cast<TreeConnectConfirmPacket *>(pkt);
 	std::vector<ConnectConfirm> confirms = treePkt->getConfirms();
 
