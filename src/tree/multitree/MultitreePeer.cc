@@ -24,8 +24,8 @@ void MultitreePeer::initialize(int stage)
 		param_intervalReportStats =  par("intervalReportStats");
 		param_delaySuccessorInfo =  par("delaySuccessorInfo");
 
-		param_intervalReconnect   =  m_appSetting->getIntervalReconnect();
-		param_delaySuccessorInfo  =  m_appSetting->getDelaySuccessorInfo();
+		param_intervalReconnect   =  par("intervalReconnect");
+		param_delaySuccessorInfo  =  par("delaySuccessorInfo");
 
 		// -------------------------------------------------------------------------
 		// -------------------------------- Timers ---------------------------------
