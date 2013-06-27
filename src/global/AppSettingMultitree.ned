@@ -9,7 +9,4 @@ simple AppSettingMultitree extends AppSetting
         int videoStreamBitRate		@unit(bps)  = default(100kbps);
         int chunkSize           	@unit(byte) = default(1250B);
         int bufferMapSize       	@unit(s)    = default(2s);
-
-        double delaySuccessorInfo	@unit(s)	= default(10ms);
-		double intervalReconnect	@unit(s)	= default(2s);
 }

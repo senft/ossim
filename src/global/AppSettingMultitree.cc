@@ -15,8 +15,6 @@ void AppSettingMultitree::initialize()
 {
 	param_numStripes				= par("numStripes");
     param_bufferMapSize_seconds		= par("bufferMapSize").longValue();
-	param_intervalReconnect 		= par("intervalReconnect").doubleValue();
-	param_delaySuccessorInfo 		= par("delaySuccessorInfo").doubleValue();
 	param_chunkSize					= par("chunkSize").longValue();
 	param_videoStreamBitRate		= par("videoStreamBitRate").longValue();
 
@@ -26,7 +24,6 @@ void AppSettingMultitree::initialize()
     param_bufferMapSizeChunk = param_bufferMapSize_seconds * m_videoStreamChunkRate;
 
 	WATCH(param_numStripes);
-	WATCH(param_waitUntilInform);
 	WATCH(param_chunkSize);
 	WATCH(param_videoStreamBitRate);
 	WATCH(param_intervalNewChunk);

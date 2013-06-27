@@ -21,9 +21,11 @@ void MultitreePeer::initialize(int stage)
 	{
 
 		param_retryLeave = par("retryLeave");
+		param_intervalReportStats =  par("intervalReportStats");
+		param_delaySuccessorInfo =  par("delaySuccessorInfo");
 
-		param_intervalReconnect =  m_appSetting->getIntervalReconnect();
-		param_delaySuccessorInfo = m_appSetting->getDelaySuccessorInfo();
+		param_intervalReconnect   =  m_appSetting->getIntervalReconnect();
+		param_delaySuccessorInfo  =  m_appSetting->getDelaySuccessorInfo();
 
 		// -------------------------------------------------------------------------
 		// -------------------------------- Timers ---------------------------------
@@ -121,7 +123,7 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
 	else if (msg == timer_reportStatistic)
     {
        handleTimerReportStatistic();
-       scheduleAt(simTime() + 2, timer_reportStatistic);
+       scheduleAt(simTime() + param_intervalReportStats, timer_reportStatistic);
     }
 } 
 

@@ -9,7 +9,6 @@ public:
     virtual ~AppSettingMultitree(void);
 
 	inline int getNumStripes(void){ return param_numStripes; };
-	inline double getWaitUntilInform(void) { return param_waitUntilInform; };
 
 	inline int getChunkSize(void) { return param_chunkSize; };
 	inline int getPacketSizeVideoChunk(void) { return param_chunkSize + 8; }; // 4 for seq_num, 4 for stripe_num
@@ -17,8 +16,6 @@ public:
 
     inline int getBufferMapSizeChunk(void) { return param_bufferMapSizeChunk; };
     inline double getIntervalNewChunk(void) { return param_intervalNewChunk; };
-	inline double getDelaySuccessorInfo() { return param_delaySuccessorInfo; };
-	inline int getIntervalReconnect() { return param_intervalReconnect; };
 
 protected:
     void handleMessage(cMessage* msg);
@@ -26,7 +23,6 @@ protected:
     virtual void finish(void);
 
     int param_numStripes;
-    double param_waitUntilInform;
 
     int param_chunkSize;
     int param_videoStreamBitRate;
@@ -37,8 +33,6 @@ protected:
     int param_bufferMapSize_seconds;
     int m_videoStreamChunkRate;
  
-    double param_delaySuccessorInfo;
-    double param_intervalReconnect;
 };
 
 #endif /* APPSETTINGMULTITREE_H_ */

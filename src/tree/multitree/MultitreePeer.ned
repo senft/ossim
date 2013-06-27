@@ -10,4 +10,8 @@ simple MultitreePeer extends MultitreeBase
         volatile double startTime @unit(s);
 
 		double retryLeave @unit(s) = default(1s);
+		double intervalReportStats @unit(s) = default(1s);
+
+		double intervalReconnect @unit(s) = default(2s);
+		double delaySuccessorInfo @unit(s) = default(10ms);
 }
