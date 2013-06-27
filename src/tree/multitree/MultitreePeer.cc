@@ -717,24 +717,9 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 	// Make sure I am not connecting to a child of mine
 	if(m_partnerList->hasChild(stripe, candidate))
 	{
-		throw cException("this happens.");
+		//throw cException("this happens.");
 		EV << "Old parent wants me to connect to a child of mine." << endl;
-
-		for (int i = 0; i < numStripes; ++i)
-		{
-			candidate = m_partnerList->getParent(i);
-			if(!candidate.equals(alternativeParent) && !m_partnerList->hasChild(stripe, candidate))
-			{
-				EV << candidate << " is a good candidate." << endl;
-				break;
-			}
-		}
-
-		if(m_partnerList->hasChild(stripe, candidate))
-		{
-			EV << "Cannot connect to any of my other parents." << endl;
-			throw cException("WHAT?!.");
-		}
+		candidate = m_partnerList->getParent(stripe);
 	}
 
 	std::vector<int> connect;
