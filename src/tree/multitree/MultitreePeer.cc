@@ -532,6 +532,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 	IPvXAddress senderAddress;
 	getSender(pkt, senderAddress);
 
+	std::map<IPvXAddress, std::vector<int> > connectTo;
+
 	for(std::vector<DisconnectRequest>::iterator it = requests.begin(); it != requests.end(); ++it)
 	{
 		DisconnectRequest request = (DisconnectRequest)*it;
@@ -543,7 +545,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			// If the DisconnectRequest comes from a child, just remove it from
 			// my PartnerList it.. regardless of state
 			removeChild(stripe, senderAddress);
-			return;
+			continue;
 		}
 
 		switch (m_state[stripe])
@@ -575,12 +577,14 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				{
 					EV << "Node gave an invalid alternative parent (" << alternativeParent 
 						<< ")(unspecified, child or parent). Reconnecting to sender..." << endl;
-						connectVia(senderAddress, connect);
+					connectTo[senderAddress].push_back(stripe);
+					//connectVia(senderAddress, connect);
 				}
 				else
 				{
 					// Connect to the given alternative parent
-					connectVia(alternativeParent, connect);
+					//connectVia(alternativeParent, connect);
+					connectTo[alternativeParent].push_back(stripe);
 				}
 
 				break;
@@ -664,6 +668,12 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			}
 		}
 	}
+
+	for (std::map<IPvXAddress, std::vector<int> >::iterator it = connectTo.begin() ; it != connectTo.end(); ++it)
+	{
+		connectVia(it->first, it->second);
+	}
+
 }
 
 void MultitreePeer::processPassNodeRequest(cPacket* pkt)
