@@ -14,7 +14,7 @@ void MultitreeStatistic::initialize(int stage)
         sig_chunkArrival		= registerSignal("Signal_Chunk_Arrival");
         sig_packetLoss   		= registerSignal("Signal_Packet_Loss");
         sig_connectionRetry     = registerSignal("Signal_Connection_Retry");
-
+        sig_numTrees            = registerSignal("Signal_Num_Trees");
         sig_BWUtil              = registerSignal("Signal_BW_Utilization");
 	}
 
@@ -59,6 +59,7 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 	{
 		reportBWUtilization();
 		reportPacketLoss();
+		reportNumTreesForwarding();
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
 }
@@ -85,6 +86,27 @@ void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumC
 {
 	currentBWUtilization[node] = curNumConn;
 	maxBWUtilization[node] = maxNumConn;
+}
+
+void MultitreeStatistic::reportNumTreesForwarding()
+{
+	if(numTreesForwarding.size() > 0)
+	{
+		int totalTrees = 0;
+
+		for (std::map<IPvXAddress, int>::iterator it = numTreesForwarding.begin() ; it != numTreesForwarding.end(); ++it)
+		{
+			totalTrees += it->second;
+		}
+
+		double mean = (double)totalTrees / (double)numTreesForwarding.size();
+		emit(sig_numTrees, mean);
+	}
+}
+
+void MultitreeStatistic::gatherNumTreesForwarding(const IPvXAddress node, int numTrees)
+{
+	numTreesForwarding[node] = numTrees;
 }
 
 void MultitreeStatistic::reportPacketLoss()

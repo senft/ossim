@@ -223,6 +223,15 @@ void MultitreePeer::handleTimerReportStatistic()
 	// Report bandwidth usage
 	m_gstat->gatherBWUtilization(getNodeAddress(), m_partnerList->getNumOutgoingConnections(), getMaxOutConnections());
 
+	// Report number of trees I am forwarding in
+	int numActiveTrees = 0;
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_partnerList->getNumOutgoingConnections(i))
+			numActiveTrees++;
+	}
+	m_gstat->gatherNumTreesForwarding(getNodeAddress(), numActiveTrees);
+
 	// Report hit/missing chunks
 	if (m_player->getState() == PLAYER_STATE_PLAYING)
 	{
@@ -241,7 +250,7 @@ void MultitreePeer::handleTimerReportStatistic()
 		
 		EV << "Reporting " << delta << " missed chunks" << endl;
 	}
-   
+
 }
 
 void MultitreePeer::handleTimerSuccessorInfo(void)

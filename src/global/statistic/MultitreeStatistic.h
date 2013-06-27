@@ -33,6 +33,7 @@ public:
 	void reportConnectionRetry(const int count);
 
 	void gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn);
+	void gatherNumTreesForwarding(const IPvXAddress node, int numTrees);
 
 private:
 	cMessage *timer_reportGlobal;
@@ -42,6 +43,7 @@ private:
 
 	void reportBWUtilization();
 	void reportPacketLoss();
+	void reportNumTreesForwarding();
 
 	ActivePeerTable *m_apTable;
 
@@ -49,9 +51,11 @@ private:
 	simsignal_t sig_packetLoss;
 	simsignal_t sig_chunkArrival;
 	simsignal_t sig_connectionRetry;
+	simsignal_t sig_numTrees;
 
 	std::map<IPvXAddress, int> currentBWUtilization;
 	std::map<IPvXAddress, int> maxBWUtilization;
+	std::map<IPvXAddress, int> numTreesForwarding;
 
 	long m_count_chunkHit;
 	long m_count_chunkMiss;

@@ -10,6 +10,7 @@ simple MultitreeStatistic like IStreamingStatistic
 		@statistic[hopCount](source="Signal_Chunk_Arrival"; record=histogram,vector;);
 		@statistic[retryConnection](source="last(Signal_Connection_Retry)"; record=vector);
 
+        @statistic[numTrees](source="Signal_Num_Trees"; record=vector);
         @statistic[bwUtil](source="Signal_BW_Utilization"; record=vector);
         @statistic[packetloss](source="Signal_Packet_Loss"; record=vector);
 }
