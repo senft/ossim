@@ -5,16 +5,13 @@ from subprocess import call
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def main():
     call('scavetool vector -p "*hop*" -O hopcount.csv -F csv Multitree_Network-0.vec',
-            shell=True)
+         shell=True)
 
     with open('hopcount.csv') as f:
         v = np.loadtxt(f, delimiter=",", dtype='int', skiprows=1, usecols=(1,))
-
-    # Get rid of hopcounts < 1 (creation of packets is recorded in the source,
-    # too)
-    v = [n for n in v if n > 0]
 
     bins = sorted(set(n for n in v))
     bins.append(bins[-1] + 1)
