@@ -38,6 +38,7 @@ private:
 	void processDisconnectRequest(cPacket *pkt);
 	void processPassNodeRequest(cPacket *pkt);
 
+	virtual void optimize(void);
 	void leave(void);
 
 	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);

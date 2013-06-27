@@ -171,3 +171,96 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 		address = getNodeAddress();
 	return address;
 }
+
+void MultitreeSource::optimize(void)
+{
+	//int stripe = getPreferredStripe();
+
+	printStatus();
+
+	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
+
+	std::vector<std::map<IPvXAddress, int> > children;
+	for (int stripe = 0; stripe < numStripes; stripe++)
+	{
+
+		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
+
+        children.push_back(m_partnerList->getChildrenWithCount(stripe));
+		bool gain = true;
+		while(gain && children.size() > 1)
+		{
+			gain = false;
+
+			IPvXAddress linkToDrop;	
+			getCostliestChild(children[stripe], stripe, linkToDrop);
+
+			IPvXAddress alternativeParent;	
+			getCheapestChild(children[stripe], stripe, alternativeParent, linkToDrop);
+
+			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
+			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+
+			double gainIf = getGain(children[stripe], stripe, alternativeParent, linkToDrop);
+
+			//EV << "GAIN: " << gainIf << endl;
+			//EV << "THRESHOLD: " << getGainThreshold() << endl;
+
+			if(gainIf >= getGainThreshold())
+			{
+				// Drop costliest to cheapest
+				dropNode(stripe, linkToDrop, alternativeParent);
+
+				children[stripe][alternativeParent] += 1 + children[stripe][linkToDrop];
+				children[stripe].erase(children[stripe].find(linkToDrop));
+				gain = true;
+			}
+		}
+
+	}			
+
+	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
+		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
+
+	int stripe = 0;
+	while(remainingBW > 0)
+	{
+	std::map<IPvXAddress, int> requestNodes;
+
+		int maxSucc = -1;
+		IPvXAddress busiestChild;
+		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
+		{
+			if(it->second > maxSucc)
+			{
+				maxSucc = it->second;
+				busiestChild = it->first;
+			}
+		}
+
+		if(maxSucc == 0 || remainingBW == 0)
+			break;
+
+		remainingBW--;
+		requestNodes[busiestChild]++;
+		children[stripe][busiestChild]--;
+
+	TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
+	reqPkt->setStripe(stripe);
+	reqPkt->setThreshold(getGainThreshold());
+	reqPkt->setDependencyFactor( (double)(m_partnerList->getNumSuccessors(stripe) / 
+				(double)m_partnerList->getNumOutgoingConnections(stripe)) - 1 );
+
+
+	for (std::map<IPvXAddress, int>::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
+	{
+		EV << "Request " << it->second << " from " << it->first << endl;
+		reqPkt->setRemainingBW(it->second);
+		sendToDispatcher(reqPkt->dup(), m_localPort, it->first, m_localPort);
+	}
+
+	stripe = ++stripe % numStripes;
+
+	delete reqPkt;
+	}
+}
