@@ -122,7 +122,10 @@ network Multitree_Network extends BasicNetwork
 
         // -- -- Group 4
 		for i=(nNodePerRouter-1) * percentGroup3..(nNodePerRouter-1){
-            peerNode[i].pppg$o++ --> Channel_50M_up --> router.pppg$i++;
-            peerNode[i].pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
+            //peerNode[i].pppg$o++ --> Channel_50M_up --> router.pppg$i++;
+            //peerNode[i].pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
+
+            peerNode[i].pppg$o++ --> DSL16k_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
         }
 }
