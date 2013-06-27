@@ -14,6 +14,7 @@ simulations/results/*.png
 simulations/results/*.sca
 simulations/results/*.vci
 simulations/results/*.vec
+simulations/results/*.elog
 simulations/results/check-links.sh~
 simulations/results/gstatlog.txt
 simulations/proc-result/*.data
