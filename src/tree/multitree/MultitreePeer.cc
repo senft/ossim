@@ -675,18 +675,26 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 		<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
 		dependencyFactor << ")" << endl;
 
-	if(m_partnerList->getChildren(stripe).size() > 0)
+	successorList children = m_partnerList->getChildrenWithCount(stripe);
+
+	for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
 	{
-		IPvXAddress child = m_partnerList->getBusiestChild(stripe);
+		if(remainingBW == 0)
+			return;
+
+		IPvXAddress child = it->first;
+
 		double k3 = (dependencyFactor - m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
-		int k2 = m_partnerList->getNumChildsSuccessors(stripe, child) > 0 ? 0 : 1;
+		int k2 = (it->second > 0) ? 0 : 1;
 		double gain = k3 - (double)k2;
 
-		// TODO k2 and k3 are often -nan
-		EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
+		//EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
 		if(gain < threshold)
+		{
 			dropNode(stripe, child, senderAddress);
+			remainingBW--;
+		}
 		else
 			EV << "NOT GIVING CHILD: " << child << endl;
 	}
