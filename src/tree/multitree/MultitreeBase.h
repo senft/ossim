@@ -95,6 +95,8 @@ protected:
     int getMaxOutConnections(void);
 
 private:
+	int preferredStripe;
+
 	void cancelAndDeleteTimer(void);
 
 	double getBWCapacity(void);

@@ -737,7 +737,15 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 
 bool MultitreePeer::isPreferredStripe(int stripe)
 {
-	return stripe == getPreferredStripe();
+	for (int i = 1; i < numStripes; i++)
+	{
+		if(i == stripe)
+			continue;
+
+		if( m_partnerList->getNumOutgoingConnections(stripe) < m_partnerList->getNumOutgoingConnections(i) )
+			return false;
+	}
+	return true;
 }
 
 void MultitreePeer::onNewChunk(int sequenceNumber)

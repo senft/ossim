@@ -19,8 +19,6 @@ void MultitreeBase::initialize(int stage)
 		getAppSetting();
 		findNodeAddress();
 
-		requestedChildship = new IPvXAddress[numStripes];
-
 		m_videoBuffer->addListener(this);
 
 		// -------------------------------------------------------------------------
@@ -33,6 +31,9 @@ void MultitreeBase::initialize(int stage)
 
 		m_state = new TreeJoinState[numStripes];
 
+		preferredStripe = -1;
+
+		requestedChildship = new IPvXAddress[numStripes];
 		lastSeqNumber = new long[numStripes];
 		for (int i = 0; i < numStripes; i++)
 		{
@@ -567,17 +568,22 @@ double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
 		}
 	}
 
-    return (double)numConnections / numStripes;
+    return (double)numConnections / (double)numStripes;
 }
 
 int MultitreeBase::getPreferredStripe()
 {
+	if(preferredStripe != -1 && isPreferredStripe(preferredStripe))
+		return preferredStripe;
+
 	int max = 0;
 	for (int i = 1; i < numStripes; i++)
 	{
-		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumOutgoingConnections(i) )
+		// Introduce randomness so not every node selects the same stripe as preferred
+		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumOutgoingConnections(i) && (intrand(2) % 2 == 0) )
 			max = i;
 	}
+	preferredStripe = max;
 	return max;
 }
 
