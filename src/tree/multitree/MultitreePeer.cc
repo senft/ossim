@@ -222,24 +222,27 @@ void MultitreePeer::handleTimerLeave()
 
 void MultitreePeer::handleTimerReportStatistic()
 {
+	// Report bandwidth usage
+	m_gstat->gatherBWUtilization(getNodeAddress(), m_partnerList->getNumOutgoingConnections(), getMaxOutConnections());
 
-   if (m_player->getState() == PLAYER_STATE_PLAYING)
-   {
-      long int delta = m_player->getCountChunkHit() - m_count_prev_chunkHit;
-
-      m_count_prev_chunkHit = m_player->getCountChunkHit();
-      m_gstat->increaseChunkHit((int)delta);
-
-      EV << "Reporting " << delta << " found chunks" << endl;
-
-      delta = m_player->getCountChunkMiss() - m_count_prev_chunkMiss;
-
-      m_count_prev_chunkMiss = m_player->getCountChunkMiss();
-
-      m_gstat->increaseChunkMiss((int)delta);
-
-      EV << "Reporting " << delta << " missed chunks" << endl;
-   }
+	// Report hit/missing chunks
+	if (m_player->getState() == PLAYER_STATE_PLAYING)
+	{
+		long int delta = m_player->getCountChunkHit() - m_count_prev_chunkHit;
+		
+		m_count_prev_chunkHit = m_player->getCountChunkHit();
+		m_gstat->increaseChunkHit((int)delta);
+		
+		EV << "Reporting " << delta << " found chunks" << endl;
+		
+		delta = m_player->getCountChunkMiss() - m_count_prev_chunkMiss;
+		
+		m_count_prev_chunkMiss = m_player->getCountChunkMiss();
+		
+		m_gstat->increaseChunkMiss((int)delta);
+		
+		EV << "Reporting " << delta << " missed chunks" << endl;
+	}
    
 }
 

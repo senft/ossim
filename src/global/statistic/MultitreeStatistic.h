@@ -32,13 +32,26 @@ public:
 	void reportChunkArrival(const int hopcount);
 	void reportConnectionRetry(const int count);
 
+	void gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn);
+
 private:
+	cMessage *timer_reportGlobal;
+	double param_interval_reportGlobal;
+
 	void handleTimerMessage(cMessage *msg);
+
+	void reportBWUtilization();
+	void reportPacketLoss();
 
 	ActivePeerTable *m_apTable;
 
+	simsignal_t sig_BWUtil;
+	simsignal_t sig_packetLoss;
 	simsignal_t sig_chunkArrival;
 	simsignal_t sig_connectionRetry;
+
+	std::map<IPvXAddress, int> currentBWUtilization;
+	std::map<IPvXAddress, int> maxBWUtilization;
 
 	long m_count_chunkHit;
 	long m_count_chunkMiss;
