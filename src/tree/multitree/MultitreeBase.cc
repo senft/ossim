@@ -114,6 +114,18 @@ void MultitreeBase::bindToStatisticModule(void)
 
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
+	bool allIdle = true;
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_state[i] != TREE_JOIN_STATE_IDLE)
+		{
+			allIdle = false;
+			break;
+		}
+	}
+	if(allIdle)
+		return;
+
 	IPvXAddress senderAddress;
     getSender(pkt, senderAddress);
 
@@ -138,7 +150,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
 
-			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
+			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING || m_state[stripe] == TREE_JOIN_STATE_IDLE)
 			{
 				EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
 				reject.push_back(request);
