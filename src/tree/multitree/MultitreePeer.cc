@@ -286,7 +286,7 @@ void MultitreePeer::scheduleSuccessorInfo(int stripe)
     if(timer_successorInfo->isScheduled())
 		return;
 
-	EV << "SCHEDULING SUCC_INFO to: " << simTime() + param_delaySuccessorInfo << endl;
+	EV << "Scheduling SUCC_INFO to: " << simTime() + param_delaySuccessorInfo << endl;
     scheduleAt(simTime() + param_delaySuccessorInfo, timer_successorInfo);
 }
 
@@ -418,7 +418,6 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 	TreeConnectRequestPacket *pkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
 
 	EV << "Sending ConnectRequest for stripe(s) ";
-
 	for (int i = 0; i < numReqStripes; i++)
 	{
 		int stripe = stripes[i];
@@ -439,7 +438,6 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 
 		EV << stripe << ", ";
 	}
-
 	EV << "to " << address << " " << endl;
 
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
@@ -504,7 +502,8 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		if(m_partnerList->getParent(i).isUnspecified())
 			return;
 
-		// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me (to connect to me)
+		// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me
+		// (to connect to me)
 		m_apTable->addAddress(getNodeAddress());
 
 		// Start collecting statistics
@@ -592,19 +591,12 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			}
 			case TREE_JOIN_STATE_LEAVING:
 			{
-
 				if( m_partnerList->hasParent(stripe, senderAddress) )
 				{
-					if(m_partnerList->hasChildren(stripe))
-					{
-						EV << "MEH" << endl;	
-					}
-					else
-					{
-						// Since I am already in leaving state, the DisconnectRequest already has be
-						// on the way to my parent (it just wants me to leave and doesn't know that
-						// I already am...), so I can safely ignore this
-					}
+					// Since I am already in leaving state, the DisconnectRequest already has be
+					// on the way to my parent (it just wants me to leave and doesn't know that
+					// I already am...), so I can safely ignore this
+					EV << "Parent sent me another DisconnectRequest, while I am leaving. Ignoring..." << endl;
 				}
 				else if(m_partnerList->hasChild(stripe, senderAddress))
 				{
@@ -828,11 +820,9 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 	// stripe)
 	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
 
-	if( //m_state[stripe] == TREE_JOIN_STATE_LEAVING ||
-			address.isUnspecified() ||
-			!m_partnerList->hasChildren(stripe) ||
-			(m_partnerList->getNumOutgoingConnections(stripe) == 1 && m_partnerList->hasChild(stripe, forNode)) 
-		)
+	if( address.isUnspecified() ||
+		!m_partnerList->hasChildren(stripe) ||
+		(m_partnerList->getNumOutgoingConnections(stripe) == 1 && m_partnerList->hasChild(stripe, forNode)) )
 	{
 		address = m_partnerList->getParent(stripe);
 	}
