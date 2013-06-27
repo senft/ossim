@@ -203,10 +203,8 @@ void MultitreePeer::handleTimerLeave()
 			for (std::vector<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
 			{
 				IPvXAddress addr = (IPvXAddress)*it;
-				if(addr.equals(laziestChild))
-					continue;
-
-				dropNode(i, addr, laziestChild);
+				if(!addr.equals(laziestChild))
+					dropNode(i, addr, laziestChild);
 			}
 
 		}
@@ -608,7 +606,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 						// I already am...), so I can safely ignore this
 					}
 				}
-				else
+				else if(m_partnerList->hasChild(stripe, senderAddress))
 				{
 					// I have sent a DisconnectRequest to a child node and that node finally
 					// disconnects
@@ -642,7 +640,16 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 					{
 						leave();
 					}
-
+				}
+				else
+				{
+					// This happens when:
+					//   - This node leaves and disconnected from all children
+					//   - Because all child nodes left I disconnect from my parents and clear my
+					//     partner list
+					//   - While my DisconnectRequest is on the way to my parent, my parent wants to
+					//     disconnect from me
+					//   - Since my DisconnectRequest is already on the way I can safely ignore this
 				}
 
 				break;
