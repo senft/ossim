@@ -820,6 +820,9 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
 
+	// Chose the node with the least successors (however getChildWithLeastSuccessors tries to make
+	// sure that the node has at least one successors, meaning the node is forwarding in the given
+	// stripe)
 	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
 
 	if( //m_state[stripe] == TREE_JOIN_STATE_LEAVING ||
