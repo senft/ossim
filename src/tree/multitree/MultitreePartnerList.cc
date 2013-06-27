@@ -78,26 +78,40 @@ void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int success
 			std::pair<IPvXAddress, int>(address, successors));
 }
 
+/**
+ * Returns the child that has the least (but at least one) successor. It is also possible to specify
+ * some nodes that should not be chosen here.
+ */
 IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::set<IPvXAddress> &skipNodes)
 {
 	IPvXAddress child;
-	std::map<IPvXAddress, int> curChildren = children[stripe];
+	const std::map<IPvXAddress, int> curChildren = children[stripe];
 
-	int minSucc = INT_MAX;
-
-	for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+	if(curChildren.size() > 0)
 	{
-		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
-		if(!skipNode)
+		int minSucc = INT_MAX;
+
+		for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 		{
-			if(it->second < minSucc)
+			bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+			if(!skipNode)
 			{
-				minSucc = it->second;
-				child = it->first;
+				if(it->second > 0 && it->second < minSucc)
+				{
+					minSucc = it->second;
+					child = it->first;
+				}
 			}
 		}
-	}
 
+		if(child.isUnspecified())
+		{
+			// All childs have 0 successors -> just pick a random child
+			std::map<IPvXAddress, int>::const_iterator it = curChildren.begin();
+			std::advance(it, intrand(curChildren.size()));
+			child = (IPvXAddress)it->first;
+		}
+	}
 	return child;
 }
 
