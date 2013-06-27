@@ -41,6 +41,7 @@ void MultitreeBase::initialize(int stage)
 		}
 
 		param_delayOptimization = par("delayOptimization");
+		param_optimize = par("optimize");
 
 		bwCapacity = getBWCapacity();
 	}
@@ -319,10 +320,10 @@ bool MultitreeBase::hasBWLeft(int additionalConnections)
 
 void MultitreeBase::scheduleOptimization(void)
 {
-	if(timer_optimization->isScheduled())
+	if(timer_optimization->isScheduled() || !param_optimize)
 		return;
 
-	EV << "SCHEDULING OPTIMIZATION to: " << simTime() + param_delayOptimization << endl;
+	EV << "Scheduling optimization to: " << simTime() + param_delayOptimization << endl;
     scheduleAt(simTime() + param_delayOptimization, timer_optimization);
 }
 

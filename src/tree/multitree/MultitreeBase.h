@@ -96,6 +96,7 @@ protected:
 
 private:
 	int preferredStripe;
+	bool param_optimize;
 
 	void cancelAndDeleteTimer(void);
 

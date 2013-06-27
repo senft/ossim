@@ -9,4 +9,5 @@ simple MultitreeBase extends CommBase
         @display("i=block/app;bgb=250,410");
 
 		double delayOptimization @unit(s) = default(1s);
+		bool optimize = default(true);
 }
