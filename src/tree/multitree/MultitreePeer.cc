@@ -553,38 +553,47 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		{
 			case TREE_JOIN_STATE_IDLE_WAITING:
 			{
-				if(m_partnerList->hasParent(stripe, senderAddress))
+				if(requestedChildship[stripe].equals(senderAddress))
+				{
+					// A node rejected my ConnectRequest
+					
+					stat_retrys[stripe]++;
+
+					m_state[stripe] = TREE_JOIN_STATE_IDLE;
+					//requestedChildship[stripe] = IPvXAddress();
+
+					EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
+
+					std::vector<int> connect;
+					connect.push_back(stripe);
+
+					if( alternativeParent.isUnspecified()
+							|| m_partnerList->hasChild(stripe, alternativeParent)
+							//|| m_partnerList->hasParent(stripe, alternativeParent) 
+						)
+					{
+						EV << "Node gave an invalid alternative parent (" << alternativeParent 
+							<< ")(unspecified, child or parent). Reconnecting to sender..." << endl;
+						connectTo[senderAddress].push_back(stripe);
+					}
+					else
+					{
+						// Connect to the given alternative parent
+						connectTo[alternativeParent].push_back(stripe);
+					}
+				}
+				else if(m_partnerList->hasParent(stripe, senderAddress))
 				{
 					EV << "Received another DisconnectRequest (stripe " << stripe << ") from parent ("
 						<< senderAddress << "). Ignoring..." << endl;
-					return;
-				}
-
-				// A node rejected my ConnectRequest
-				
-				stat_retrys[stripe]++;
-
-				m_state[stripe] = TREE_JOIN_STATE_IDLE;
-				//requestedChildship[stripe] = IPvXAddress();
-
-				EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
-
-				std::vector<int> connect;
-				connect.push_back(stripe);
-
-				if( alternativeParent.isUnspecified()
-						|| m_partnerList->hasChild(stripe, alternativeParent)
-						|| m_partnerList->hasParent(stripe, alternativeParent) )
-				{
-					EV << "Node gave an invalid alternative parent (" << alternativeParent 
-						<< ")(unspecified, child or parent). Reconnecting to sender..." << endl;
-					connectTo[senderAddress].push_back(stripe);
+					continue;
 				}
 				else
 				{
-					// Connect to the given alternative parent
-					connectTo[alternativeParent].push_back(stripe);
+					throw cException("hae?");
 				}
+
+
 
 				break;
 			}
@@ -845,6 +854,12 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
 	skipNodes.insert(lastRequest);
+
+	std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
+	for(std::set<IPvXAddress>::iterator it = curDisconnectingChildren.begin(); it != curDisconnectingChildren.end(); ++it)
+	{
+		skipNodes.insert( (IPvXAddress)*it );
+	}
 
 	// Chose the node with the least successors (however getChildWithLeastSuccessors tries to make
 	// sure that the node has at least one successors, meaning the node is forwarding in the given
