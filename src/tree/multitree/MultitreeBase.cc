@@ -43,7 +43,8 @@ void MultitreeBase::initialize(int stage)
 		param_delayOptimization = par("delayOptimization");
 		param_optimize = par("optimize");
 
-		bwCapacity = getBWCapacity();
+		//bwCapacity = getBWCapacity();
+		bwCapacity = par("bwCapacity");
 	}
 }
 
