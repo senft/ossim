@@ -491,15 +491,22 @@ double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
 int MultitreeBase::getPreferredStripe()
 {
 	if(preferredStripe != -1 && isPreferredStripe(preferredStripe))
-		return preferredStripe;
-
-	int max = 0;
-	for (int i = 1; i < numStripes; i++)
 	{
-		// Introduce randomness so not every node selects the same stripe as preferred
-		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumOutgoingConnections(i) && (intrand(2) % 2 == 0) )
-			max = i;
+		return preferredStripe;
 	}
+
+	// Start with a random stripe and check all stripes starting with the random one
+	int max = intrand(numStripes);
+	int startWith = max;
+	for(int i = 0; i < numStripes; ++i)
+	{
+		int check = (startWith + i) % numStripes;
+		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumOutgoingConnections(check) )
+		{
+			max = check;
+		}
+	}
+
 	preferredStripe = max;
 	return max;
 }
@@ -551,7 +558,7 @@ int MultitreeBase::getConnections(void)
 void MultitreeBase::printStatus(void)
 {
 	EV << "******************************" << endl;
-	EV << getNodeAddress() << endl;
+	EV << getNodeAddress() << " (preferred stripe: " << getPreferredStripe() << ")" << endl;
 	m_partnerList->printPartnerList();
 }
 

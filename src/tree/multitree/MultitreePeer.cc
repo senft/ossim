@@ -750,7 +750,7 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 
 bool MultitreePeer::isPreferredStripe(int stripe)
 {
-	for (int i = 1; i < numStripes; i++)
+	for (int i = 0; i < numStripes; i++)
 	{
 		if(i == stripe)
 			continue;
