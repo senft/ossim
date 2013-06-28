@@ -7,6 +7,7 @@ struct ConnectRequest
 	int numSuccessors;
 	long lastReceivedChunk;
 	IPvXAddress currentParent;
+	IPvXAddress lastRequest;
 };
 
 struct ConnectConfirm

@@ -441,6 +441,7 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 		request.numSuccessors = numSucc;
 		request.lastReceivedChunk = lastReceivedChunk;
 		request.currentParent = currentParent;
+		request.lastRequest = requestedChildship[stripe];
 
 		pkt->getRequests().push_back(request);
 
@@ -564,7 +565,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				stat_retrys[stripe]++;
 
 				m_state[stripe] = TREE_JOIN_STATE_IDLE;
-				requestedChildship[stripe] = IPvXAddress();
+				//requestedChildship[stripe] = IPvXAddress();
 
 				EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
 
@@ -578,12 +579,10 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 					EV << "Node gave an invalid alternative parent (" << alternativeParent 
 						<< ")(unspecified, child or parent). Reconnecting to sender..." << endl;
 					connectTo[senderAddress].push_back(stripe);
-					//connectVia(senderAddress, connect);
 				}
 				else
 				{
 					// Connect to the given alternative parent
-					//connectVia(alternativeParent, connect);
 					connectTo[alternativeParent].push_back(stripe);
 				}
 
@@ -698,6 +697,8 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 	successorList children = m_partnerList->getChildrenWithCount(stripe);
 
+	// TODO try to first give the nodes with the most successors to the top, so that the hopcount is
+	// reduced for the maximum number of nodes possible
 	for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
 	{
 		if(remainingBW == 0)
@@ -838,11 +839,12 @@ int MultitreePeer::getGreatestReceivedSeqNumber(void)
 	return max;
 }
 
-IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent)
+IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, IPvXAddress lastRequest)
 {
 	std::set<IPvXAddress> skipNodes;
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
+	skipNodes.insert(lastRequest);
 
 	// Chose the node with the least successors (however getChildWithLeastSuccessors tries to make
 	// sure that the node has at least one successors, meaning the node is forwarding in the given

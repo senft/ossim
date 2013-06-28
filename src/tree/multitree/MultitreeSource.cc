@@ -159,11 +159,12 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 	}
 }
 
-IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent)
+IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, IPvXAddress lastRequest)
 {
 	std::set<IPvXAddress> skipNodes;
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
+	skipNodes.insert(lastRequest);
 
 	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
 
@@ -223,6 +224,7 @@ void MultitreeSource::optimize(void)
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
 	int stripe = 0;
+	// TODO: only send 1 req per node
 	while(remainingBW > 0)
 	{
 	std::map<IPvXAddress, int> requestNodes;

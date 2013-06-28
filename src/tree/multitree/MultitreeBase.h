@@ -88,7 +88,7 @@ protected:
 	void dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
 	int getPreferredStripe();
 
-	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent) = 0;
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, IPvXAddress lastRequest) = 0;
 
     void handleTimerOptimization();
 	cMessage *timer_optimization;

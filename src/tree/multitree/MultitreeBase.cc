@@ -207,8 +207,9 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		ConnectRequest cRequest = requests[i];
 		int stripe = cRequest.stripe;
 		IPvXAddress currentParent = cRequest.currentParent;
+		IPvXAddress lastRequest = cRequest.lastRequest;
 
-		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent);
+		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequest);
 
 		DisconnectRequest dRequest;
 		dRequest.stripe = stripe;
@@ -219,7 +220,7 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		pkt->getRequests().push_back(dRequest);
 	}
 
-    sendToDispatcher(pkt, m_localPort, address, m_destPort);
+	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
 void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address)
@@ -234,7 +235,9 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 		ConnectRequest request = requests[i];
 		int stripe = request.stripe;
 		int numSucc = request.numSuccessors;
-		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, IPvXAddress());
+		IPvXAddress currentParent = request.currentParent;
+		IPvXAddress lastRequest = request.lastRequest;
+		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequest);
 
 		ConnectConfirm confirm;
 		confirm.stripe = stripe;
@@ -529,7 +532,8 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 	// TODO make stripe a vector
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 
-	EV << "Sending DisconnectRequests to " << address << " (stripe: " << stripe << "), alternativeParent=" << alternativeParent << endl;
+	EV << "Sending DisconnectRequests to " << address << " (stripe: " << stripe 
+		<< "), alternativeParent=" << alternativeParent << endl;
 
 	DisconnectRequest request;
 	request.stripe = stripe;
