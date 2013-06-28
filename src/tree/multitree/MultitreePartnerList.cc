@@ -84,6 +84,7 @@ void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int success
  */
 IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::set<IPvXAddress> &skipNodes)
 {
+	// TODO: refactor
 	IPvXAddress child;
 	const std::map<IPvXAddress, int> curChildren = children[stripe];
 
@@ -104,12 +105,43 @@ IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::s
 			}
 		}
 
+		//if(child.isUnspecified())
+		//{
+		//	// No child with succ > 0 has been found, dismiss that requirement
+		//	for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		//	{
+		//		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+		//		if(!skipNode)
+		//		{
+		//			if(it->second < minSucc)
+		//			{
+		//				minSucc = it->second;
+		//				child = it->first;
+		//			}
+		//		}
+		//	}
+		//}
+
 		if(child.isUnspecified())
 		{
-			// All childs have 0 successors -> just pick a random child
-			std::map<IPvXAddress, int>::const_iterator it = curChildren.begin();
-			std::advance(it, intrand(curChildren.size()));
-			child = (IPvXAddress)it->first;
+			// All children have 0 successors -> just pick a random child (but make sure it is not in
+			// 'skipNode'
+			bool allInSkipNodes = true;
+			for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+			{
+				if(skipNodes.find(it->first) == skipNodes.end())
+					return it->first;
+					//allInSkipNodes = false;
+			}
+
+			if(!allInSkipNodes)
+			{
+				do {
+					std::map<IPvXAddress, int>::const_iterator it = curChildren.begin();
+					std::advance(it, intrand(curChildren.size()));
+					child = (IPvXAddress)it->first;
+				} while(skipNodes.find(child) != skipNodes.end());
+			}
 		}
 	}
 	return child;
