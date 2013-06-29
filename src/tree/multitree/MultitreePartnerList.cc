@@ -130,8 +130,8 @@ IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::s
 			for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 			{
 				if(skipNodes.find(it->first) == skipNodes.end())
-					return it->first;
-					//allInSkipNodes = false;
+					//return it->first; // not random
+					allInSkipNodes = false; // random
 			}
 
 			if(!allInSkipNodes)

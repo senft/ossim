@@ -157,6 +157,11 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
 				reject.push_back(request);
 			}
+			//else if(m_state[stripe] == TREE_JOIN_STATE_IDLE_WAITING)
+			//{
+			//	EV << "Received ConnectRequest (stripe " << stripe << ") while parent is pending. Rejecting..." << endl;
+			//	reject.push_back(request);
+			//}
 			else if( m_partnerList->hasParent(stripe, senderAddress) )
 			{
 				EV << "Received ConnectRequest from parent " << senderAddress << " for stripe " << stripe 
@@ -516,6 +521,7 @@ int MultitreeBase::getPreferredStripe()
 
 	// Start with a random stripe and check all stripes starting with the random one
 	int max = intrand(numStripes);
+	//int max = 0;
 	int startWith = max;
 	for(int i = 0; i < numStripes; ++i)
 	{
