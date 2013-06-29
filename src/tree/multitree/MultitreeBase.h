@@ -48,6 +48,8 @@ protected:
     VideoBuffer				*m_videoBuffer;
     MultitreeStatistic 		*m_gstat;
 
+	std::map<int, std::set<IPvXAddress> > disconnectingChildren;
+
 	IPvXAddress *requestedChildship;
 
     TreeJoinState     		*m_state;

@@ -305,6 +305,12 @@ void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 {
 	EV << "Removing child: " << address << " (stripe: " << stripe << ")" << endl;
 	m_partnerList->removeChild(stripe, address);
+
+	std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
+
+	if(curDisconnectingChildren.find(address) != curDisconnectingChildren.end())
+		curDisconnectingChildren.erase(curDisconnectingChildren.find(address));
+
     scheduleSuccessorInfo(stripe);
 }
 
@@ -540,6 +546,8 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 	request.alternativeParent = alternativeParent;
 
 	pkt->getRequests().push_back(request);
+
+	disconnectingChildren[stripe].insert(address);
 
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
