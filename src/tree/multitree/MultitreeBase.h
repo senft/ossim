@@ -110,6 +110,7 @@ protected:
 private:
 	int preferredStripe;
 	bool param_optimize;
+	bool param_sendMissingChunks;
 
 	void cancelAndDeleteTimer(void);
 

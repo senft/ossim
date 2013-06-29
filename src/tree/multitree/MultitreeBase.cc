@@ -42,6 +42,7 @@ void MultitreeBase::initialize(int stage)
 
 		param_delayOptimization = par("delayOptimization");
 		param_optimize = par("optimize");
+		param_sendMissingChunks = par("sendMissingChunks");
 
 		//bwCapacity = getBWCapacity();
 		bwCapacity = par("bwCapacity");
@@ -255,7 +256,16 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 
 	for (int i = 0; i < numReqStripes; i++)
 	{
-		int stripe = requests[i].stripe;
+		ConnectRequest request = requests[i];
+
+		int stripe = request.stripe;
+
+		if(param_sendMissingChunks)
+		{
+			int lastChunk = request.lastReceivedChunk;
+			sendChunksToNewChild(stripe, address, lastChunk);
+		}
+
 		scheduleSuccessorInfo(stripe);
 	}
 
@@ -609,3 +619,27 @@ int MultitreeBase::getMaxOutConnections()
 {
 	return numStripes * (bwCapacity);
 }
+
+void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk)
+{
+  //EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
+  if(lastChunk != -1)
+  {
+    for (int i = lastChunk; i <= lastSeqNumber[stripe]; i++)
+    {
+      if(m_videoBuffer->isInBuffer(i))
+      {
+        VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(i);
+        VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
+
+        if(stripePkt->getStripe() == stripe)
+        {
+          //EV << "Sending chunk: " << i << endl;
+          sendToDispatcher(stripePkt->dup(), m_localPort, address, m_destPort);
+        }
+      }
+    }
+  }
+
+}
+

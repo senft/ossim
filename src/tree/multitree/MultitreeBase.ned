@@ -12,4 +12,5 @@ simple MultitreeBase extends CommBase
 
 		double delayOptimization @unit(s) = default(1s);
 		bool optimize = default(true);
+		bool sendMissingChunks = default(true);
 }
