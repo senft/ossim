@@ -130,8 +130,7 @@ IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::s
 			for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 			{
 				if(skipNodes.find(it->first) == skipNodes.end())
-					//return it->first; // not random
-					allInSkipNodes = false; // random
+					allInSkipNodes = false;
 			}
 
 			if(!allInSkipNodes)
@@ -343,25 +342,17 @@ void MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress add
 
 void MultitreePartnerList::printPartnerList(void)
 {
-	EV << "*********** Parents **********" << endl;
 	for (int i = 0; i < numStripes; i++)
 	{
-		EV << "Stripe " << i << ": " << parents[i] << endl;
-	}
-
-	EV << "********** Children **********" << endl;
-	for (int i = 0; i < numStripes; i++)
-	{
-		EV << "Stripe " << i << ": ";
+		EV << "*********** Stripe " << i << " **********" << endl;
+		EV << "Parent  : " << parents[i] << endl;
+		EV << "Children: ";
 
 		std::map<IPvXAddress, int> curChildren = children[i];
-
 		for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 		{
 			EV << it->first.str() << " (" << it->second << " successors), ";
 		}
 		EV << endl;
 	}
-
-	EV << "******************************" << endl;
 }

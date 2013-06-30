@@ -40,12 +40,10 @@ void MultitreeBase::initialize(int stage)
 			lastSeqNumber[i] = -1L;
 		}
 
-		param_delayOptimization = par("delayOptimization");
-		param_optimize = par("optimize");
-		param_sendMissingChunks = par("sendMissingChunks");
-
 		//bwCapacity = getBWCapacity();
 		bwCapacity = par("bwCapacity");
+		param_delayOptimization = par("delayOptimization");
+		param_optimize = par("optimize");
 	}
 }
 
@@ -132,7 +130,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
     getSender(pkt, senderAddress);
 
 	TreeConnectRequestPacket *treePkt = check_and_cast<TreeConnectRequestPacket *>(pkt);
-	std::vector<ConnectRequest> requests = treePkt->getRequests();
+	const std::vector<ConnectRequest> requests = treePkt->getRequests();
 
 	std::vector<ConnectRequest> accept;
 	std::vector<ConnectRequest> reject;
@@ -143,7 +141,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	// 2 runs: 1 for the preferred stripes, 1 for the remaining
 	for (int i = 0; i < 2; i++)
 	{
-		for(std::vector<ConnectRequest>::iterator it = requests.begin(); it != requests.end(); ++it)
+		for(std::vector<ConnectRequest>::const_iterator it = requests.begin(); it != requests.end(); ++it)
 		{
 			const ConnectRequest request = (ConnectRequest)*it;
 			int stripe = request.stripe;
@@ -309,8 +307,6 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 
 	if(changes)
 	{
-		printStatus();
-
 		// Optimize when a node detects "major changes" in the topology below
 		scheduleOptimization();
 	}
@@ -585,9 +581,10 @@ int MultitreeBase::getConnections(void)
 
 void MultitreeBase::printStatus(void)
 {
-	EV << "******************************" << endl;
+	EV << "*******************************" << endl;
 	EV << getNodeAddress() << " (preferred stripe: " << getPreferredStripe() << ")" << endl;
 	m_partnerList->printPartnerList();
+	EV << "*******************************" << endl;
 }
 
 

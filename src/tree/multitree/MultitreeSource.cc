@@ -131,6 +131,7 @@ void MultitreeSource::cancelAllTimer()
 void MultitreeSource::scheduleSuccessorInfo(int stripe)
 { 
 	// Do nothing because a source has no parents...
+	printStatus();
 }
 
 bool MultitreeSource::isPreferredStripe(int stripe)
