@@ -16,6 +16,7 @@ void MultitreeStatistic::initialize(int stage)
         sig_connectionRetry     = registerSignal("Signal_Connection_Retry");
         sig_numTrees            = registerSignal("Signal_Num_Trees");
         sig_BWUtil              = registerSignal("Signal_BW_Utilization");
+        sig_connTime            = registerSignal("Signal_Connection_Time");
 	}
 
     if (stage != 3)
@@ -34,9 +35,14 @@ void MultitreeStatistic::initialize(int stage)
 	m_count_allChunk = 0;
 	m_count_chunkMiss = 0;
 
+	meanBWUtil = 0;
+
 	WATCH(m_count_chunkHit);
 	WATCH(m_count_chunkMiss);
 	WATCH(m_count_allChunk);
+
+	WATCH(meanBWUtil);
+	WATCH(meanConnectionTime);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 }
@@ -60,6 +66,7 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportBWUtilization();
 		reportPacketLoss();
 		reportNumTreesForwarding();
+		reportConnectionTime();
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
 }
@@ -77,9 +84,25 @@ void MultitreeStatistic::reportBWUtilization()
 			totalMaxNumCon += maxBWUtilization[it->first];
 		}
 
-		double totalUtilization = (double)totalCurNumCon / (double)totalMaxNumCon;
-		emit(sig_BWUtil, totalUtilization);
+		meanBWUtil = (double)totalCurNumCon / (double)totalMaxNumCon;
+		emit(sig_BWUtil, meanBWUtil);
 	}
+}
+
+void MultitreeStatistic::gatherConnectionTime(int stripe, double time)
+{
+	connectionTimes.push_back(time);
+}
+
+void MultitreeStatistic::reportConnectionTime()
+{
+	double sum = 0;
+	for(std::vector<double>::iterator it = connectionTimes.begin(); it != connectionTimes.end(); ++it)
+	{
+		sum += (double)*it;
+	}
+	meanConnectionTime = sum / (double)connectionTimes.size();
+	emit(sig_connTime, meanConnectionTime);
 }
 
 void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn)

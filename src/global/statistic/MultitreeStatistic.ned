@@ -13,4 +13,5 @@ simple MultitreeStatistic like IStreamingStatistic
         @statistic[numTrees](source="Signal_Num_Trees"; record=vector);
         @statistic[bwUtil](source="Signal_BW_Utilization"; record=vector);
         @statistic[packetloss](source="Signal_Packet_Loss"; record=vector);
+        @statistic[conntime](source="Signal_Connection_Time"; record=vector);
 }

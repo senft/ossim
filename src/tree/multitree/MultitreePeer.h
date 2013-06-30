@@ -17,6 +17,7 @@ protected:
 private:
 	IPvXAddress *fallbackParent;
 	int *stat_retrys;
+	std::vector<simtime_t> beginConnecting;
 
 	long firstSequenceNumber;
 
@@ -33,6 +34,8 @@ private:
     void handleTimerMessage(cMessage *msg);
 
     void onNewChunk(int sequenceNumber);
+
+    void startPlayer(void);
 
 	void processConnectConfirm(cPacket* pkt);
 	void processDisconnectRequest(cPacket *pkt);

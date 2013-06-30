@@ -44,6 +44,11 @@ void MultitreePeer::initialize(int stage)
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 
+		for (int i = 0; i < numStripes; i++)
+		{
+			beginConnecting.push_back(-1);
+		}
+
 		stat_retrys = new int[numStripes];
 		numSuccChanged = new bool[numStripes];
 		fallbackParent = new IPvXAddress[numStripes];
@@ -68,6 +73,7 @@ void MultitreePeer::initialize(int stage)
 		for (int i = 0; i < numStripes; i++)
 		{
 			WATCH(lastSeqNumber[i]);
+			WATCH(beginConnecting[i]);
 		}
 	}
 }
@@ -257,6 +263,9 @@ void MultitreePeer::handleTimerReportStatistic()
 
 void MultitreePeer::handleTimerSuccessorInfo(void)
 {
+	EV << "Sending SuccessorInfo." << endl;
+	printStatus();
+
     TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_SUCCESSOR_INFO");
 
 	for (int i = 0; i < numStripes; i++)
@@ -445,6 +454,8 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 
 		pkt->getRequests().push_back(request);
 
+		if(beginConnecting[stripe] == -1)
+			beginConnecting[stripe] = simTime();
 		requestedChildship[stripe] = address;
 		m_state[stripe] = TREE_JOIN_STATE_IDLE_WAITING;
 
@@ -481,6 +492,9 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		int stripe = confirm.stripe;
 		IPvXAddress alternativeParent = confirm.alternativeParent;
 
+		double time = (simTime() - beginConnecting[stripe]).dbl();
+		m_gstat->gatherConnectionTime(stripe, time);
+
 		IPvXAddress oldParent = m_partnerList->getParent(stripe);
 		if(!oldParent.isUnspecified())
 		{
@@ -495,13 +509,15 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		}
 		else
 		{
-			EV << "New parent in stripe: " << stripe << " (fallback: " << alternativeParent << ")" << endl;
+			EV << "New parent in stripe: " << stripe << " (fallback: " << alternativeParent 
+				<< "), it took me :"  << time << " seconds." << endl;
 		}
 
 		fallbackParent[stripe] = alternativeParent;
 		requestedChildship[stripe] = IPvXAddress();
 		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
 		m_partnerList->addParent(stripe, address);
+		beginConnecting[stripe] = -1;
 
 		m_gstat->reportConnectionRetry(stat_retrys[stripe]);
 		stat_retrys[stripe] = 0;
@@ -798,21 +814,37 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 
 	lastSeqNumber[stripe] = sequenceNumber;
 
-	if(firstSequenceNumber == -1 || sequenceNumber < firstSequenceNumber)
+	if(m_player->getState() == PLAYER_STATE_IDLE)
 	{
-		//EV << "FIRST CHUNK: " << sequenceNumber << endl;
-		firstSequenceNumber = sequenceNumber;
+		if(firstSequenceNumber == -1 || sequenceNumber < firstSequenceNumber)
+		{
+			//EV << "FIRST CHUNK: " << sequenceNumber << endl;
+			firstSequenceNumber = sequenceNumber;
+		}
+
+		startPlayer();
+	}
+}
+
+/*
+ * Sees if there are <numStripes> consecutive chunks, if so, start the player
+ */
+void MultitreePeer::startPlayer(void)
+{
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_state[i] == TREE_JOIN_STATE_LEAVING)
+			return;
 	}
 
 	int max = getGreatestReceivedSeqNumber();
-
 	//EV << "MAX SEQ: " << max << endl;
 
 	int current = firstSequenceNumber;
 	int currentStart = firstSequenceNumber;
 	int streak = 0;
 
-	while(m_state[stripe] != TREE_JOIN_STATE_LEAVING && m_player->getState() == PLAYER_STATE_IDLE && current <= max)
+	while(m_player->getState() == PLAYER_STATE_IDLE && current <= max)
 	{
 		//EV << "Checking: " << current << endl;
 		if(m_videoBuffer->isInBuffer(current++))
@@ -835,6 +867,7 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 		}
 		
 	}
+
 }
 
 int MultitreePeer::getGreatestReceivedSeqNumber(void)
