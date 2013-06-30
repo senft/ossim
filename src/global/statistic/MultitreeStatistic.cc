@@ -43,6 +43,7 @@ void MultitreeStatistic::initialize(int stage)
 
 	WATCH(meanBWUtil);
 	WATCH(meanConnectionTime);
+	WATCH(meanNumTrees);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 }
@@ -122,8 +123,8 @@ void MultitreeStatistic::reportNumTreesForwarding()
 			totalTrees += it->second;
 		}
 
-		double mean = (double)totalTrees / (double)numTreesForwarding.size();
-		emit(sig_numTrees, mean);
+		meanNumTrees = (double)totalTrees / (double)numTreesForwarding.size();
+		emit(sig_numTrees, meanNumTrees);
 	}
 }
 

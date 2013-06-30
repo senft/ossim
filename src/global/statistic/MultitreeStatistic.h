@@ -67,6 +67,7 @@ private:
 
 	double meanBWUtil;
 	double meanConnectionTime;
+	double meanNumTrees;
 };
 
 #endif /* MULTITREE_STATISTIC_H_ */
