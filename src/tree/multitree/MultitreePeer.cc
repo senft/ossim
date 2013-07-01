@@ -969,22 +969,26 @@ void MultitreePeer::optimize(void)
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
+	// <node, remainingBW>
 	std::map<IPvXAddress, int> requestNodes;
 
 	while(remainingBW > 0)
 	{
+		std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
 		int maxSucc = -1;
 		IPvXAddress busiestChild;
 		for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
 		{
-			if(it->second > maxSucc)
+			if( it->second > maxSucc && curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
 			{
+				// More children and I didnt already send a DisconenctRequest there (the latter is
+				// needed to not send multiple DisconnectRequests to a child)
 				maxSucc = it->second;
 				busiestChild = it->first;
 			}
 		}
 
-		if(maxSucc == 0 || remainingBW == 0)
+		if(maxSucc <= 0 || remainingBW == 0)
 			break;
 
 		remainingBW--;

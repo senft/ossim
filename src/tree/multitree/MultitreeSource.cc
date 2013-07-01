@@ -188,9 +188,11 @@ void MultitreeSource::optimize(void)
 
 		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
+		// Get children of current stripe
         children.push_back(m_partnerList->getChildrenWithCount(stripe));
+
 		bool gain = true;
-		while(gain && children.size() > 1)
+		while(gain && children[stripe].size() > 1)
 		{
 			gain = false;
 
@@ -208,7 +210,7 @@ void MultitreeSource::optimize(void)
 			//EV << "GAIN: " << gainIf << endl;
 			//EV << "THRESHOLD: " << getGainThreshold() << endl;
 
-			if(gainIf >= getGainThreshold())
+			if(gainIf >= getGainThreshold() && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 			{
 				// Drop costliest to cheapest
 				dropNode(stripe, linkToDrop, alternativeParent);
@@ -234,8 +236,10 @@ void MultitreeSource::optimize(void)
 		IPvXAddress busiestChild;
 		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
-			if(it->second > maxSucc)
+			if( it->second > maxSucc && disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() )
 			{
+				// More children and I didnt already send a DisconenctRequest there (the latter is
+				// needed to not send multiple DisconnectRequests to a child)
 				maxSucc = it->second;
 				busiestChild = it->first;
 			}
