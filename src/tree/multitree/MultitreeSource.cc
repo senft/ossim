@@ -131,7 +131,6 @@ void MultitreeSource::cancelAllTimer()
 void MultitreeSource::scheduleSuccessorInfo(int stripe)
 { 
 	// Do nothing because a source has no parents...
-	printStatus();
 }
 
 bool MultitreeSource::isPreferredStripe(int stripe)
@@ -227,11 +226,11 @@ void MultitreeSource::optimize(void)
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
 	int stripe = 0;
-	// TODO: only send 1 req per node
+
+	// <node, <stripe, remainingBW> >
+	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
 	while(remainingBW > 0)
 	{
-	std::map<IPvXAddress, int> requestNodes;
-
 		int maxSucc = -1;
 		IPvXAddress busiestChild;
 		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
@@ -249,25 +248,33 @@ void MultitreeSource::optimize(void)
 			break;
 
 		remainingBW--;
-		requestNodes[busiestChild]++;
+		requestNodes[busiestChild][stripe]++;
 		children[stripe][busiestChild]--;
 
-	TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
-	reqPkt->setStripe(stripe);
-	reqPkt->setThreshold(getGainThreshold());
-	reqPkt->setDependencyFactor( (double)(m_partnerList->getNumSuccessors(stripe) / 
-				(double)m_partnerList->getNumOutgoingConnections(stripe)) - 1 );
-
-
-	for (std::map<IPvXAddress, int>::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
-	{
-		EV << "Request " << it->second << " from " << it->first << endl;
-		reqPkt->setRemainingBW(it->second);
-		sendToDispatcher(reqPkt->dup(), m_localPort, it->first, m_localPort);
+		stripe = ++stripe % numStripes;
 	}
 
-	stripe = ++stripe % numStripes;
+	double threshold = getGainThreshold();
+	double depFactor = (double)(m_partnerList->getNumSuccessors(stripe) / 
+						(double)m_partnerList->getNumOutgoingConnections(stripe)) - 1;
 
-	delete reqPkt;
+	for (std::map<IPvXAddress, std::map<int, int> >::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
+	{
+		TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
+
+		for (std::map<int, int>::iterator stripes = it->second.begin() ; stripes != it->second.end(); ++stripes)
+		{
+			PassNodeRequest request;
+			request.stripe = stripes->first;
+			request.remainingBW = stripes->second;
+			request.threshold = threshold;
+			request.dependencyFactor = depFactor;
+
+			reqPkt->getRequests().push_back(request);
+
+			EV << "Request " << stripes->second << " from " << it->first << endl;
+		}
+
+		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
 	}
 }

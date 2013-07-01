@@ -272,7 +272,7 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 		scheduleSuccessorInfo(stripe);
 	}
 
-	printStatus();
+	//printStatus();
 }
 
 void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
@@ -307,6 +307,7 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 
 	if(changes)
 	{
+		printStatus();
 		// Optimize when a node detects "major changes" in the topology below
 		scheduleOptimization();
 	}
@@ -321,8 +322,6 @@ void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 
 	if(curDisconnectingChildren.find(address) != curDisconnectingChildren.end())
 		curDisconnectingChildren.erase(curDisconnectingChildren.find(address));
-
-    scheduleSuccessorInfo(stripe);
 }
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)

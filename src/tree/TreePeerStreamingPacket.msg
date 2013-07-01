@@ -95,11 +95,6 @@ packet TreePassNodeRequestPacket extends TreePeerStreamingPacket
     packetType = TREE_PASS_NODE_REQUEST;
 
 	PNRVector requests;
-
-	int stripe;
-	int remainingBW;
-	float threshold;
-	float dependencyFactor;
 }
 
 packet TreeSuccessorInfoPacket extends TreePeerStreamingPacket

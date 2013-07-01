@@ -229,13 +229,14 @@ void MultitreePeer::handleTimerLeave()
 void MultitreePeer::handleTimerReportStatistic()
 {
 	// Report bandwidth usage
-	m_gstat->gatherBWUtilization(getNodeAddress(), m_partnerList->getNumOutgoingConnections(), getMaxOutConnections());
+	m_gstat->gatherBWUtilization(getNodeAddress(),
+			m_partnerList->getNumOutgoingConnections(), getMaxOutConnections());
 
 	// Report number of trees I am forwarding in
 	int numActiveTrees = 0;
 	for (int i = 0; i < numStripes; i++)
 	{
-		if(m_partnerList->getNumOutgoingConnections(i))
+		if(m_partnerList->hasChildren(i))
 			numActiveTrees++;
 	}
 	m_gstat->gatherNumTreesForwarding(getNodeAddress(), numActiveTrees);
@@ -264,7 +265,6 @@ void MultitreePeer::handleTimerReportStatistic()
 void MultitreePeer::handleTimerSuccessorInfo(void)
 {
 	EV << "Sending SuccessorInfo." << endl;
-	printStatus();
 
     TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_SUCCESSOR_INFO");
 
@@ -557,11 +557,13 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		int stripe = request.stripe;
 		IPvXAddress alternativeParent = request.alternativeParent;
 
+		// TODO: This also is true, when I sent a DRQ to my child and it answers...
 		if( m_partnerList->hasChild(stripe, senderAddress) && m_state[stripe] != TREE_JOIN_STATE_LEAVING )
 		{
 			// If the DisconnectRequest comes from a child, just remove it from
 			// my PartnerList it.. regardless of state
 			removeChild(stripe, senderAddress);
+			scheduleSuccessorInfo(stripe);
 			continue;
 		}
 
@@ -643,7 +645,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 					// disconnects
 
 					EV << "Child " << senderAddress << " connected to new parent in stripe " << stripe << endl;
-					m_partnerList->removeChild(stripe, senderAddress);
+					removeChild(stripe, senderAddress);
+					//m_partnerList->removeChild(stripe, senderAddress);
 
 					if(m_partnerList->getChildren(stripe).empty())
 					{
@@ -704,46 +707,54 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 {
 	TreePassNodeRequestPacket *treePkt = check_and_cast<TreePassNodeRequestPacket *>(pkt);
 
-	int stripe = treePkt->getStripe();
+	std::vector<PassNodeRequest> requests = treePkt->getRequests();
 
-	if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
-		return;
-
-	int remainingBW = treePkt->getRemainingBW();
-	float threshold = treePkt->getThreshold();
-	float dependencyFactor = treePkt->getDependencyFactor();
-
-	IPvXAddress senderAddress;
-	getSender(pkt, senderAddress);
-
-	EV << "PassNodeRequest from parent " << senderAddress << " (stripe: " << stripe << ") (remainingBW: "
-		<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
-		dependencyFactor << ")" << endl;
-
-	successorList children = m_partnerList->getChildrenWithCount(stripe);
-
-	// TODO try to first give the nodes with the most successors to the top, so that the hopcount is
-	// reduced for the maximum number of nodes possible
-	for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
+	for(std::vector<PassNodeRequest>::iterator it = requests.begin(); it != requests.end(); ++it)
 	{
-		if(remainingBW == 0)
-			return;
 
-		IPvXAddress child = it->first;
+		PassNodeRequest request = (PassNodeRequest)*it;
+		int stripe = request.stripe;
 
-		double k3 = (dependencyFactor - m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
-		int k2 = (it->second > 0) ? 0 : 1;
-		double gain = k3 - (double)k2;
+		if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
+			continue;
 
-		//EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
+		int remainingBW = request.remainingBW;
+		float threshold = request.threshold;
+		float dependencyFactor = request.dependencyFactor;
 
-		if(gain < threshold)
+		IPvXAddress senderAddress;
+		getSender(pkt, senderAddress);
+
+		EV << "PassNodeRequest from parent " << senderAddress << " (stripe: " << stripe << ") (remainingBW: "
+			<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
+			dependencyFactor << ")" << endl;
+
+		successorList children = m_partnerList->getChildrenWithCount(stripe);
+
+		// TODO try to first give the nodes with the most successors to the top, so that the hopcount is
+		// reduced for the maximum number of nodes possible
+		for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
 		{
-			dropNode(stripe, child, senderAddress);
-			remainingBW--;
+			if(remainingBW == 0)
+				break;
+
+			IPvXAddress child = it->first;
+
+			double k3 = (dependencyFactor - m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
+			int k2 = (it->second > 0) ? 0 : 1;
+			double gain = k3 - (double)k2;
+
+			//EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
+
+			if(gain < threshold)
+			{
+				dropNode(stripe, child, senderAddress);
+				remainingBW--;
+			}
+			else
+				EV << "Not giving child: " << child << endl;
 		}
-		else
-			EV << "NOT GIVING CHILD: " << child << endl;
+
 	}
 }
 
@@ -995,20 +1006,21 @@ void MultitreePeer::optimize(void)
 		requestNodes[busiestChild]++;
 		children[busiestChild]--;
 	}
-
-	TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
-	reqPkt->setStripe(stripe);
-	reqPkt->setThreshold(getGainThreshold());
-	reqPkt->setDependencyFactor( (double)(m_partnerList->getNumSuccessors(stripe) / 
-				(double)m_partnerList->getNumOutgoingConnections(stripe)) - 1 );
-
-
+	
 	for (std::map<IPvXAddress, int>::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
 	{
-		EV << "Request " << it->second << " from " << it->first << endl;
-		reqPkt->setRemainingBW(it->second);
-		sendToDispatcher(reqPkt->dup(), m_localPort, it->first, m_localPort);
-	}
+		TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
 
-	delete reqPkt;
+		PassNodeRequest request;
+		request.stripe = stripe;
+		request.threshold = getGainThreshold();
+		request.dependencyFactor = (double)(m_partnerList->getNumSuccessors(stripe) / 
+					(double)m_partnerList->getNumOutgoingConnections(stripe)) - 1;
+		request.remainingBW = it->second;
+
+		reqPkt->getRequests().push_back(request);
+
+		EV << "Request " << request.remainingBW << " from " << it->first << endl;
+		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
+	}
 }
