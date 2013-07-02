@@ -961,13 +961,12 @@ void MultitreePeer::optimize(void)
 		IPvXAddress alternativeParent;	
 		getCheapestChild(children, stripe, alternativeParent, linkToDrop);
 
-		//EV << "COSTLIEST CHILD: " << linkToDrop << endl;
-		//EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+		EV << "COSTLIEST CHILD: " << linkToDrop << endl;
+		EV << "CHEAPEST CHILD: " << alternativeParent << endl;
 
-		double gainIf = getGain(children, stripe, alternativeParent, linkToDrop);
-
-		//EV << "GAIN: " << gainIf << endl;
-		//EV << "THRESHOLD: " << getGainThreshold() << endl;
+		double gainIf = getGain(children, stripe, alternativeParent, IPvXAddress());
+		EV << "GAIN: " << gainIf << endl;
+		EV << "THRESHOLD: " << getGainThreshold() << endl;
 
 		if(gainIf >= getGainThreshold() && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 		{

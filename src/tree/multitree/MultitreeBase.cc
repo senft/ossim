@@ -443,7 +443,7 @@ double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress 
 double MultitreeBase::getStripeDensityCosts(successorList childList, int stripe) // K_sel ,K_1
 {
 	int fanout = childList.size();
-	float outCapacity = bwCapacity;
+	double outCapacity = (bwCapacity * numStripes);
 	//EV << "K1: " << fanout << " " << outCapacity << endl;
 	return 1 - (fanout / outCapacity);
 }
@@ -467,7 +467,10 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
 	//EV << "fanout: " << myChildren << " mySucc: " << mySuccessors << " childsSucc: " << childsSuccessors << endl; 
 
 	if(!childToDrop.isUnspecified())
+	{
 		myChildren--;
+		childsSuccessors++;
+	}
 
 	if(myChildren == 0) // TODO is this ok?
 		return 0;
@@ -476,9 +479,6 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
 
 	if(x == 0) // TODO is this ok?
 		return 0;
-
-	if(!childToDrop.isUnspecified())
-		childsSuccessors++;
 
     return  (x - childsSuccessors) / x;
 }
@@ -493,10 +493,12 @@ double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
 
 	for (int i = 0; i < numStripes; i++)
 	{
-		std::vector<IPvXAddress> curChildren = m_partnerList->getChildren(i);
-		for(std::vector<IPvXAddress>::iterator it = curChildren.begin(); it != curChildren.end(); ++it)
-		{
-			if ( ((IPvXAddress)*it).equals(child) )
+		std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[i];
+       	std::vector<IPvXAddress> curChildren = m_partnerList->getChildren(i);
+       	for(std::vector<IPvXAddress>::iterator it = curChildren.begin(); it != curChildren.end(); ++it)
+       	{
+			IPvXAddress child = (IPvXAddress)*it;
+			if ( child.equals(child) && curDisconnectingChildren.find(child) == curDisconnectingChildren.end() )
 			{
 				numConnections++;
 				break;
@@ -533,8 +535,16 @@ int MultitreeBase::getPreferredStripe()
 
 double MultitreeBase::getGainThreshold(void)
 {
-	float t = 0.2;
-	float b = getConnections() / ((bwCapacity + 1) * numStripes);
+	double t = 0.2;
+	//double b = getConnections() / ((bwCapacity + 1) * numStripes);
+
+    int outDegree = 0;
+    for (int i = 0; i < numStripes; i++)
+    {
+            outDegree += m_partnerList->getNumOutgoingConnections(i);
+            outDegree -= disconnectingChildren[i].size();
+    }
+    double b = (double)outDegree / (double)(bwCapacity * numStripes);
 
 	//EV << "deg: " << getConnections() << " max: " << ((bwCapacity + 1) * numStripes) << " b: " << b << endl;
 
