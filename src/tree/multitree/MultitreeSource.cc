@@ -161,6 +161,7 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 
 IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests)
 {
+	// TODO refactor
 	std::set<IPvXAddress> skipNodes;
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
@@ -170,6 +171,24 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 	}
 
 	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
+
+	if(address.isUnspecified())
+	{
+		skipNodes.clear();
+		skipNodes.insert(forNode);
+		skipNodes.insert(currentParent);
+		if(!lastRequests.empty())
+			skipNodes.insert( lastRequests.back() );
+		address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
+	}
+
+	if(address.isUnspecified())
+	{
+		skipNodes.clear();
+		skipNodes.insert(forNode);
+		skipNodes.insert(currentParent);
+		address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
+	}
 
 	if(address.isUnspecified())
 		address = getNodeAddress();
