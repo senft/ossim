@@ -36,6 +36,8 @@ void MultitreeStatistic::initialize(int stage)
 	m_count_chunkMiss = 0;
 
 	meanBWUtil = 0;
+	meanConnectionTime = 0;
+	meanNumTrees = 0;
 
 	WATCH(m_count_chunkHit);
 	WATCH(m_count_chunkMiss);
@@ -97,13 +99,16 @@ void MultitreeStatistic::gatherConnectionTime(int stripe, double time)
 
 void MultitreeStatistic::reportConnectionTime()
 {
-	double sum = 0;
-	for(std::vector<double>::iterator it = connectionTimes.begin(); it != connectionTimes.end(); ++it)
+	if(connectionTimes.size() > 0)
 	{
-		sum += (double)*it;
+		double sum = 0;
+		for(std::vector<double>::iterator it = connectionTimes.begin(); it != connectionTimes.end(); ++it)
+		{
+			sum += (double)*it;
+		}
+		meanConnectionTime = sum / (double)connectionTimes.size();
+		emit(sig_connTime, meanConnectionTime);
 	}
-	meanConnectionTime = sum / (double)connectionTimes.size();
-	emit(sig_connTime, meanConnectionTime);
 }
 
 void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn)
