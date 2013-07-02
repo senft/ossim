@@ -166,11 +166,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
 				reject.push_back(request);
 			}
-			//else if(m_state[stripe] == TREE_JOIN_STATE_IDLE_WAITING)
-			//{
-			//	EV << "Received ConnectRequest (stripe " << stripe << ") while parent is pending. Rejecting..." << endl;
-			//	reject.push_back(request);
-			//}
 			else if( m_partnerList->hasParent(stripe, senderAddress) )
 			{
 				EV << "Received ConnectRequest from parent " << senderAddress << " for stripe " << stripe 
@@ -331,8 +326,7 @@ void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 	EV << "Removing child: " << address << " (stripe: " << stripe << ")" << endl;
 	m_partnerList->removeChild(stripe, address);
 
-	std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
-
+	std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[stripe];
 	if(curDisconnectingChildren.find(address) != curDisconnectingChildren.end())
 		curDisconnectingChildren.erase(curDisconnectingChildren.find(address));
 }

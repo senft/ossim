@@ -65,9 +65,6 @@ void MultitreePeer::initialize(int stage)
 		m_count_prev_chunkMiss = 0L;
 		m_count_prev_chunkHit = 0L;
 
-		WATCH(m_localAddress);
-		WATCH(m_localPort);
-		WATCH(m_destPort);
 		WATCH(param_delaySuccessorInfo);
 		WATCH(param_intervalReconnect);
 		for (int i = 0; i < numStripes; i++)
