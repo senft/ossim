@@ -266,7 +266,7 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		pkt->getRequests().push_back(dRequest);
 	}
 
-	numCR++;
+	numDR++;
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
