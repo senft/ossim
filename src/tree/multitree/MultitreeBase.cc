@@ -187,10 +187,46 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-					<< ") but have no bandwidth left. Rejecting..." << endl;
-				reject.push_back(request);
-				doOptimize  = true;
+				if(onlyPreferredStripes)
+				{
+					printStatus();
+
+					EV << "received CR" << request.stripe << endl;
+
+					bool droppedNode = false;
+					// Its the preferred stripe, try to drop a node from an "un-preferred" stripe
+					for (int i = 0; i < numStripes; i++)
+					{
+						if(i == stripe)
+							continue;
+
+						if( m_partnerList->hasChildren(i) && !m_partnerList->getParent(i).isUnspecified() )
+						{
+							// TODO better pick a well chosen child
+							droppedNode = true;
+							dropNode(i, m_partnerList->getChildren(i)[0], 
+									getAlternativeNode(i, m_partnerList->getChildren(i)[0], IPvXAddress(), IPvXAddress()));
+							accept.push_back(request);
+							break;
+						}
+					}
+
+					if(!droppedNode)
+					{
+						EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+							<< ") but have no bandwidth left. Rejecting..." << endl;
+						reject.push_back(request);
+						doOptimize  = true;
+					}
+
+				}
+				else
+				{
+					EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+						<< ") but have no bandwidth left. Rejecting..." << endl;
+					reject.push_back(request);
+					doOptimize  = true;
+				}
 			}
 		}
 
