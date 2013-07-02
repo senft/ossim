@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "MultitreePeer.h"
 
 Define_Module(MultitreePeer)
@@ -454,7 +455,7 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 
 		if(beginConnecting[stripe] == -1)
 			beginConnecting[stripe] = simTime();
-		requestedChildship[stripe].insert(address);
+		requestedChildship[stripe].push_back(address);
 		m_state[stripe] = TREE_JOIN_STATE_IDLE_WAITING;
 
 		EV << stripe << ", ";
@@ -570,7 +571,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		{
 			case TREE_JOIN_STATE_IDLE_WAITING:
 			{
-				if(requestedChildship[stripe].find(senderAddress) != requestedChildship[stripe].end())
+				if( std::find(requestedChildship[stripe].begin(), requestedChildship[stripe].end(), senderAddress) != requestedChildship[stripe].end() )
 				{
 					// A node rejected my ConnectRequest
 					
@@ -895,12 +896,12 @@ int MultitreePeer::getGreatestReceivedSeqNumber(void)
 	return max;
 }
 
-IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::set<IPvXAddress> lastRequests)
+IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests)
 {
 	std::set<IPvXAddress> skipNodes;
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
-	for(std::set<IPvXAddress>::iterator it = lastRequests.begin(); it != lastRequests.end(); ++it)
+	for(std::vector<IPvXAddress>::iterator it = lastRequests.begin(); it != lastRequests.end(); ++it)
 	{
 		skipNodes.insert( (IPvXAddress)*it );
 	}

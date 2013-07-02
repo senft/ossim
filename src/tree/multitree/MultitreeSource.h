@@ -14,7 +14,7 @@ protected:
     virtual void finish(void);
 
 private:
-	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::set<IPvXAddress> lastRequests);
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests);
 
 	virtual void optimize(void);
 

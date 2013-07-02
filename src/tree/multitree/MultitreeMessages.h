@@ -7,7 +7,7 @@ struct ConnectRequest
 	int numSuccessors;
 	long lastReceivedChunk;
 	IPvXAddress currentParent;
-	std::set<IPvXAddress> lastRequests;
+	std::vector<IPvXAddress> lastRequests;
 };
 
 struct ConnectConfirm

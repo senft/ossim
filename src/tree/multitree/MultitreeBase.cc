@@ -170,8 +170,11 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					<< ". Rejecting..." << endl;
 				reject.push_back(request);
 			}
-			else if( requestedChildship[stripe].find(senderAddress) != requestedChildship[stripe].end() )
+			//else if( requestedChildship[stripe].find(senderAddress) != requestedChildship[stripe].end() )
+			else if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
 			{
+				// TODO: maybe skip this even when the node is in requestedChildship (not just last
+				// element)
 				// TODO: would be better to just queue this.. maybe the node rejects me
 				EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe "
 					<< stripe << ". Rejecting..." << endl;
@@ -201,7 +204,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 							// TODO better pick a well chosen child
 							droppedNode = true;
 							dropNode(i, m_partnerList->getChildren(i)[0], 
-									getAlternativeNode(i, m_partnerList->getChildren(i)[0], IPvXAddress(), std::set<IPvXAddress>()));
+									getAlternativeNode(i, m_partnerList->getChildren(i)[0], IPvXAddress(), std::vector<IPvXAddress>()));
 							accept.push_back(request);
 							break;
 						}
@@ -249,7 +252,7 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		ConnectRequest cRequest = requests[i];
 		int stripe = cRequest.stripe;
 		IPvXAddress currentParent = cRequest.currentParent;
-		std::set<IPvXAddress> lastRequests = cRequest.lastRequests;
+		std::vector<IPvXAddress> lastRequests = cRequest.lastRequests;
 
 		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequests);
 
@@ -279,7 +282,7 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 		int stripe = request.stripe;
 		int numSucc = request.numSuccessors;
 		IPvXAddress currentParent = request.currentParent;
-		std::set<IPvXAddress> lastRequests = request.lastRequests;
+		std::vector<IPvXAddress> lastRequests = request.lastRequests;
 		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequests);
 
 		ConnectConfirm confirm;
