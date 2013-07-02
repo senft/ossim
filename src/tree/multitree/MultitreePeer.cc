@@ -969,7 +969,7 @@ void MultitreePeer::optimize(void)
 		//EV << "GAIN: " << gainIf << endl;
 		//EV << "THRESHOLD: " << getGainThreshold() << endl;
 
-		if(gainIf >= getGainThreshold())
+		if(gainIf >= getGainThreshold() && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 		{
 			// Drop costliest to cheapest
 			dropNode(stripe, linkToDrop, alternativeParent);
@@ -1004,7 +1004,7 @@ void MultitreePeer::optimize(void)
 			}
 		}
 
-		if(maxSucc <= 0 || remainingBW == 0)
+		if(busiestChild.isUnspecified() || maxSucc <= 0 || remainingBW <= 0)
 			break;
 
 		remainingBW--;

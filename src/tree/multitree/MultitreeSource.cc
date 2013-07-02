@@ -244,7 +244,7 @@ void MultitreeSource::optimize(void)
 			}
 		}
 
-		if(maxSucc == 0 || remainingBW == 0)
+		if(busiestChild.isUnspecified() || maxSucc <= 0 || remainingBW <= 0)
 			break;
 
 		remainingBW--;
