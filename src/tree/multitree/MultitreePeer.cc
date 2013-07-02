@@ -510,7 +510,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		else
 		{
 			EV << "New parent in stripe: " << stripe << " (fallback: " << alternativeParent 
-				<< "), it took me :"  << time << " seconds." << endl;
+				<< "), it took me: "  << time << " seconds." << endl;
 		}
 
 		fallbackParent[stripe] = alternativeParent;
@@ -731,6 +731,8 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 		successorList children = m_partnerList->getChildrenWithCount(stripe);
 
+		std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
+
 		// TODO try to first give the nodes with the most successors to the top, so that the hopcount is
 		// reduced for the maximum number of nodes possible
 		for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
@@ -739,6 +741,9 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 				break;
 
 			IPvXAddress child = it->first;
+
+			if(curDisconnectingChildren.find(child) != curDisconnectingChildren.end())
+				continue;
 
 			double k3 = (dependencyFactor - m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
 			int k2 = (it->second > 0) ? 0 : 1;
