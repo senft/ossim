@@ -49,8 +49,7 @@ protected:
     MultitreeStatistic 		*m_gstat;
 
 	std::map<int, std::set<IPvXAddress> > disconnectingChildren;
-
-	IPvXAddress *requestedChildship;
+	std::map<int, std::set<IPvXAddress> > requestedChildship;
 
     TreeJoinState     		*m_state;
 
@@ -96,7 +95,7 @@ protected:
 	void dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
 	int getPreferredStripe();
 
-	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, IPvXAddress lastRequest) = 0;
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::set<IPvXAddress> lastRequests) = 0;
 
     void handleTimerOptimization();
 	cMessage *timer_optimization;

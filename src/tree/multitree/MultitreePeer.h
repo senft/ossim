@@ -28,7 +28,7 @@ private:
 	double param_intervalReconnect;
 	double param_delaySuccessorInfo;
 
-	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, IPvXAddress lastRequest);
+	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::set<IPvXAddress> lastRequests);
 
     virtual void processPacket(cPacket *pkt);
     void handleTimerMessage(cMessage *msg);

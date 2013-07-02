@@ -33,7 +33,6 @@ void MultitreeBase::initialize(int stage)
 
 		preferredStripe = -1;
 
-		requestedChildship = new IPvXAddress[numStripes];
 		lastSeqNumber = new long[numStripes];
 		for (int i = 0; i < numStripes; i++)
 		{
@@ -64,7 +63,6 @@ void MultitreeBase::finish(void)
 
 	m_partnerList->clear();
 	delete[] m_state;
-	delete[] requestedChildship;
 }
 
 void MultitreeBase::handleMessage(cMessage *msg)
@@ -172,7 +170,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					<< ". Rejecting..." << endl;
 				reject.push_back(request);
 			}
-			else if( requestedChildship[stripe].equals(senderAddress) )
+			else if( requestedChildship[stripe].find(senderAddress) != requestedChildship[stripe].end() )
 			{
 				// TODO: would be better to just queue this.. maybe the node rejects me
 				EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe "
@@ -203,7 +201,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 							// TODO better pick a well chosen child
 							droppedNode = true;
 							dropNode(i, m_partnerList->getChildren(i)[0], 
-									getAlternativeNode(i, m_partnerList->getChildren(i)[0], IPvXAddress(), IPvXAddress()));
+									getAlternativeNode(i, m_partnerList->getChildren(i)[0], IPvXAddress(), std::set<IPvXAddress>()));
 							accept.push_back(request);
 							break;
 						}
@@ -251,9 +249,9 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		ConnectRequest cRequest = requests[i];
 		int stripe = cRequest.stripe;
 		IPvXAddress currentParent = cRequest.currentParent;
-		IPvXAddress lastRequest = cRequest.lastRequest;
+		std::set<IPvXAddress> lastRequests = cRequest.lastRequests;
 
-		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequest);
+		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequests);
 
 		DisconnectRequest dRequest;
 		dRequest.stripe = stripe;
@@ -281,8 +279,8 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 		int stripe = request.stripe;
 		int numSucc = request.numSuccessors;
 		IPvXAddress currentParent = request.currentParent;
-		IPvXAddress lastRequest = request.lastRequest;
-		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequest);
+		std::set<IPvXAddress> lastRequests = request.lastRequests;
+		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequests);
 
 		ConnectConfirm confirm;
 		confirm.stripe = stripe;

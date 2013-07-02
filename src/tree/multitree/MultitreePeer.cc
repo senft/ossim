@@ -448,13 +448,13 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 		request.numSuccessors = numSucc;
 		request.lastReceivedChunk = lastReceivedChunk;
 		request.currentParent = currentParent;
-		request.lastRequest = requestedChildship[stripe];
+		request.lastRequests = requestedChildship[stripe];
 
 		pkt->getRequests().push_back(request);
 
 		if(beginConnecting[stripe] == -1)
 			beginConnecting[stripe] = simTime();
-		requestedChildship[stripe] = address;
+		requestedChildship[stripe].insert(address);
 		m_state[stripe] = TREE_JOIN_STATE_IDLE_WAITING;
 
 		EV << stripe << ", ";
@@ -513,7 +513,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		}
 
 		fallbackParent[stripe] = alternativeParent;
-		requestedChildship[stripe] = IPvXAddress();
+		requestedChildship[stripe].clear();
 		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
 		m_partnerList->addParent(stripe, address);
 		beginConnecting[stripe] = -1;
@@ -570,14 +570,13 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		{
 			case TREE_JOIN_STATE_IDLE_WAITING:
 			{
-				if(requestedChildship[stripe].equals(senderAddress))
+				if(requestedChildship[stripe].find(senderAddress) != requestedChildship[stripe].end())
 				{
 					// A node rejected my ConnectRequest
 					
 					stat_retrys[stripe]++;
 
 					m_state[stripe] = TREE_JOIN_STATE_IDLE;
-					//requestedChildship[stripe] = IPvXAddress();
 
 					EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
 
@@ -896,12 +895,15 @@ int MultitreePeer::getGreatestReceivedSeqNumber(void)
 	return max;
 }
 
-IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, IPvXAddress lastRequest)
+IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::set<IPvXAddress> lastRequests)
 {
 	std::set<IPvXAddress> skipNodes;
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
-	skipNodes.insert(lastRequest);
+	for(std::set<IPvXAddress>::iterator it = lastRequests.begin(); it != lastRequests.end(); ++it)
+	{
+		skipNodes.insert( (IPvXAddress)*it );
+	}
 
 	std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
 	for(std::set<IPvXAddress>::iterator it = curDisconnectingChildren.begin(); it != curDisconnectingChildren.end(); ++it)
