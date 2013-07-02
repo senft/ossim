@@ -291,6 +291,7 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
         	if( !parent.isUnspecified() && sentTo.find(parent) == sentTo.end() )
 			{
 				sentTo.insert(parent);
+				numSI++;
 				sendToDispatcher(pkt->dup(), m_localPort, parent, m_destPort);
         	}
 			numSuccChanged[i] = false;
@@ -463,6 +464,7 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 	}
 	EV << "to " << address << " " << endl;
 
+	numCR++;
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
@@ -1025,6 +1027,7 @@ void MultitreePeer::optimize(void)
 		reqPkt->getRequests().push_back(request);
 
 		EV << "Request " << request.remainingBW << " from " << it->first << endl;
+		numPNR++;
 		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
 	}
 }

@@ -276,6 +276,7 @@ void MultitreeSource::optimize(void)
 			EV << "Request " << stripes->second << " from " << it->first << endl;
 		}
 
+		numPNR++;
 		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
 	}
 }

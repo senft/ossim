@@ -44,6 +44,17 @@ void MultitreeBase::initialize(int stage)
 		bwCapacity = par("bwCapacity");
 		param_delayOptimization = par("delayOptimization");
 		param_optimize = par("optimize");
+
+		numCR = 0;
+		numDR = 0;
+		numCC = 0;
+		numPNR = 0;
+		numSI = 0;
+		WATCH(numCR);
+		WATCH(numDR);
+		WATCH(numCC);
+		WATCH(numPNR);
+		WATCH(numSI);
 	}
 }
 
@@ -224,6 +235,7 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		pkt->getRequests().push_back(dRequest);
 	}
 
+	numCR++;
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
@@ -255,6 +267,7 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 	}
 	EV << " of node " << address << endl;
 
+	numCC++;
     sendToDispatcher(pkt, m_localPort, address, m_destPort);
 
 	for (int i = 0; i < numReqStripes; i++)
@@ -570,6 +583,7 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 
 	disconnectingChildren[stripe].insert(address);
 
+	numDR++;
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 

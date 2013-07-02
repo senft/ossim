@@ -67,6 +67,12 @@ protected:
 
 	long *lastSeqNumber;
 
+	int numCR;
+	int numDR;
+	int numCC;
+	int numPNR;
+	int numSI;
+
 	bool hasBWLeft(int additionalConnections);
 
     void bindToGlobalModule(void);
