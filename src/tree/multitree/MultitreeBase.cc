@@ -187,11 +187,9 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				if(onlyPreferredStripes)
+				if(onlyPreferredStripes && stripe == getPreferredStripe())
 				{
-					printStatus();
-
-					EV << "received CR" << request.stripe << endl;
+					//printStatus();
 
 					bool droppedNode = false;
 					// Its the preferred stripe, try to drop a node from an "un-preferred" stripe
