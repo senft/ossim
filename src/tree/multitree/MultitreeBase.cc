@@ -554,12 +554,22 @@ double MultitreeBase::getGainThreshold(void)
     int outDegree = 0;
     for (int i = 0; i < numStripes; i++)
     {
-            outDegree += m_partnerList->getNumOutgoingConnections(i);
-            outDegree -= disconnectingChildren[i].size();
+		int out = m_partnerList->getNumOutgoingConnections(i);
+		int disconnecting = disconnectingChildren[i].size();
+
+		if(out < disconnecting)
+		{
+			throw cException("Stripe %d: More disconnecting children (%d) than normal children (%d).",
+					i, disconnecting, out );
+		}
+
+		outDegree += out;
+		outDegree -= disconnecting;
     }
     double b = (double)outDegree / (double)(bwCapacity * numStripes);
 
-	//EV << "deg: " << getConnections() << " max: " << ((bwCapacity + 1) * numStripes) << " b: " << b << endl;
+	//EV << "deg: " << outDegree << " max: " << (bwCapacity * numStripes) << " b: " << b << endl;
+	//EV << "t: " <<  (1 - pow(b, pow(2 * t, 3)) * (1 - pow(t, 3))) + pow(t, 3) << endl;
 
 	if(b == 1)
 		return INT_MIN;
@@ -581,7 +591,9 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 
 	pkt->getRequests().push_back(request);
 
-	disconnectingChildren[stripe].insert(address);
+	if(!m_partnerList->hasParent(stripe, address))
+		// If that node is no parent, mark it as disconnecting
+		disconnectingChildren[stripe].insert(address);
 
 	numDR++;
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
