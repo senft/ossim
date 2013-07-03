@@ -43,8 +43,11 @@ public:
 	void removeChild(int stripe, IPvXAddress address);
 	std::set<IPvXAddress> getChildren();
 	std::vector<IPvXAddress> getChildren(int stripe);
-	IPvXAddress getBusiestChild(int stripe);
-	IPvXAddress getChildWithLeastSuccessors(int stripe, std::set<IPvXAddress> &skipNodes);
+	IPvXAddress getLaziestForwardingChild(int stripe, const std::set<IPvXAddress> &skipNodes);
+	IPvXAddress getChildWithMostChildren(int stripe, const std::set<IPvXAddress> &skipNodes);
+	IPvXAddress getChildWithLeastChildren(int stripe, const std::set<IPvXAddress> &skipNodes);
+	IPvXAddress getRandomChild(int stripe, const std::set<IPvXAddress> &skipNodes);
+	IPvXAddress getBestLazyChild(int stripe, const std::set<IPvXAddress> &skipNodes);
 	std::map<IPvXAddress, int> getChildrenWithCount(int stripe);
 
 	void printPartnerList(void);

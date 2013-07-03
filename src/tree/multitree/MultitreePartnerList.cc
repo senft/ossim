@@ -78,13 +78,37 @@ void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int success
 			std::pair<IPvXAddress, int>(address, successors));
 }
 
+IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const std::set<IPvXAddress> &skipNodes)
+{
+	IPvXAddress child;
+	const std::map<IPvXAddress, int> curChildren = children[stripe];
+
+	if(curChildren.size() > 0)
+	{
+		int minSucc = INT_MAX;
+
+		for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		{
+			bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+			if(!skipNode)
+			{
+				if(it->second < minSucc)
+				{
+					minSucc = it->second;
+					child = it->first;
+				}
+			}
+		}
+	}
+	return child;
+}
+
 /**
  * Returns the child that has the least (but at least one) successor. It is also possible to specify
  * some nodes that should not be chosen here.
  */
-IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::set<IPvXAddress> &skipNodes)
+IPvXAddress MultitreePartnerList::getLaziestForwardingChild(int stripe, const std::set<IPvXAddress> &skipNodes)
 {
-	// TODO: refactor
 	IPvXAddress child;
 	const std::map<IPvXAddress, int> curChildren = children[stripe];
 
@@ -104,32 +128,41 @@ IPvXAddress MultitreePartnerList::getChildWithLeastSuccessors(int stripe, std::s
 				}
 			}
 		}
-
-		if(child.isUnspecified())
-		{
-			// All children have 0 successors -> just pick a random child (but make sure it is not in
-			// 'skipNode'
-			bool allInSkipNodes = true;
-			for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
-			{
-				if(skipNodes.find(it->first) == skipNodes.end())
-					allInSkipNodes = false;
-			}
-
-			if(!allInSkipNodes)
-			{
-				do {
-					std::map<IPvXAddress, int>::const_iterator it = curChildren.begin();
-					std::advance(it, intrand(curChildren.size()));
-					child = (IPvXAddress)it->first;
-				} while(skipNodes.find(child) != skipNodes.end());
-			}
-		}
 	}
 	return child;
 }
 
-IPvXAddress MultitreePartnerList::getBusiestChild(int stripe)
+IPvXAddress MultitreePartnerList::getRandomChild(int stripe, const std::set<IPvXAddress> &skipNodes)
+{
+	IPvXAddress child;
+	const std::map<IPvXAddress, int> curChildren = children[stripe];
+
+	if(curChildren.size() > 0)
+	{
+		bool allInSkipNodes = true;
+		for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		{
+			if(skipNodes.find(it->first) == skipNodes.end())
+			{
+				allInSkipNodes = false;
+				return it->first;
+			}
+		}
+
+		if(!allInSkipNodes)
+		{
+			do {
+				std::map<IPvXAddress, int>::const_iterator it = curChildren.begin();
+				std::advance(it, intrand(curChildren.size()));
+				child = (IPvXAddress)it->first;
+			} while(skipNodes.find(child) != skipNodes.end());
+		}
+	}
+	return child;
+
+}
+
+IPvXAddress MultitreePartnerList::getChildWithMostChildren(int stripe, const std::set<IPvXAddress> &skipNodes)
 {
 	int maxSucc = -1;
 	IPvXAddress busiestChild;
@@ -137,13 +170,36 @@ IPvXAddress MultitreePartnerList::getBusiestChild(int stripe)
 
 	for (std::map<IPvXAddress, int>::iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 	{
-		if(it->second > maxSucc)
+		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+		if(!skipNode)
 		{
-			maxSucc = it->second;
-			busiestChild = it->first;
+			if(it->second > maxSucc)
+			{
+				maxSucc = it->second;
+				busiestChild = it->first;
+			}
 		}
 	}
 	return busiestChild;
+}
+
+/*
+ * Tries to find the "best" "lazy" child in 2 steps:
+ *    1.) Find the node with least successors, that has at least 1 successor
+ *    2.) If 1. didn't yield a result, find the child with least successors
+ */
+IPvXAddress MultitreePartnerList::getBestLazyChild(int stripe, const std::set<IPvXAddress> &skipNodes)
+{
+	IPvXAddress child = getLaziestForwardingChild(stripe, skipNodes);
+	child = getLaziestForwardingChild(stripe, skipNodes);
+
+	if(child.isUnspecified())
+		child = getChildWithLeastChildren(stripe, skipNodes);
+
+	//if(child.isUnspecified())
+	//	child = getRandomChild(stripe, skipNodes);
+
+	return child;
 }
 
 std::set<IPvXAddress> MultitreePartnerList::getChildren()

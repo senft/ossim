@@ -200,8 +200,9 @@ void MultitreePeer::handleTimerLeave()
 
 			std::vector<IPvXAddress> children = m_partnerList->getChildren(i);
 
+			// TODO try busiest child here
 			std::set<IPvXAddress> skipNodes;
-			IPvXAddress laziestChild = m_partnerList->getChildWithLeastSuccessors(i, skipNodes);
+			IPvXAddress laziestChild = m_partnerList->getBestLazyChild(i, skipNodes);
 			// Drop the child with the least successors to my parent...
 			dropNode(i, laziestChild, m_partnerList->getParent(i));
 
@@ -896,12 +897,12 @@ int MultitreePeer::getGreatestReceivedSeqNumber(void)
 	return max;
 }
 
-IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests)
+IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, const std::vector<IPvXAddress> lastRequests)
 {
 	std::set<IPvXAddress> skipNodes;
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
-	for(std::vector<IPvXAddress>::iterator it = lastRequests.begin(); it != lastRequests.end(); ++it)
+	for(std::vector<IPvXAddress>::const_iterator it = lastRequests.begin(); it != lastRequests.end(); ++it)
 	{
 		skipNodes.insert( (IPvXAddress)*it );
 	}
@@ -912,10 +913,11 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 		skipNodes.insert( (IPvXAddress)*it );
 	}
 
-	// Chose the node with the least successors (however getChildWithLeastSuccessors tries to make
+	// Chose the node with the least successors (however getLaziestForwardingChild tries to make
 	// sure that the node has at least one successors, meaning the node is forwarding in the given
 	// stripe)
-	IPvXAddress address = m_partnerList->getChildWithLeastSuccessors(stripe, skipNodes);
+	//IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+	IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 
 	if( address.isUnspecified() ||
 		!m_partnerList->hasChildren(stripe) ||

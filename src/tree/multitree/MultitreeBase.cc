@@ -159,6 +159,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
 
+			// TODO check if node is a child
 			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING || m_state[stripe] == TREE_JOIN_STATE_IDLE)
 			{
 				EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
@@ -188,34 +189,82 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				if(onlyPreferredStripes && stripe == getPreferredStripe())
+				if(onlyPreferredStripes && stripe == getPreferredStripe() && !m_partnerList->hasChild(stripe, senderAddress))
 				{
-					//printStatus();
+					// A node wants to connect to my preferred stripe, but there is no no spare
+					// bandwidth. First try to drop a node in an "un-preferred" to a node
+					// in the same stripe (hence this only works when there are at least 2 children
+					// in an unpreferred stripe). Then try to drop a node in the preferred stripe to
+					// another node in the same stripe.
+
+					printStatus();
 
 					bool droppedNode = false;
-					// Its the preferred stripe, try to drop a node from an "un-preferred" stripe
-					for (int i = 0; i < numStripes; i++)
+					for (int j = 0; i < numStripes; i++)
 					{
-						if(i == stripe)
+						if(j == stripe)
 							continue;
 
-						if( m_partnerList->hasChildren(i) && !m_partnerList->getParent(i).isUnspecified() )
+						if( m_partnerList->getNumOutgoingConnections(j) > 1 ) // At least 2 children...
 						{
-							// TODO better pick a well chosen child
-							droppedNode = true;
-							dropNode(i, m_partnerList->getChildren(i)[0], 
-									getAlternativeNode(i, m_partnerList->getChildren(i)[0], IPvXAddress(), std::vector<IPvXAddress>()));
-							accept.push_back(request);
-							break;
+
+							std::set<IPvXAddress> skipNodes;
+							for(std::set<IPvXAddress>::iterator it = disconnectingChildren[j].begin(); it != disconnectingChildren[j].end(); ++it)
+							{
+								skipNodes.insert((IPvXAddress)*it);
+							}
+
+							IPvXAddress drop = m_partnerList->getChildWithLeastChildren( j, skipNodes );
+							skipNodes.insert(drop);
+							IPvXAddress alternativeParent = m_partnerList->getChildWithMostChildren(j, skipNodes);
+
+							if( !drop.isUnspecified() && !alternativeParent.isUnspecified()
+									&& !alternativeParent.equals(m_partnerList->getParent(j)))
+							{
+								EV << "Dropping " << drop << " to make room for " << senderAddress << endl;
+
+								droppedNode = true;
+								dropNode(j, drop, alternativeParent);
+								accept.push_back(request);
+								break;
+							}
 						}
 					}
 
 					if(!droppedNode)
 					{
-						EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-							<< ") but have no bandwidth left. Rejecting..." << endl;
-						reject.push_back(request);
-						doOptimize  = true;
+						// No child could be dropped in an unpreferred stripe
+						
+						if( m_partnerList->getNumOutgoingConnections(stripe) > 1 ) // At least 2 children...
+						{
+							std::set<IPvXAddress> skipNodes;
+							for(std::set<IPvXAddress>::iterator it = disconnectingChildren[stripe].begin(); it != disconnectingChildren[stripe].end(); ++it)
+							{
+								skipNodes.insert((IPvXAddress)*it);
+							}
+
+							IPvXAddress drop = m_partnerList->getChildWithLeastChildren( stripe, skipNodes );
+							skipNodes.insert(drop);
+							IPvXAddress alternativeParent = m_partnerList->getChildWithMostChildren(stripe, skipNodes );
+
+							if( !drop.isUnspecified() && ! alternativeParent.isUnspecified()
+									&& !alternativeParent.equals(m_partnerList->getParent(stripe)))
+							{
+								EV << "Dropping " << drop << " to make room for " << senderAddress << endl;
+
+								droppedNode = true;
+								dropNode(stripe, drop, alternativeParent);
+								accept.push_back(request);
+							}
+						}
+						
+						if(!droppedNode)
+						{
+							EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+								<< ") but have no bandwidth left. Rejecting..." << endl;
+							reject.push_back(request);
+							doOptimize  = true;
+						}
 					}
 
 				}
