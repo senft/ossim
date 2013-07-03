@@ -202,7 +202,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					bool droppedNode = false;
 					for (int j = 0; i < numStripes; i++)
 					{
-						if(j == stripe)
+						if(j == stripe || droppedNode == true)
 							continue;
 
 						if( m_partnerList->getNumOutgoingConnections(j) > 1 ) // At least 2 children...
@@ -226,7 +226,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 								droppedNode = true;
 								dropNode(j, drop, alternativeParent);
 								accept.push_back(request);
-								break;
 							}
 						}
 					}
@@ -270,6 +269,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				}
 				else
 				{
+					// This is no preferred stripe -> just reject
 					EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
 						<< ") but have no bandwidth left. Rejecting..." << endl;
 					reject.push_back(request);
