@@ -20,10 +20,6 @@ network Multitree_Network extends BasicNetwork
 
         int nNodePerRouter;
 
-		double percentGroup1;
-        double percentGroup2;
-        double percentGroup3;
-
     types:
 		channel Source_up extends ned.DatarateChannel
         {
@@ -98,40 +94,12 @@ network Multitree_Network extends BasicNetwork
 
     connections:
         // -- Connect source
-        sourceNode.pppg$o++ --> Source_up --> router.pppg$i++;
-        sourceNode.pppg$i++ <-- Source_down <-- router.pppg$o++;
+        sourceNode.pppg$o++ --> Channel_50M_up --> router.pppg$i++;
+        sourceNode.pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
 
         // -- Connect peers
-		// -- -- Group 1
-		for i=0..(nNodePerRouter-1) * percentGroup1 {
-            //peerNode[i].pppg$o++ --> DSL2k_up --> router.pppg$i++;
-            //peerNode[i].pppg$i++ <-- DSL2k_down <-- router.pppg$o++;
-            peerNode[i].pppg$o++ --> DSL16k_up --> router.pppg$i++;
-            peerNode[i].pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
-        }
-
-		// -- -- Group 2
-		for i=(nNodePerRouter-1) * percentGroup1..(nNodePerRouter-1) * percentGroup2{
-            //peerNode[i].pppg$o++ --> DSL6k_up --> router.pppg$i++;
-            //peerNode[i].pppg$i++ <-- DSL6k_down <-- router.pppg$o++;
-            peerNode[i].pppg$o++ --> DSL16k_up --> router.pppg$i++;
-            peerNode[i].pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
-        }
-
-        // -- -- Group 3
-		for i=(nNodePerRouter-1) * percentGroup2..(nNodePerRouter-1) * percentGroup3{
-            //peerNode[i].pppg$o++ --> DSL16k_up --> router.pppg$i++;
-            //peerNode[i].pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
-            peerNode[i].pppg$o++ --> DSL16k_up --> router.pppg$i++;
-            peerNode[i].pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
-        }
-
-        // -- -- Group 4
-		for i=(nNodePerRouter-1) * percentGroup3..(nNodePerRouter-1){
-            //peerNode[i].pppg$o++ --> Channel_50M_up --> router.pppg$i++;
-            //peerNode[i].pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
-
-            peerNode[i].pppg$o++ --> DSL16k_up --> router.pppg$i++;
-            peerNode[i].pppg$i++ <-- DSL16k_down <-- router.pppg$o++;
+		for i=0..(nNodePerRouter-1) {
+            peerNode[i].pppg$o++ --> Channel_50M_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
         }
 }
