@@ -920,8 +920,8 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 	// Chose the node with the least successors (however getLaziestForwardingChild tries to make
 	// sure that the node has at least one successors, meaning the node is forwarding in the given
 	// stripe)
-	//IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
-	IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
+	IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+	//IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 
 	if( address.isUnspecified() ||
 		!m_partnerList->hasChildren(stripe) ||
