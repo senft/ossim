@@ -528,17 +528,21 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 	for (int i = 0; i < numStripes; i++)
 	{
+		// TODO Make sure this only happens when switching from no parent at all to a parent
 		if(m_partnerList->getParent(i).isUnspecified())
+		{
 			return;
-
-		// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me
-		// (to connect to me)
-		m_apTable->addAddress(getNodeAddress());
-
-		// Start collecting statistics
-		if(!timer_reportStatistic->isScheduled())
-			scheduleAt(simTime() + 2, timer_reportStatistic);
+		}
 	}
+
+	// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me
+	// (to connect to me)
+	EV << "Adding myself to ActivePeerTable" << endl;
+	m_apTable->addAddress(getNodeAddress());
+
+	// Start collecting statistics
+	if(!timer_reportStatistic->isScheduled())
+		scheduleAt(simTime() + 2, timer_reportStatistic);
 }
 
 void MultitreePeer::processDisconnectRequest(cPacket* pkt)
