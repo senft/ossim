@@ -576,9 +576,9 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		{
 			case TREE_JOIN_STATE_IDLE_WAITING:
 			{
-				if( std::find(requestedChildship[stripe].begin(), requestedChildship[stripe].end(), senderAddress) != requestedChildship[stripe].end() )
+				if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
 				{
-					// A node rejected my ConnectRequest
+					// The last node I sent a ConnectRequest to rejected my request
 					
 					stat_retrys[stripe]++;
 
