@@ -562,7 +562,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		int stripe = request.stripe;
 		IPvXAddress alternativeParent = request.alternativeParent;
 
-		// TODO: This also is true, when I sent a DRQ to my child and it answers...
 		if( m_partnerList->hasChild(stripe, senderAddress) && m_state[stripe] != TREE_JOIN_STATE_LEAVING )
 		{
 			// If the DisconnectRequest comes from a child, just remove it from
@@ -612,10 +611,9 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				}
 				else
 				{
-					throw cException("hae?");
+					const char *sAddr = senderAddress.str().c_str();
+					throw cException("Received DisconnectRequets (stripe %d) from %s, which is neither child nor parent.", stripe, sAddr);
 				}
-
-
 
 				break;
 			}
