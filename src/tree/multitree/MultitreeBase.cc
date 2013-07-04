@@ -192,7 +192,10 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				if(onlyPreferredStripes && stripe == getPreferredStripe() && !m_partnerList->hasChild(stripe, senderAddress))
+				if(onlyPreferredStripes && stripe == getPreferredStripe() 
+						&& !m_partnerList->hasChild(stripe, senderAddress)
+						&& request.currentParent.isUnspecified() // only when it is the nodes initial connect
+						)
 				{
 
 					// A node wants to connect to my preferred stripe, but there is no no spare
@@ -213,19 +216,24 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 						if( m_partnerList->hasChildren(j) )
 						{
 
+							std::vector<IPvXAddress> vSkipNodes;
 							std::set<IPvXAddress> skipNodes;
 							for(std::set<IPvXAddress>::iterator it = disconnectingChildren[j].begin(); it != disconnectingChildren[j].end(); ++it)
 							{
 								skipNodes.insert((IPvXAddress)*it);
+								vSkipNodes.push_back((IPvXAddress)*it);
 							}
 
 							IPvXAddress drop = m_partnerList->getChildWithLeastChildren( j, skipNodes );
 							skipNodes.insert(drop);
-							IPvXAddress alternativeParent = m_partnerList->getChildWithMostChildren(j, skipNodes);
+							vSkipNodes.push_back(drop);
+							//IPvXAddress alternativeParent = m_partnerList->getChildWithMostChildren(j, skipNodes);
+							IPvXAddress alternativeParent = getAlternativeNode(j, drop, IPvXAddress(), vSkipNodes);
 
 							if( !drop.isUnspecified() && !alternativeParent.isUnspecified()
-									&& m_partnerList->getNumChildsSuccessors(j, drop) == 0 )
-									//&& !alternativeParent.equals(m_partnerList->getParent(j)))
+									&& m_partnerList->getNumChildsSuccessors(j, drop) == 0
+									//&& !alternativeParent.equals(m_partnerList->getParent(j))
+								)
 							{
 								EV << "Dropping " << drop << " to make room for " << senderAddress << endl;
 
