@@ -511,7 +511,8 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		else
 		{
 			EV << "New parent in stripe: " << stripe << " (fallback: " << alternativeParent 
-				<< "), it took me: "  << time << " seconds." << endl;
+				<< "), it took me: "  << time << " seconds and " << requestedChildship[stripe].size()
+			    << " requests."	<< endl;
 		}
 
 		fallbackParent[stripe] = alternativeParent;
@@ -583,7 +584,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 
 					m_state[stripe] = TREE_JOIN_STATE_IDLE;
 
-					EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")." << endl;
+					EV << "Node " << senderAddress << " refused to let me join (stripe " << stripe << ")(request #" <<
+					   requestedChildship[stripe].size() << ")." << endl;
 
 					std::vector<int> connect;
 					connect.push_back(stripe);
