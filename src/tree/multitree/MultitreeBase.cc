@@ -160,7 +160,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
 
-			EV << "Processing stripe: " << stripe << endl;
+			//EV << "Processing stripe: " << stripe << endl;
 
 			// TODO check if node is a child
 			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING || m_state[stripe] == TREE_JOIN_STATE_IDLE)
@@ -195,8 +195,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				if(onlyPreferredStripes && stripe == getPreferredStripe() && !m_partnerList->hasChild(stripe, senderAddress))
 				{
 
-					EV << "ABABA" << endl;
-
 					// A node wants to connect to my preferred stripe, but there is no no spare
 					// bandwidth. First try to drop a node in an "un-preferred" to a node
 					// in the same stripe (hence this only works when there are at least 2 children
@@ -211,7 +209,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 						if(j == stripe || droppedNode == true)
 							continue;
 
-						if( m_partnerList->getNumOutgoingConnections(j) > 1 ) // At least 2 children...
+						//if( m_partnerList->getNumOutgoingConnections(j) > 1 ) // At least 2 children...
+						if( m_partnerList->hasChildren(j) )
 						{
 
 							std::set<IPvXAddress> skipNodes;
@@ -225,7 +224,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 							IPvXAddress alternativeParent = m_partnerList->getChildWithMostChildren(j, skipNodes);
 
 							if( !drop.isUnspecified() && !alternativeParent.isUnspecified()
-									&& !alternativeParent.equals(m_partnerList->getParent(j)))
+									&& m_partnerList->getNumChildsSuccessors(j, drop) == 0 )
+									//&& !alternativeParent.equals(m_partnerList->getParent(j)))
 							{
 								EV << "Dropping " << drop << " to make room for " << senderAddress << endl;
 
