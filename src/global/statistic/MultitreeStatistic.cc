@@ -13,10 +13,10 @@ void MultitreeStatistic::initialize(int stage)
     {
         sig_chunkArrival		= registerSignal("Signal_Chunk_Arrival");
         sig_packetLoss   		= registerSignal("Signal_Packet_Loss");
-        sig_connectionRetry     = registerSignal("Signal_Connection_Retry");
         sig_numTrees            = registerSignal("Signal_Num_Trees");
         sig_BWUtil              = registerSignal("Signal_BW_Utilization");
         sig_connTime            = registerSignal("Signal_Connection_Time");
+        sig_retrys              = registerSignal("Signal_Retrys");
 	}
 
     if (stage != 3)
@@ -38,6 +38,8 @@ void MultitreeStatistic::initialize(int stage)
 	meanBWUtil = 0;
 	meanConnectionTime = 0;
 	meanNumTrees = 0;
+	meanRetrys = 0;
+	maxRetrys = 0;
 
 	WATCH(m_count_chunkHit);
 	WATCH(m_count_chunkMiss);
@@ -46,8 +48,36 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(meanBWUtil);
 	WATCH(meanConnectionTime);
 	WATCH(meanNumTrees);
+	WATCH(meanRetrys);
+	WATCH(maxRetrys);
+
+	WATCH(awakeNodes);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
+}
+
+void MultitreeStatistic::gatherRetrys(int numRetrys)
+{
+	retrys.push_back(numRetrys);
+}
+void MultitreeStatistic::reportRetrys()
+{
+	int sum = 0;
+	for(std::vector<int>::iterator it = retrys.begin(); it != retrys.end(); ++it)
+	{
+		int numRetrys = (int)*it;
+		sum += numRetrys;
+
+		if(numRetrys > maxRetrys)
+			maxRetrys = numRetrys;
+	}
+	meanRetrys = (double)sum / (double)retrys.size();
+	emit(sig_retrys, meanRetrys);
+}
+
+void MultitreeStatistic::reportAwakeNode(void)
+{
+	awakeNodes++;
 }
 
 void MultitreeStatistic::handleMessage(cMessage *msg)
@@ -70,6 +100,8 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportPacketLoss();
 		reportNumTreesForwarding();
 		reportConnectionTime();
+		reportRetrys();
+
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
 }
@@ -146,11 +178,6 @@ void MultitreeStatistic::reportPacketLoss()
 void MultitreeStatistic::reportChunkArrival(const int hopcount)
 {
     emit(sig_chunkArrival, hopcount);
-}
-
-void MultitreeStatistic::reportConnectionRetry(const int count)
-{
-    emit(sig_connectionRetry, count);
 }
 
 void MultitreeStatistic::increaseChunkHit(const int &delta)

@@ -140,6 +140,8 @@ void MultitreePeer::handleTimerJoin()
 			throw cException("");
 	}
 
+	m_gstat->reportAwakeNode();
+
 	std::vector<int> stripes;
 	for (int i = 0; i < numStripes; ++i)
 	{
@@ -494,7 +496,6 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		IPvXAddress alternativeParent = confirm.alternativeParent;
 
 		double time = (simTime() - beginConnecting[stripe]).dbl();
-		m_gstat->gatherConnectionTime(stripe, time);
 
 		IPvXAddress oldParent = m_partnerList->getParent(stripe);
 		if(!oldParent.isUnspecified())
@@ -502,8 +503,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			// There already is another parent for this stripe (I disconnected from it, though).
 			// So now I should tell him that it can stop forwarding packets to me
 			EV << "Switching parent in stripe: " << stripe << " old: " << m_partnerList->getParent(stripe)
-				<< " new: " << address << ". It took me: "  << time << " seconds and " << requestedChildship[stripe].size()
-			    << " requests."	<< endl;
+				<< " new: " << address << endl;
 
 			if(!address.equals(oldParent))
 				// No need to give an alternative when disconnecting from a parent
@@ -512,9 +512,14 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		else
 		{
 			EV << "New parent in stripe: " << stripe << " (fallback: " << alternativeParent 
-				<< "), it took me: "  << time << " seconds and " << requestedChildship[stripe].size()
-			    << " requests."	<< endl;
+				<< ")."	<< endl;
 		}
+
+		EV << "It took me: "  << time << " seconds and " << requestedChildship[stripe].size()
+			    << " requests." << endl;
+
+		m_gstat->gatherConnectionTime(stripe, time);
+		m_gstat->gatherRetrys(requestedChildship[stripe].size());
 
 		fallbackParent[stripe] = alternativeParent;
 		requestedChildship[stripe].clear();
@@ -522,8 +527,8 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		m_partnerList->addParent(stripe, address);
 		beginConnecting[stripe] = -1;
 
-		m_gstat->reportConnectionRetry(stat_retrys[stripe]);
-		stat_retrys[stripe] = 0;
+		//m_gstat->reportConnectionRetry(stat_retrys[stripe]);
+		//stat_retrys[stripe] = 0;
 	}
 
 	printStatus();

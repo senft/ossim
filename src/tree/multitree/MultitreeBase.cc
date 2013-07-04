@@ -197,7 +197,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 						&& request.currentParent.isUnspecified() // only when it is the nodes initial connect
 						)
 				{
-
 					// A node wants to connect to my preferred stripe, but there is no no spare
 					// bandwidth. First try to drop a node in an "un-preferred" to a node
 					// in the same stripe (hence this only works when there are at least 2 children

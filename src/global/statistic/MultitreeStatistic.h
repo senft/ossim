@@ -29,12 +29,14 @@ public:
 
 	virtual void receiveChangeNotification(int category, const cPolymorphic *details);
 
+	void reportAwakeNode(void);
+
 	void reportChunkArrival(const int hopcount);
-	void reportConnectionRetry(const int count);
 
 	void gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn);
 	void gatherNumTreesForwarding(const IPvXAddress node, int numTrees);
 	void gatherConnectionTime(int stripe, double time);
+	void gatherRetrys(int retrys);
 
 private:
 	cMessage *timer_reportGlobal;
@@ -46,25 +48,31 @@ private:
 	void reportPacketLoss();
 	void reportNumTreesForwarding();
 	void reportConnectionTime();
+	void reportRetrys();
 
 	ActivePeerTable *m_apTable;
 
 	simsignal_t sig_BWUtil;
 	simsignal_t sig_packetLoss;
 	simsignal_t sig_chunkArrival;
-	simsignal_t sig_connectionRetry;
 	simsignal_t sig_numTrees;
 	simsignal_t sig_connTime;
+	simsignal_t sig_retrys;
 
 	std::map<IPvXAddress, int> currentBWUtilization;
 	std::map<IPvXAddress, int> maxBWUtilization;
 	std::map<IPvXAddress, int> numTreesForwarding;
 	std::vector<double> connectionTimes;
+	std::vector<int> retrys;
+
+	int awakeNodes;
 
 	long m_count_chunkHit;
 	long m_count_chunkMiss;
 	long m_count_allChunk;
 
+	int maxRetrys;
+	double meanRetrys;
 	double meanBWUtil;
 	double meanConnectionTime;
 	double meanNumTrees;
