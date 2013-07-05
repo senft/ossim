@@ -81,6 +81,8 @@ void MultitreeSource::processPacket(cPacket *pkt)
     }
     }
 
+	printStatus();
+
     delete pkt;
 }
 
@@ -161,7 +163,7 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 
 IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests)
 {
-	printStatus();
+	//printStatus();
 
 	//EV << "Searching alternative parent for " << forNode << ", currentParent="
 	//	<< currentParent << ", alread tried to connect to " << lastRequests.size()
@@ -208,6 +210,8 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 
 void MultitreeSource::optimize(void)
 {
+	// TODO maybe start with the tree I have the most children in
+
 	//int stripe = getPreferredStripe();
 
 	printStatus();
@@ -306,7 +310,7 @@ void MultitreeSource::optimize(void)
 
 			reqPkt->getRequests().push_back(request);
 
-			EV << "Request " << stripes->second << " from " << it->first << endl;
+			EV << "Request " << request.remainingBW << " from " << it->first << ", stripe " << stripes->first << endl;
 		}
 
 		numPNR++;

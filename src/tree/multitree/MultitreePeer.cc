@@ -503,7 +503,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			// There already is another parent for this stripe (I disconnected from it, though).
 			// So now I should tell him that it can stop forwarding packets to me
 			EV << "Switching parent in stripe: " << stripe << " old: " << m_partnerList->getParent(stripe)
-				<< " new: " << address << endl;
+				<< " new: " << address << ". ";
 
 			if(!address.equals(oldParent))
 				// No need to give an alternative when disconnecting from a parent
@@ -512,7 +512,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		else
 		{
 			EV << "New parent in stripe: " << stripe << " (fallback: " << alternativeParent 
-				<< ")."	<< endl;
+				<< "). ";
 		}
 
 		EV << "It took me: "  << time << " seconds and " << requestedChildship[stripe].size()
@@ -1038,7 +1038,7 @@ void MultitreePeer::optimize(void)
 
 		reqPkt->getRequests().push_back(request);
 
-		EV << "Request " << request.remainingBW << " from " << it->first << endl;
+		EV << "Request " << request.remainingBW << " from " << it->first << ", stripe " << stripe << endl;
 		numPNR++;
 		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
 	}

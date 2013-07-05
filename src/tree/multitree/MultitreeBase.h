@@ -110,9 +110,10 @@ protected:
 	void getCostliestChild(successorList childList, int fromStripe, IPvXAddress &address);
 	void getCheapestChild(successorList childList, int fromStripe, IPvXAddress &address, IPvXAddress skipAddress);
 
+	virtual void optimize(void) = 0;
 
 	int preferredStripe;
-	virtual void optimize(void) = 0;
+
 private:
 	bool param_optimize;
 	bool param_sendMissingChunks;

@@ -74,8 +74,7 @@ bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
 
 void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int successors)
 {
-	children[stripe].insert(
-			std::pair<IPvXAddress, int>(address, successors));
+	children[stripe].insert( std::pair<IPvXAddress, int>(address, successors) );
 }
 
 IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const std::set<IPvXAddress> &skipNodes)
@@ -98,6 +97,10 @@ IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const st
 					child = it->first;
 				}
 			}
+			//else
+			//{
+			//	EV << "skip: " << it->first << endl;
+			//}
 		}
 	}
 	return child;
@@ -384,7 +387,7 @@ void MultitreePartnerList::printPartnerList(void)
 	for (int i = 0; i < numStripes; i++)
 	{
 		EV << "*********** Stripe " << i << " **********" << endl;
-		EV << "Parent  : " << parents[i] << endl;
+		EV << "Parent  : " << parents[i] << " (" << getNumOutgoingConnections(i) << " children, " << getNumSuccessors(i) << " successors)" << endl;
 		EV << "Children: ";
 
 		std::map<IPvXAddress, int> curChildren = children[i];

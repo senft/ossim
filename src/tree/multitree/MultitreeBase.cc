@@ -718,7 +718,7 @@ int MultitreeBase::getConnections(void)
 void MultitreeBase::printStatus(void)
 {
 	EV << "*******************************" << endl;
-	EV << getNodeAddress() << " (preferred stripe: " << getPreferredStripe() << ")" << endl;
+	EV << getNodeAddress() << endl;
 	m_partnerList->printPartnerList();
 	EV << "*******************************" << endl;
 }
