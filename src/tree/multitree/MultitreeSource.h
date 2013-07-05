@@ -34,6 +34,7 @@ private:
 
 	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
+
 };
 
 #endif

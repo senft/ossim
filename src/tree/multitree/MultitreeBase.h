@@ -93,7 +93,6 @@ protected:
 	void printStatus(void);
 
 	void dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
-	int getPreferredStripe();
 
 	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests) = 0;
 

@@ -47,6 +47,7 @@ private:
 	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);
 
 	virtual bool isPreferredStripe(int stripe);
+	int selectPreferredStripe(int start);
 
 	void connectVia(IPvXAddress address, const std::vector<int> &stripes);
 
@@ -75,5 +76,6 @@ private:
 
 	long m_count_prev_chunkMiss;
 	long m_count_prev_chunkHit;
+
 };
 #endif

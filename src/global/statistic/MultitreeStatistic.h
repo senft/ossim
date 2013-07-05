@@ -33,6 +33,7 @@ public:
 
 	void reportChunkArrival(const int hopcount);
 
+	void gatherPreferredStripe(const IPvXAddress node, int stripe);
 	void gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn);
 	void gatherNumTreesForwarding(const IPvXAddress node, int numTrees);
 	void gatherConnectionTime(int stripe, double time);
@@ -59,6 +60,7 @@ private:
 	simsignal_t sig_connTime;
 	simsignal_t sig_retrys;
 
+	std::map<IPvXAddress, int> preferredStripes;
 	std::map<IPvXAddress, int> currentBWUtilization;
 	std::map<IPvXAddress, int> maxBWUtilization;
 	std::map<IPvXAddress, int> numTreesForwarding;

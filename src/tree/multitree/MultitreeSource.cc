@@ -180,6 +180,7 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 
 	//IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 	IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+	//IPvXAddress address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 
 	if(address.isUnspecified())
 	{
@@ -190,6 +191,7 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 			skipNodes.insert( lastRequests.back() );
 		//address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 		address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+		//address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 	}
 
 	if(address.isUnspecified())
@@ -199,6 +201,7 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 		skipNodes.insert(currentParent);
 		//address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 		address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+		//address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 	}
 
 	if(address.isUnspecified())
