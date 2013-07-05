@@ -729,8 +729,8 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 			continue;
 
 		int remainingBW = request.remainingBW;
-		float threshold = request.threshold;
-		float dependencyFactor = request.dependencyFactor;
+		double threshold = request.threshold;
+		double dependencyFactor = request.dependencyFactor;
 
 		IPvXAddress senderAddress;
 		getSender(pkt, senderAddress);
@@ -755,13 +755,13 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 			if(curDisconnectingChildren.find(child) != curDisconnectingChildren.end())
 				continue;
 
-			double k3 = (dependencyFactor - m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
+			double k3 = (dependencyFactor - (double)m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
 			int k2 = (it->second > 0) ? 0 : 1;
 			double gain = k3 - (double)k2;
 
-			//EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
+			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
-			if(gain < threshold)
+			if(gain > threshold)
 			{
 				dropNode(stripe, child, senderAddress);
 				remainingBW--;

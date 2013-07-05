@@ -293,8 +293,6 @@ void MultitreeSource::optimize(void)
 	}
 
 	double threshold = getGainThreshold();
-	double depFactor = (double)(m_partnerList->getNumSuccessors(stripe) / 
-						(double)m_partnerList->getNumOutgoingConnections(stripe)) - 1;
 
 	for (std::map<IPvXAddress, std::map<int, int> >::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
 	{
@@ -302,6 +300,9 @@ void MultitreeSource::optimize(void)
 
 		for (std::map<int, int>::iterator stripes = it->second.begin() ; stripes != it->second.end(); ++stripes)
 		{
+			double depFactor = (double)(m_partnerList->getNumSuccessors(stripes->first) / 
+								(double)m_partnerList->getNumOutgoingConnections(stripes->first)) - 1;
+
 			PassNodeRequest request;
 			request.stripe = stripes->first;
 			request.remainingBW = stripes->second;
