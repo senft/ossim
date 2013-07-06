@@ -808,7 +808,7 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 
 	int stripe = stripePkt->getStripe();
 
-	if(m_state[stripe] == TREE_JOIN_STATE_IDLE)
+	if(m_state[stripe] == TREE_JOIN_STATE_IDLE && !m_partnerList->hasChildren(stripe))
 		return;
 
 	int hopcount = stripePkt->getHopCount();
