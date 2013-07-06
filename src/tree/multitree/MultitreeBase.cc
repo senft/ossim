@@ -271,6 +271,9 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					{
 						accept.push_back(request);
 						m_partnerList->addChild(stripe, senderAddress, numSucc);
+
+						// Accepted unpreferred stripe
+						doOptimize  = true;
 					}
 					else
 					{

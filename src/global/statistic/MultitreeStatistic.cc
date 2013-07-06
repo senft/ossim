@@ -27,9 +27,11 @@ void MultitreeStatistic::initialize(int stage)
     m_apTable = check_and_cast<ActivePeerTable *>(temp);
     EV << "Binding to activePeerTable is completed successfully" << endl;
 
-	timer_reportGlobal = new cMessage("GLOBAL_STATISTIC_REPORT_BWUtil");
+	timer_reportGlobal = new cMessage("GLOBAL_STATISTIC_REPORT_GLOBAL");
 
 	param_interval_reportGlobal = par("interval_reportGlobal");
+
+	awakeNodes = 0;
 
 	m_count_chunkHit = 0;
 	m_count_allChunk = 0;
@@ -54,6 +56,11 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(awakeNodes);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
+}
+
+void MultitreeStatistic::gatherPreferredStripe(const IPvXAddress node, int stripe)
+{
+	preferredStripes[node] = stripe;
 }
 
 void MultitreeStatistic::gatherRetrys(int numRetrys)
@@ -101,6 +108,19 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportNumTreesForwarding();
 		reportConnectionTime();
 		reportRetrys();
+
+		// TODO refactor
+		std::map<int, int> counts;
+		for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
+		{
+			counts[it->second]++;
+		}
+
+		EV << m_apTable->getNumActivePeer() << " nodes in total." << endl;
+		for (std::map<int, int>::const_iterator it = counts.begin() ; it != counts.end(); ++it)
+		{
+			EV << "stripe " << it->first << ": " << it->second << " nodes" << endl;
+		}
 
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
