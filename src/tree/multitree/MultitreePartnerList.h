@@ -50,6 +50,8 @@ public:
 	IPvXAddress getBestLazyChild(int stripe, const std::set<IPvXAddress> &skipNodes);
 	std::map<IPvXAddress, int> getChildrenWithCount(int stripe);
 
+	int getNumActiveTrees(void);
+
 	void printPartnerList(void);
 protected:
 	int numStripes;

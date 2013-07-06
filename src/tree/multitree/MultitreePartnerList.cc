@@ -398,3 +398,14 @@ void MultitreePartnerList::printPartnerList(void)
 		EV << endl;
 	}
 }
+
+int MultitreePartnerList::getNumActiveTrees(void)
+{
+	int numActiveTrees = 0;
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(hasChildren(i))
+			numActiveTrees++;
+	}
+	return numActiveTrees;
+}

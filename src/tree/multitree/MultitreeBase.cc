@@ -184,7 +184,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				EV << "Received ConnectRequest from child (" << senderAddress << ", stripe " << stripe
 					<< "). Tell him he can stay..." << endl;
 				accept.push_back(request);
-				m_partnerList->addChild(stripe, senderAddress, numSucc);
+
+				disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
 
 			}
 			//else if( requestedChildship[stripe].find(senderAddress) != requestedChildship[stripe].end() )
@@ -208,7 +209,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					{
 
 						// source
-						bool moreSuccInOther = false;
+						bool moreSuccInOther = true;
 						bool lessChildrenInOther = false;
 
 						int myNumChildren = m_partnerList->getNumOutgoingConnections(stripe);
@@ -219,10 +220,10 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 							if(i == stripe)
 								continue;
 
-							if(myNumSucc < m_partnerList->getNumSuccessors(i))
+							if(myNumSucc > m_partnerList->getNumSuccessors(i))
 							{
 								//EV << "Succ: " << myNumSucc << " < " << m_partnerList->getNumSuccessors(i) << endl;
-								moreSuccInOther = true;
+								moreSuccInOther = false;
 							}
 
 							if(myNumChildren > m_partnerList->getNumOutgoingConnections(i))
@@ -232,17 +233,25 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 							}
 						}
 
-						if(moreSuccInOther || !lessChildrenInOther)
+						//if( (moreSuccInOther && moreChildrenInOther) || (moreSuccInOther ^ moreChildrenInOther))
+						if( (lessChildrenInOther))
 						{
-							accept.push_back(request);
-							m_partnerList->addChild(stripe, senderAddress, numSucc);
-
+							if(moreSuccInOther)
+							{
+								accept.push_back(request);
+								m_partnerList->addChild(stripe, senderAddress, numSucc);
+							}
+							else
+							{
+								EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+									<< ") but already have most sucessors/children in that stripe. Rejecting..." << endl;
+								reject.push_back(request);
+							}
 						}
 						else
 						{
-							EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-								<< ") but already have most sucessors/children in that stripe. Rejecting..." << endl;
-							reject.push_back(request);
+							accept.push_back(request);
+							m_partnerList->addChild(stripe, senderAddress, numSucc);
 						}
 
 					}
@@ -258,9 +267,17 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				}
 				else
 				{
-					EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-						<< ") but not my preferred stripe. Rejecting..." << endl;
-					reject.push_back(request);
+					if(m_partnerList->getNumActiveTrees() <= 1)
+					{
+						accept.push_back(request);
+						m_partnerList->addChild(stripe, senderAddress, numSucc);
+					}
+					else
+					{
+						EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+							<< ") but not my preferred stripe. Rejecting..." << endl;
+						reject.push_back(request);
+					}
 				}
 			}
 			else
@@ -730,6 +747,10 @@ double MultitreeBase::getGainThreshold(void)
 
 void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
 {
+	if(disconnectingChildren[stripe].find(address) != disconnectingChildren[stripe].end())
+		return;
+
+
 	// TODO make stripe a vector
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 

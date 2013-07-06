@@ -236,12 +236,7 @@ void MultitreePeer::handleTimerReportStatistic()
 			m_partnerList->getNumOutgoingConnections(), getMaxOutConnections());
 
 	// Report number of trees I am forwarding in
-	int numActiveTrees = 0;
-	for (int i = 0; i < numStripes; i++)
-	{
-		if(m_partnerList->hasChildren(i))
-			numActiveTrees++;
-	}
+	int numActiveTrees = m_partnerList->getNumActiveTrees();
 	m_gstat->gatherNumTreesForwarding(getNodeAddress(), numActiveTrees);
 
 	// Report hit/missing chunks
@@ -586,6 +581,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			{
 				if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
 				{
+					//if(requestedChildship[stripe].size() > 100)
+					//	throw cException("staaaawp");
 					// The last node I sent a ConnectRequest to rejected my request
 					
 					stat_retrys[stripe]++;
@@ -763,7 +760,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
-			if(gain > threshold)
+			if(gain < threshold)
 			{
 				dropNode(stripe, child, senderAddress);
 				remainingBW--;
@@ -1023,7 +1020,7 @@ void MultitreePeer::optimize(void)
 		request.stripe = stripe;
 		request.threshold = getGainThreshold();
 		request.dependencyFactor = (double)(m_partnerList->getNumSuccessors(stripe) / 
-					(double)m_partnerList->getNumOutgoingConnections(stripe)) - 1;
+					((double)m_partnerList->getNumOutgoingConnections(stripe) + 1)) - 1;
 		request.remainingBW = it->second;
 
 		reqPkt->getRequests().push_back(request);
@@ -1066,20 +1063,21 @@ bool MultitreePeer::isPreferredStripe(int stripe)
 		return true;
 	}
 
-	bool lessInOther = false;
-	for (int i = 0; i < numStripes; i++)
-	{
-		if(i == stripe)
-			continue;
+	//bool lessInOther = false;
+	//bool moreInOther = false;
+	//for (int i = 0; i < numStripes; i++)
+	//{
+	//	if(i == stripe)
+	//		continue;
 
-		if( m_partnerList->getNumOutgoingConnections(preferredStripe) > m_partnerList->getNumOutgoingConnections(i) )
-		{
-			lessInOther = true;
-			break;
-		}
-	}
+	//	if( m_partnerList->getNumOutgoingConnections(preferredStripe) > m_partnerList->getNumOutgoingConnections(i) )
+	//	{
+	//		lessInOther = true;
+	//		break;
+	//	}
+	//}
 
-	if(!lessInOther)
+	//if(!lessInOther)
 		preferredStripe = selectPreferredStripe(stripe);
 
 	m_gstat->gatherPreferredStripe(getNodeAddress(), preferredStripe);

@@ -266,14 +266,21 @@ void MultitreeSource::optimize(void)
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
+	// TODO Start with tree with most children
 	int stripe = 0;
 
 	// <node, <stripe, remainingBW> >
 	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
+	int treesWithNoMoreChildren = 0;
 	while(remainingBW > 0)
 	{
+
+		if(treesWithNoMoreChildren >= numStripes)
+			break;
+
 		int maxSucc = -1;
 		IPvXAddress busiestChild;
+
 		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
 			if( it->second > maxSucc && disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() )
@@ -285,14 +292,20 @@ void MultitreeSource::optimize(void)
 			}
 		}
 
-		if(busiestChild.isUnspecified() || maxSucc <= 0 || remainingBW <= 0)
-			break;
+		EV << "stripe " << stripe << " busiest: " << busiestChild << " with " << maxSucc << endl;
+
+		if(busiestChild.isUnspecified() || maxSucc <= 0)
+		{
+			treesWithNoMoreChildren++;
+			stripe = (stripe + 1) % numStripes;
+			continue;
+		}
 
 		remainingBW--;
 		requestNodes[busiestChild][stripe]++;
 		children[stripe][busiestChild]--;
 
-		stripe = ++stripe % numStripes;
+		stripe = (stripe + 1) % numStripes;
 	}
 
 	double threshold = getGainThreshold();
@@ -304,7 +317,7 @@ void MultitreeSource::optimize(void)
 		for (std::map<int, int>::iterator stripes = it->second.begin() ; stripes != it->second.end(); ++stripes)
 		{
 			double depFactor = (double)(m_partnerList->getNumSuccessors(stripes->first) / 
-								(double)m_partnerList->getNumOutgoingConnections(stripes->first)) - 1;
+								((double)m_partnerList->getNumOutgoingConnections(stripes->first) + 1)) - 1;
 
 			PassNodeRequest request;
 			request.stripe = stripes->first;
