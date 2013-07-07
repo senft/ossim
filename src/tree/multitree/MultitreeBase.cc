@@ -499,10 +499,14 @@ double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress 
 	//EV << "****************************************" << endl;
 
 	// K_1 + 2 * K_2 + 3 * K_3 + 4 * K_4
+	//return getStripeDensityCosts(childList, stripe)
+	//	+ 2 * getForwardingCosts(childList, stripe, child)
+	//	+ 3 * getBalanceCosts(childList, stripe, child, IPvXAddress())
+	//	+ 4 * getDepencyCosts(child);
 	return getStripeDensityCosts(childList, stripe)
-		+ 2 * getForwardingCosts(childList, stripe, child)
-		+ 3 * getBalanceCosts(childList, stripe, child, IPvXAddress())
-		+ 4 * getDepencyCosts(child);
+		+ 0.2 * getForwardingCosts(childList, stripe, child)
+		+ 0.2 * getBalanceCosts(childList, stripe, child, IPvXAddress())
+		+ 0.2 * getDepencyCosts(child);
 }
 
 double MultitreeBase::getStripeDensityCosts(successorList childList, int stripe) // K_sel ,K_1
