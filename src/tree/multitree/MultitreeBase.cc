@@ -167,10 +167,15 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 			//EV << "Processing stripe: " << stripe << endl;
 
-			// TODO check if node is a child
-			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING || m_state[stripe] == TREE_JOIN_STATE_IDLE)
+			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
 			{
 				EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
+				reject.push_back(request);
+			}
+			else if( (m_state[stripe] == TREE_JOIN_STATE_IDLE && m_partnerList->getParent(stripe).isUnspecified()) )
+			{
+				EV << "Received ConnectRequest (stripe " << stripe
+					<< ") in (not yet or not anymore) unconnected stripe. Rejecting..." << endl;
 				reject.push_back(request);
 			}
 			else if( m_partnerList->hasParent(stripe, senderAddress) )
@@ -188,7 +193,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
 
 			}
-			//else if( requestedChildship[stripe].find(senderAddress) != requestedChildship[stripe].end() )
 			else if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
 			{
 				// TODO: maybe skip this even when the node is in requestedChildship (not just last
