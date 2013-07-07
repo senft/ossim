@@ -125,6 +125,8 @@ private:
 	void acceptConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
 	void rejectConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
 
+    virtual bool canAccept(ConnectRequest request) = 0;
+
     virtual void scheduleSuccessorInfo(int stripe) = 0;
 	int getConnections(void);
 

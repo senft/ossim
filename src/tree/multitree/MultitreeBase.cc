@@ -199,91 +199,57 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else if(hasBWLeft(accept.size() + 1))
 			{
+
 				if(preferredStripe == -1)
 					preferredStripe = stripe;
 
-				if(isPreferredStripe(stripe))
+				if(canAccept(request))
 				{
-					if(m_partnerList->getParent(stripe).isUnspecified())
+					if(!isPreferredStripe(stripe))
 					{
+						doOptimize = true;
+					}
 
-						// source
-						bool moreSuccInOther = true;
-						bool lessChildrenInOther = false;
+					accept.push_back(request);
+					m_partnerList->addChild(stripe, senderAddress, numSucc);
+					std::vector<IPvXAddress> myChildren = m_partnerList->getChildren(stripe);
 
-						int myNumChildren = m_partnerList->getNumOutgoingConnections(stripe);
-						int myNumSucc = m_partnerList->getNumSuccessors(stripe);
+					std::vector<IPvXAddress>::iterator child = 
+						std::find(myChildren.begin(), myChildren.end(), request.currentParent);
 
-						for (int i = 0; i < numStripes; i++)
-						{
-							if(i == stripe)
-								continue;
+					if(child != myChildren.end())
+					{
+						int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*child);
+						// The nodes old parent is one of my children. So I can already
+						// update my partnerlist (that child now has 1 successors less)
+						m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*child, 
+								currentSucc - (1 + request.numSuccessors));
 
-							if(myNumSucc > m_partnerList->getNumSuccessors(i))
-							{
-								//EV << "Succ: " << myNumSucc << " < " << m_partnerList->getNumSuccessors(i) << endl;
-								moreSuccInOther = false;
-							}
-
-							if(myNumChildren > m_partnerList->getNumOutgoingConnections(i))
-							{
-								//EV << "Children: " << myNumChildren << " > " << m_partnerList->getNumOutgoingConnections(i) << endl;
-								lessChildrenInOther = true;
-							}
-						}
-
-						//if( (moreSuccInOther && moreChildrenInOther) || (moreSuccInOther ^ moreChildrenInOther))
-						if( (lessChildrenInOther))
-						{
-							if(moreSuccInOther)
-							{
-								accept.push_back(request);
-								m_partnerList->addChild(stripe, senderAddress, numSucc);
-							}
-							else
-							{
-								EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-									<< ") but already have most sucessors/children in that stripe. Rejecting..." << endl;
-								reject.push_back(request);
-							}
-						}
-						else
-						{
-							accept.push_back(request);
-							m_partnerList->addChild(stripe, senderAddress, numSucc);
-						}
-
+						// Since I just got a child of one of my children nothing changed
+						// for the nodes above me. So there is no need to send a
+						// SuccessorInfo 
 					}
 					else
 					{
-						// peer
-						accept.push_back(request);
-						m_partnerList->addChild(stripe, senderAddress, numSucc);
-
-						//if(!isPreferredStripe(stripe))
-						//	doOptimize  = true;
+						scheduleSuccessorInfo(stripe);
 					}
 				}
 				else
 				{
-					if(m_partnerList->getNumActiveTrees() <= 1)
-					{
-						accept.push_back(request);
-						m_partnerList->addChild(stripe, senderAddress, numSucc);
-
-						// Accepted unpreferred stripe
-						doOptimize  = true;
-					}
-					else
-					{
-						EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-							<< ") but not my preferred stripe. Rejecting..." << endl;
-						reject.push_back(request);
-					}
+					EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+						<< ") but already it haven't tried all my children or I have most "
+						<< " sucessors/children in that stripe, or its not my preferred stripe. Rejecting..." << endl;
+					reject.push_back(request);
 				}
+
 			}
 			else
 			{
+				EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
+				<< ") but have no bandwidth left. Rejecting..." << endl;
+
+				reject.push_back(request);
+				doOptimize  = true;
 			}
 		}
 
@@ -366,8 +332,6 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 			int lastChunk = request.lastReceivedChunk;
 			sendChunksToNewChild(stripe, address, lastChunk);
 		}
-
-		scheduleSuccessorInfo(stripe);
 	}
 
 	//printStatus();
@@ -465,7 +429,8 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
 	{
 		IPvXAddress curAddress = it->first;
 
-		if(curAddress.equals(skipAddress))
+		if(curAddress.equals(skipAddress) 
+				|| disconnectingChildren[stripe].find(curAddress) == disconnectingChildren[stripe].end())
 			continue;
 
 		double curGain = getGain(childList, stripe, curAddress, IPvXAddress());

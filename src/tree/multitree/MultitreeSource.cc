@@ -1,5 +1,7 @@
 #include "MultitreeSource.h"
 
+#include <algorithm> 
+
 Define_Module(MultitreeSource)
 
 MultitreeSource::MultitreeSource(){}
@@ -333,4 +335,40 @@ void MultitreeSource::optimize(void)
 		numPNR++;
 		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
 	}
+}
+
+bool MultitreeSource::canAccept(ConnectRequest request)
+{
+	int stripe = request.stripe;
+	bool moreSuccInOther = true;
+
+	int myNumSucc = m_partnerList->getNumSuccessors(stripe);
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(i == stripe)
+			continue;
+
+		if(myNumSucc > m_partnerList->getNumSuccessors(i))
+		{
+			moreSuccInOther = false;
+		}
+
+	}
+
+	bool triedAllChildren = true;
+	std::vector<IPvXAddress> lastRequests = request.lastRequests;
+	std::vector<IPvXAddress> myChildren = m_partnerList->getChildren(stripe);
+	for(std::vector<IPvXAddress>::iterator it = myChildren.begin(); it != myChildren.end(); ++it)
+	{
+		if( std::find(lastRequests.begin(), lastRequests.end(), (IPvXAddress)*it) == lastRequests.end() )
+		{
+			triedAllChildren = false;
+		}
+	}
+
+    // lastRequests.size == 0 and no current parent means this is
+	// probably due to a PassNodeRequest
+	return (triedAllChildren && moreSuccInOther)
+		|| (!request.currentParent.isUnspecified() && request.lastRequests.size() == 0);
 }

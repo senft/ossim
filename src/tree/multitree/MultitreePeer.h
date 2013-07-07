@@ -82,5 +82,6 @@ private:
 
 	std::map<IPvXAddress, std::vector<int> > connectTo;
 
+	virtual bool canAccept(ConnectRequest request);
 };
 #endif
