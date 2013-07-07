@@ -694,6 +694,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 
 					if(!m_partnerList->hasChildren())
 					{
+						m_partnerList->clear();
 						leave();
 					}
 				}
@@ -718,7 +719,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		}
 	}
 
-	if(!timer_connect->isScheduled())
+	if(!timer_connect->isScheduled() && connectTo.size() > 0)
 	{
 		simtime_t nextConnect = simTime() + param_delayRetryConnect;
 		EV << "Scheduling reconnect to " << nextConnect<< endl;
