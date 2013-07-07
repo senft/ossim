@@ -25,8 +25,8 @@ void MultitreePeer::initialize(int stage)
 		param_intervalReportStats =  par("intervalReportStats");
 		param_delaySuccessorInfo =  par("delaySuccessorInfo");
 
-		param_intervalReconnect   =  par("intervalReconnect");
 		param_delaySuccessorInfo  =  par("delaySuccessorInfo");
+		param_delayRetryConnect   =  par("delayRetryConnect");
 
 		// -------------------------------------------------------------------------
 		// -------------------------------- Timers ---------------------------------
@@ -40,6 +40,7 @@ void MultitreePeer::initialize(int stage)
 		// -- Repeated timers
         timer_successorInfo     = new cMessage("TREE_NODE_TIMER_SUCCESSOR_UPDATE");
 		timer_reportStatistic   = new cMessage("TREE_NODE_TIMER_REPORT_STATISTIC");
+		timer_connect			= new cMessage("TREE_NODE_TIMER_CONNECT");
 
 		// -------------------------------------------------------------------------
 
@@ -68,8 +69,8 @@ void MultitreePeer::initialize(int stage)
 		m_count_prev_chunkMiss = 0L;
 		m_count_prev_chunkHit = 0L;
 
+		WATCH(param_delayRetryConnect);
 		WATCH(param_delaySuccessorInfo);
-		WATCH(param_intervalReconnect);
 		for (int i = 0; i < numStripes; i++)
 		{
 			WATCH(lastSeqNumber[i]);
@@ -131,6 +132,10 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
        handleTimerReportStatistic();
        scheduleAt(simTime() + param_intervalReportStats, timer_reportStatistic);
     }
+	else if (msg == timer_connect)
+	{
+        handleTimerConnect();
+	}
 } 
 
 void MultitreePeer::handleTimerJoin()
@@ -346,6 +351,12 @@ void MultitreePeer::cancelAndDeleteTimer(void)
 		delete cancelEvent(timer_optimization);
 		timer_optimization = NULL;
 	}
+
+	if(timer_connect != NULL)
+	{
+		delete cancelEvent(timer_connect);
+		timer_connect = NULL;
+	}
 }
 
 void MultitreePeer::cancelAllTimer(void)
@@ -356,6 +367,7 @@ void MultitreePeer::cancelAllTimer(void)
     cancelEvent(timer_successorInfo);
     cancelEvent(timer_reportStatistic);
 	cancelEvent(timer_optimization);
+	cancelEvent(timer_connect);
 
 }
 
@@ -558,8 +570,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 	IPvXAddress senderAddress;
 	getSender(pkt, senderAddress);
 
-	std::map<IPvXAddress, std::vector<int> > connectTo;
-
 	for(std::vector<DisconnectRequest>::iterator it = requests.begin(); it != requests.end(); ++it)
 	{
 		DisconnectRequest request = (DisconnectRequest)*it;
@@ -571,6 +581,9 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			// If the DisconnectRequest comes from a child, just remove it from
 			// my PartnerList it.. regardless of state
 			removeChild(stripe, senderAddress);
+
+			// TODO if the node knew, that the DRQ came from a child I dropped because of a PNR I
+			// could omit the update
 			scheduleSuccessorInfo(stripe);
 			continue;
 		}
@@ -705,12 +718,25 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 		}
 	}
 
+	if(!timer_connect->isScheduled())
+	{
+		simtime_t nextConnect = simTime() + param_delayRetryConnect;
+		EV << "Scheduling reconnect to " << nextConnect<< endl;
+		scheduleAt(nextConnect, timer_connect);
+	}
+
+}
+
+void MultitreePeer::handleTimerConnect(void)
+{
 	for (std::map<IPvXAddress, std::vector<int> >::iterator it = connectTo.begin() ; it != connectTo.end(); ++it)
 	{
 		connectVia(it->first, it->second);
 	}
 
+	connectTo.clear();
 }
+
 
 void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 {
@@ -909,9 +935,6 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 		skipNodes.insert( (IPvXAddress)*it );
 	}
 
-	// Chose the node with the least successors (however getLaziestForwardingChild tries to make
-	// sure that the node has at least one successors, meaning the node is forwarding in the given
-	// stripe)
 	IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
 	//IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 	//IPvXAddress address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
