@@ -765,24 +765,28 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 			<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
 			dependencyFactor << ")" << endl;
 
-		successorList children = m_partnerList->getChildrenWithCount(stripe);
+		//successorList children = m_partnerList->getChildrenWithCount(stripe);
 
 		std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
 
-		// TODO try to first give the nodes with the most successors to the top, so that the hopcount is
-		// reduced for the maximum number of nodes possible
-		for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
+		std::set<IPvXAddress> skipNodes;
+		for(std::set<IPvXAddress>::iterator it = curDisconnectingChildren.begin(); it != curDisconnectingChildren.end(); ++it)
 		{
-			if(remainingBW == 0)
+			skipNodes.insert( (IPvXAddress)*it );
+		}
+		while(remainingBW > 0)
+		{
+			IPvXAddress child = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
+
+			if(child.isUnspecified())
 				break;
 
-			IPvXAddress child = it->first;
-
-			if(curDisconnectingChildren.find(child) != curDisconnectingChildren.end())
-				continue;
-
-			double k3 = (dependencyFactor - (double)m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
-			int k2 = (it->second > 0) ? 0 : 1;
+			double k3;
+			if(dependencyFactor != 0)
+				k3 = (dependencyFactor - (double)m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
+			else
+				k3 = 0;
+			int k2 = (m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1;
 			double gain = k3 - (double)k2;
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
@@ -793,7 +797,10 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 				remainingBW--;
 			}
 			else
+			{
 				EV << "Not giving child: " << child << endl;
+			}
+			skipNodes.insert(child);
 		}
 
 	}
