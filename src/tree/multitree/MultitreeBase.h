@@ -128,7 +128,6 @@ private:
     virtual bool canAccept(ConnectRequest request) = 0;
 
     virtual void scheduleSuccessorInfo(int stripe) = 0;
-	int getConnections(void);
 
 	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);
 

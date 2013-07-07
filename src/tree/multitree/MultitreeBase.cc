@@ -554,10 +554,6 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
 
 double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
 {
-	// This does not need an up-to-date successorList, because this only gets called during an
-	// optimization process. During that process only one stripe changes, the others stay the same.
-	// And we can be sure, that this node is conencted with <child> else this would not get called.
-
 	int numConnections = 0;
 
 	for (int i = 0; i < numStripes; i++)
@@ -581,7 +577,6 @@ double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
 double MultitreeBase::getGainThreshold(void)
 {
 	double t = 0.2;
-	//double b = getConnections() / ((bwCapacity + 1) * numStripes);
 
     int outDegree = 0;
     for (int i = 0; i < numStripes; i++)
@@ -633,21 +628,6 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 
 	numDR++;
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
-}
-
-int MultitreeBase::getConnections(void)
-{
-	int result = 0;
-
-	for (int i = 0; i < numStripes; i++)
-	{
-		if(!m_partnerList->getParent(i).isUnspecified())
-			result++;
-
-		result += m_partnerList->getChildren(i).size();
-	}
-
-	return result;
 }
 
 void MultitreeBase::printStatus(void)
