@@ -816,7 +816,7 @@ void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativePare
 	if(m_partnerList->hasChild(stripe, candidate))
 	{
 		//throw cException("this happens.");
-		EV << "Old parent wants me to connect to a child of mine." << endl;
+		EV << "Old parent wants me to connect to a child of mine. (" << alternativeParent << ")" << endl;
 		candidate = m_partnerList->getParent(stripe);
 	}
 
@@ -970,13 +970,6 @@ void MultitreePeer::optimize(void)
 	bool gain = true;
 	while(gain && children.size() > 1)
 	{
-		//EV << "########################" << endl;
-		//for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
-		//{
-		//	EV << it->first << " (" << it->second << " successors), ";
-		//}
-		//EV << endl << "###################" << endl;
-
 		gain = false;
 
 		IPvXAddress linkToDrop;	
@@ -1027,7 +1020,7 @@ void MultitreePeer::optimize(void)
 			}
 		}
 
-		if(busiestChild.isUnspecified() || maxSucc <= 0 || remainingBW <= 0)
+		if(child.isUnspecified() || maxSucc <= 0)
 			break;
 
 		remainingBW--;
@@ -1041,9 +1034,11 @@ void MultitreePeer::optimize(void)
 
 		PassNodeRequest request;
 		request.stripe = stripe;
-		request.threshold = getGainThreshold();
+		request.threshold = gainThreshold;
 		request.dependencyFactor = (double)(m_partnerList->getNumSuccessors(stripe) / 
-					((double)m_partnerList->getNumOutgoingConnections(stripe) + 1)) - 1;
+					((double)m_partnerList->getNumOutgoingConnections(stripe) )) - 1;
+
+		EV << "depFactor: " << request.dependencyFactor << endl;
 		request.remainingBW = it->second;
 
 		reqPkt->getRequests().push_back(request);
@@ -1056,14 +1051,6 @@ void MultitreePeer::optimize(void)
 
 int MultitreePeer::selectPreferredStripe(int start)
 {
-	//if(preferredStripe != -1 && isPreferredStripe(preferredStripe))
-	//{
-	//	EV << "Preferred stripe is: " << preferredStripe << endl;
-	//	return preferredStripe;
-	//}
-
-	// Start with a random stripe and check all stripes starting with the random one
-	//int max = intrand(numStripes);
 	int max = start;
 	int startWith = max;
 	for(int i = 0; i < numStripes; ++i)
@@ -1086,24 +1073,15 @@ bool MultitreePeer::isPreferredStripe(int stripe)
 		return true;
 	}
 
-	//bool lessInOther = false;
-	//bool moreInOther = false;
-	//for (int i = 0; i < numStripes; i++)
-	//{
-	//	if(i == stripe)
-	//		continue;
-
-	//	if( m_partnerList->getNumOutgoingConnections(preferredStripe) > m_partnerList->getNumOutgoingConnections(i) )
-	//	{
-	//		lessInOther = true;
-	//		break;
-	//	}
-	//}
-
-	//if(!lessInOther)
-		preferredStripe = selectPreferredStripe(stripe);
+	preferredStripe = selectPreferredStripe(stripe);
 
 	m_gstat->gatherPreferredStripe(getNodeAddress(), preferredStripe);
 
 	return stripe == preferredStripe;
+}
+
+
+bool MultitreePeer::canAccept(ConnectRequest request)
+{
+	return isPreferredStripe(request.stripe) || (m_partnerList->getNumActiveTrees() <= 1);
 }

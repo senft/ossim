@@ -165,8 +165,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 			int numSucc = request.numSuccessors;
 
-			//EV << "Processing stripe: " << stripe << endl;
-
 			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
 			{
 				EV << "Received ConnectRequest (stripe " << stripe << ") while leaving. Rejecting..." << endl;
@@ -195,11 +193,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
 			{
-				// TODO: maybe skip this even when the node is in requestedChildship (not just last
-				// element)
-				// TODO: would be better to just queue this.. maybe the node rejects me
-				EV << "Received ConnectRequest from a node (" << senderAddress << ") that I requested childship from for stripe "
-					<< stripe << ". Rejecting..." << endl;
+				EV << "Received ConnectRequest from a node (" << senderAddress<< ") that I requested "
+					<< "childship from for stripe " << stripe << ". Rejecting..." << endl;
 				reject.push_back(request);
 			}
 			else if(hasBWLeft(accept.size() + 1))
@@ -289,116 +284,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			}
 			else
 			{
-				//if(onlyPreferredStripes && stripe == getPreferredStripe() 
-				//		&& !m_partnerList->hasChild(stripe, senderAddress)
-				//		)
-				//{
-				//	// A node wants to connect to my preferred stripe, but there is no no spare
-				//	// bandwidth. First try to drop a node in an "un-preferred" to a node
-				//	// in the same stripe (hence this only works when there are at least 2 children
-				//	// in an unpreferred stripe). Then try to drop a node in the preferred stripe to
-				//	// another node in the same stripe.
-
-				//	printStatus();
-
-				//	bool droppedNode = false;
-				//	if(request.currentParent.isUnspecified()) // when it is the nodes initial connect
-				//	{
-
-				//		if(!droppedNode)
-				//		{
-				//			if( m_partnerList->getNumOutgoingConnections(stripe) > 1 ) // At least 2 children...
-				//			{
-				//				std::set<IPvXAddress> skipNodes;
-				//				for(std::set<IPvXAddress>::iterator it = disconnectingChildren[stripe].begin(); it != disconnectingChildren[stripe].end(); ++it)
-				//				{
-				//					skipNodes.insert((IPvXAddress)*it);
-				//				}
-
-				//				IPvXAddress drop = m_partnerList->getChildWithLeastChildren( stripe, skipNodes );
-				//				skipNodes.insert(drop);
-				//				//IPvXAddress alternativeParent = m_partnerList->getChildWithMostChildren(stripe, skipNodes );
-				//				IPvXAddress alternativeParent = senderAddress;
-
-				//				if( !drop.isUnspecified() && ! alternativeParent.isUnspecified()
-				//						&& !alternativeParent.equals(m_partnerList->getParent(stripe)))
-				//				{
-				//					EV << "Dropping " << drop << " to make room for " << senderAddress << endl;
-
-				//					droppedNode = true;
-				//					dropNode(stripe, drop, alternativeParent);
-				//					accept.push_back(request);
-				//				}
-				//			}
-				//		}
-
-				//	}
-				//	//else
-				//	//{
-
-				//	//	if(!droppedNode)
-				//	//	{
-				//	//		for (int j = 0; j < numStripes; j++)
-				//	//		{
-				//	//			if(j == stripe || droppedNode == true)
-				//	//				continue;
-
-				//	//			//if( m_partnerList->getNumOutgoingConnections(j) > 1 ) // At least 2 children...
-				//	//			if( m_partnerList->hasChildren(j) )
-				//	//			{
-
-				//	//				std::vector<IPvXAddress> vSkipNodes;
-				//	//				std::set<IPvXAddress> skipNodes;
-				//	//				for(std::set<IPvXAddress>::iterator it = disconnectingChildren[j].begin(); it != disconnectingChildren[j].end(); ++it)
-				//	//				{
-				//	//					skipNodes.insert((IPvXAddress)*it);
-				//	//					vSkipNodes.push_back((IPvXAddress)*it);
-				//	//				}
-
-				//	//				IPvXAddress drop = m_partnerList->getChildWithLeastChildren( j, skipNodes );
-				//	//				skipNodes.insert(drop);
-				//	//				vSkipNodes.push_back(drop);
-				//	//				//IPvXAddress alternativeParent = m_partnerList->getChildWithMostChildren(j, skipNodes);
-				//	//				IPvXAddress alternativeParent = getAlternativeNode(j, drop, IPvXAddress(), vSkipNodes);
-
-				//	//				if( !drop.isUnspecified() && !alternativeParent.isUnspecified()
-				//	//						&& m_partnerList->getNumChildsSuccessors(j, drop) == 0
-				//	//						//&& !alternativeParent.equals(m_partnerList->getParent(j))
-				//	//					)
-				//	//				{
-				//	//					EV << "Dropping " << drop << " to make room for " << senderAddress << endl;
-
-				//	//					droppedNode = true;
-				//	//					dropNode(j, drop, alternativeParent);
-				//	//					accept.push_back(request);
-				//	//				}
-				//	//			}
-				//	//		}
-				//	//	}
-
-				//	//}
-				//		
-				//	if(!droppedNode)
-				//	{
-				//		EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-				//			<< ") but have no bandwidth left. Rejecting..." << endl;
-				//		reject.push_back(request);
-				//		doOptimize  = true;
-				//	}
-
-				//}
-				//else
-				//{
-				  // This is no preferred stripe -> just reject
-				  //EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-				  //	<< ") but have no bandwidth left. Rejecting..." << endl;
-
-				  EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-				  	<< ") but have no bandwidth left. Rejecting..." << endl;
-
-				  reject.push_back(request);
-				  //doOptimize  = true;
-				//}
 			}
 		}
 
@@ -678,11 +563,11 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
 
 	//EV << "fanout: " << myChildren << " mySucc: " << mySuccessors << " childsSucc: " << childsSuccessors << endl; 
 
-	if(!childToDrop.isUnspecified())
-	{
-		myChildren--;
-		childsSuccessors++;
-	}
+	//if(!childToDrop.isUnspecified())
+	//{
+	//	myChildren--;
+	//	childsSuccessors++;
+	//}
 
 	if(myChildren == 0) // TODO is this ok?
 		return 0;

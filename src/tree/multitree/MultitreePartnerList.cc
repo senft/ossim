@@ -81,26 +81,18 @@ IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const st
 {
 	IPvXAddress child;
 	const std::map<IPvXAddress, int> curChildren = children[stripe];
+	int minSucc = INT_MAX;
 
-	if(curChildren.size() > 0)
+	for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 	{
-		int minSucc = INT_MAX;
-
-		for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+		if(!skipNode)
 		{
-			bool skipNode = skipNodes.find(it->first) != skipNodes.end();
-			if(!skipNode)
+			if(it->second < minSucc)
 			{
-				if(it->second < minSucc)
-				{
-					minSucc = it->second;
-					child = it->first;
-				}
+				minSucc = it->second;
+				child = it->first;
 			}
-			//else
-			//{
-			//	EV << "skip: " << it->first << endl;
-			//}
 		}
 	}
 	return child;
@@ -114,21 +106,17 @@ IPvXAddress MultitreePartnerList::getLaziestForwardingChild(int stripe, const st
 {
 	IPvXAddress child;
 	const std::map<IPvXAddress, int> curChildren = children[stripe];
+	int minSucc = INT_MAX;
 
-	if(curChildren.size() > 0)
+	for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 	{
-		int minSucc = INT_MAX;
-
-		for (std::map<IPvXAddress, int>::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+		if(!skipNode)
 		{
-			bool skipNode = skipNodes.find(it->first) != skipNodes.end();
-			if(!skipNode)
+			if(it->second > 0 && it->second < minSucc)
 			{
-				if(it->second > 0 && it->second < minSucc)
-				{
-					minSucc = it->second;
-					child = it->first;
-				}
+				minSucc = it->second;
+				child = it->first;
 			}
 		}
 	}

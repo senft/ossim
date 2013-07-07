@@ -317,7 +317,7 @@ void MultitreeSource::optimize(void)
 		for (std::map<int, int>::iterator stripes = it->second.begin() ; stripes != it->second.end(); ++stripes)
 		{
 			double depFactor = (double)(m_partnerList->getNumSuccessors(stripes->first) / 
-								((double)m_partnerList->getNumOutgoingConnections(stripes->first) + 1)) - 1;
+								((double)m_partnerList->getNumOutgoingConnections(stripes->first) )) - 1;
 
 			PassNodeRequest request;
 			request.stripe = stripes->first;
