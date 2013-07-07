@@ -274,29 +274,25 @@ void MultitreeSource::optimize(void)
 	// <node, <stripe, remainingBW> >
 	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
 	int treesWithNoMoreChildren = 0;
-	while(remainingBW > 0)
+	while(remainingBW > 0 && treesWithNoMoreChildren < numStripes)
 	{
 
-		if(treesWithNoMoreChildren >= numStripes)
-			break;
-
-		int maxSucc = -1;
-		IPvXAddress busiestChild;
+		int maxSucc = 0;
+		IPvXAddress child;
 
 		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
-			if( it->second > maxSucc && disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() )
+			if( it->second > maxSucc 
+					&& disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() )
 			{
-				// More children and I didnt already send a DisconenctRequest there (the latter is
-				// needed to not send multiple DisconnectRequests to a child)
+				// Make sure I didnt already send a DisconenctRequest to the child, to not send
+				// multiple DisconnectRequests
 				maxSucc = it->second;
-				busiestChild = it->first;
+				child = it->first;
 			}
 		}
 
-		EV << "stripe " << stripe << " busiest: " << busiestChild << " with " << maxSucc << endl;
-
-		if(busiestChild.isUnspecified() || maxSucc <= 0)
+		if(child.isUnspecified() || maxSucc <= 0)
 		{
 			treesWithNoMoreChildren++;
 			stripe = (stripe + 1) % numStripes;
@@ -304,8 +300,8 @@ void MultitreeSource::optimize(void)
 		}
 
 		remainingBW--;
-		requestNodes[busiestChild][stripe]++;
-		children[stripe][busiestChild]--;
+		requestNodes[child][stripe]++;
+		children[stripe][child]--;
 
 		stripe = (stripe + 1) % numStripes;
 	}

@@ -1001,22 +1001,23 @@ void MultitreePeer::optimize(void)
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
+	std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
+
 	// <node, remainingBW>
 	std::map<IPvXAddress, int> requestNodes;
-
 	while(remainingBW > 0)
 	{
-		std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
-		int maxSucc = -1;
-		IPvXAddress busiestChild;
+		int maxSucc = 0;
+		IPvXAddress child;
 		for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
 		{
-			if( it->second > maxSucc && curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
+			if( it->second > maxSucc 
+					&& curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
 			{
-				// More children and I didnt already send a DisconenctRequest there (the latter is
-				// needed to not send multiple DisconnectRequests to a child)
+				// Make sure I didnt already send a DisconenctRequest to the child, to not send
+				// multiple DisconnectRequests
 				maxSucc = it->second;
-				busiestChild = it->first;
+				child = it->first;
 			}
 		}
 
@@ -1024,9 +1025,13 @@ void MultitreePeer::optimize(void)
 			break;
 
 		remainingBW--;
-		requestNodes[busiestChild]++;
-		children[busiestChild]--;
+		requestNodes[child]++;
+		children[child]--;
 	}
+
+	double gainThreshold = getGainThreshold();
+
+	EV << "threshold: " << gainThreshold << endl;
 	
 	for (std::map<IPvXAddress, int>::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
 	{
