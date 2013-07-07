@@ -40,13 +40,14 @@ public:
 	void addChild(int stripe, IPvXAddress address, int successors);
 	void removeChild(IPvXAddress address);
 	void removeChild(int stripe, IPvXAddress address);
-	std::vector<IPvXAddress> getChildren(int stripe);
+	std::vector<IPvXAddress> &getChildren(int stripe);
+	std::map<IPvXAddress, int> &getChildrenWithCount(int stripe);
+
 	IPvXAddress getLaziestForwardingChild(int stripe, const std::set<IPvXAddress> &skipNodes);
 	IPvXAddress getChildWithMostChildren(int stripe, const std::set<IPvXAddress> &skipNodes);
 	IPvXAddress getChildWithLeastChildren(int stripe, const std::set<IPvXAddress> &skipNodes);
 	IPvXAddress getRandomChild(int stripe, const std::set<IPvXAddress> &skipNodes);
 	IPvXAddress getBestLazyChild(int stripe, const std::set<IPvXAddress> &skipNodes);
-	std::map<IPvXAddress, int> getChildrenWithCount(int stripe);
 
 	int getNumActiveTrees(void);
 
@@ -55,7 +56,8 @@ protected:
 	int numStripes;
 
 	IPvXAddress* parents;
-	std::vector<std::map<IPvXAddress, int> > children;
+	std::vector<std::map<IPvXAddress, int> > mChildren;
+	std::vector<std::vector<IPvXAddress> > vChildren;
 
 private:
 
