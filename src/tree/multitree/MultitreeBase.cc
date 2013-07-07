@@ -468,14 +468,17 @@ void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXA
 	for(std::map<IPvXAddress, int>::iterator it = childList.begin() ; it != childList.end(); ++it)
 	{
 		IPvXAddress curAddress = it->first;
-		double curCosts = getCosts(childList, stripe, curAddress);
-
-		//EV << "checking: " << curAddress << ", costs: " << curCosts << endl;
-
-		if(curMaxCosts < curCosts)
+		if ( disconnectingChildren[stripe].find(curAddress) == disconnectingChildren[stripe].end() )
 		{
-			curMaxCosts = curCosts;
-			curMaxAddress = curAddress;
+			double curCosts = getCosts(childList, stripe, curAddress);
+
+			//EV << "checking: " << curAddress << ", costs: " << curCosts << endl;
+
+			if(curMaxCosts < curCosts)
+			{
+				curMaxCosts = curCosts;
+				curMaxAddress = curAddress;
+			}
 		}
 	}
 	address = curMaxAddress;
