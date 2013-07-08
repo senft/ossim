@@ -449,8 +449,10 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
 		IPvXAddress curAddress = it->first;
 
 		if(curAddress.equals(skipAddress) 
-				|| disconnectingChildren[stripe].find(curAddress) == disconnectingChildren[stripe].end())
+				|| disconnectingChildren[stripe].find(curAddress) != disconnectingChildren[stripe].end())
+		{
 			continue;
+		}
 
 		double curGain = getGain(childList, stripe, curAddress, IPvXAddress());
 
@@ -627,10 +629,9 @@ double MultitreeBase::getGainThreshold(void)
 void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
 {
 	if(disconnectingChildren[stripe].find(address) != disconnectingChildren[stripe].end())
+		// Only drop if not already disconnecting
 		return;
 
-
-	// TODO make stripe a vector
 	TreeDisconnectRequestPacket *pkt = new TreeDisconnectRequestPacket("TREE_DISCONNECT_REQUEST");
 
 	EV << "Sending DisconnectRequests to " << address << " (stripe: " << stripe 
