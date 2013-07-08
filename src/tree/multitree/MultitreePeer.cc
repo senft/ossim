@@ -810,6 +810,7 @@ void MultitreePeer::leave(void)
 {
 	EV << "No more parents, nor children. I am outta here!" << endl;
 	cancelAllTimer();
+	m_gstat->reportNodeLeft();
 }
 
 void MultitreePeer::disconnectFromParent(int stripe, IPvXAddress alternativeParent)

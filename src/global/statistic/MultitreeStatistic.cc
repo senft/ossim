@@ -87,6 +87,11 @@ void MultitreeStatistic::reportAwakeNode(void)
 	awakeNodes++;
 }
 
+void MultitreeStatistic::reportNodeLeft(void)
+{
+	awakeNodes--;
+}
+
 void MultitreeStatistic::handleMessage(cMessage *msg)
 {
     if (msg->isSelfMessage())

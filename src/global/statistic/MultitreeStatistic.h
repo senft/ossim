@@ -30,6 +30,7 @@ public:
 	virtual void receiveChangeNotification(int category, const cPolymorphic *details);
 
 	void reportAwakeNode(void);
+	void reportNodeLeft(void);
 
 	void reportChunkArrival(const int hopcount);
 
