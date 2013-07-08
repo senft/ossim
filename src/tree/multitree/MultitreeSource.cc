@@ -334,6 +334,7 @@ void MultitreeSource::optimize(void)
 
 bool MultitreeSource::canAccept(ConnectRequest request)
 {
+	return true;
 	int stripe = request.stripe;
 	bool moreSuccInOther = true;
 

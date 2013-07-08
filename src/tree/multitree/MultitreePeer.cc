@@ -1097,5 +1097,6 @@ bool MultitreePeer::isPreferredStripe(int stripe)
 
 bool MultitreePeer::canAccept(ConnectRequest request)
 {
+	return true;
 	return isPreferredStripe(request.stripe) || (m_partnerList->getNumActiveTrees() <= 1);
 }
