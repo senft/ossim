@@ -59,7 +59,7 @@ network Multitree_Network extends BasicNetwork
 
 		channel Channel_50M_up extends ned.DatarateChannel
         {
-            datarate = 10Mbps;
+            datarate = 50Mbps;
         }
         channel Channel_50M_down extends ned.DatarateChannel
         {
