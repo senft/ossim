@@ -163,6 +163,11 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
 
+			std::vector<IPvXAddress> myChildren = m_partnerList->getChildren(stripe);
+
+			std::vector<IPvXAddress>::iterator itCurParent = 
+				std::find(myChildren.begin(), myChildren.end(), request.currentParent);
+
 			int numSucc = request.numSuccessors;
 
 			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
@@ -197,6 +202,24 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					<< "childship from for stripe " << stripe << ". Rejecting..." << endl;
 				reject.push_back(request);
 			}
+			else if(itCurParent != myChildren.end())
+			{
+
+				EV << "Received ConnectRequest from a childs child (" << senderAddress<< ", stripe "
+					<< stripe << ")." << endl;
+
+				// One of my children is the nodes parent -> this must be a PNR or the parent wants
+				// to leave
+
+				accept.push_back(request);
+				m_partnerList->addChild(stripe, senderAddress, numSucc);
+
+				IPvXAddress childsChild = (IPvXAddress)*itCurParent;
+				int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, childsChild);
+				m_partnerList->updateNumChildsSuccessors(stripe, childsChild, currentSucc - (1 + numSucc));
+				scheduleSuccessorInfo(stripe);
+
+			}
 			else if(hasBWLeft(accept.size() + 1))
 			{
 
@@ -212,22 +235,18 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 					accept.push_back(request);
 					m_partnerList->addChild(stripe, senderAddress, numSucc);
-					std::vector<IPvXAddress> myChildren = m_partnerList->getChildren(stripe);
 
-					std::vector<IPvXAddress>::iterator child = 
-						std::find(myChildren.begin(), myChildren.end(), request.currentParent);
-
-					if(child != myChildren.end())
+					if(itCurParent != myChildren.end())
 					{
-						int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*child);
-						// The nodes old parent is one of my children. So I can already
-						// update my partnerlist (that child now has 1 successors less)
-						m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*child, 
-								currentSucc - (1 + request.numSuccessors));
+						//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
+						//// The nodes old parent is one of my children. So I can already
+						//// update my partnerlist (that child now has 1 successors less)
+						//m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, 
+						//		currentSucc - (1 + numSucc));
 
-						// Since I just got a child of one of my children nothing changed
-						// for the nodes above me. So there is no need to send a
-						// SuccessorInfo 
+						//// Since I just got a child of one of my children nothing changed
+						//// for the nodes above me. So there is no need to send a
+						//// SuccessorInfo 
 					}
 					else
 					{
