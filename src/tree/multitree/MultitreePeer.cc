@@ -952,7 +952,27 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 		!m_partnerList->hasChildren(stripe) ||
 		(m_partnerList->getNumOutgoingConnections(stripe) == 1 && m_partnerList->hasChild(stripe, forNode)) )
 	{
-		address = m_partnerList->getParent(stripe);
+		if(std::find(lastRequests.begin(), lastRequests.end(), m_partnerList->getParent(stripe)) == lastRequests.end())
+		{
+			address = m_partnerList->getParent(stripe);
+		}
+		else
+		{
+			// The node already tried connecting to my parent and all my children, so actually I
+			// cannot make a reasonable choice.. just pick a random child, or the parent (in hope
+			// the situation at that nodes changed)
+
+			skipNodes.clear();
+			skipNodes.insert(forNode);
+			skipNodes.insert(currentParent);
+			if(!lastRequests.empty())
+				skipNodes.insert( lastRequests.back() );
+
+			address = m_partnerList->getRandomChild(stripe, skipNodes);
+
+			if( address.isUnspecified() || intrand(m_partnerList->getNumOutgoingConnections(stripe) + 1) == 0 )
+					address = m_partnerList->getParent(stripe);
+		}
 	}
 
 	//EV << "Giving alternative node: " << address << endl;

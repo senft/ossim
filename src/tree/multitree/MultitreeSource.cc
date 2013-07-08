@@ -190,25 +190,27 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 		skipNodes.insert(currentParent);
 		if(!lastRequests.empty())
 			skipNodes.insert( lastRequests.back() );
-		address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
+
+		address = m_partnerList->getRandomChild(stripe, skipNodes);
+
+		//address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 		//address = m_partnerList->getBestLazyChild(stripe, skipNodes);
 		//address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 	}
 
 	if(address.isUnspecified())
 	{
-		skipNodes.clear();
-		skipNodes.insert(forNode);
-		skipNodes.insert(currentParent);
-		address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
-		//address = m_partnerList->getBestLazyChild(stripe, skipNodes);
-		//address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
+		if(!lastRequests.empty())
+			skipNodes.erase(skipNodes.find( lastRequests.back() ));
+
+		address = m_partnerList->getRandomChild(stripe, skipNodes);
 	}
 
 	if(address.isUnspecified())
 	{
 		address = getNodeAddress();
 	}
+
 	return address;
 }
 
