@@ -138,7 +138,7 @@ IPvXAddress MultitreePartnerList::getRandomChild(int stripe, const std::set<IPvX
 			if(skipNodes.find(it->first) == skipNodes.end())
 			{
 				allInSkipNodes = false;
-				return it->first;
+				//return it->first;
 			}
 		}
 
@@ -152,7 +152,6 @@ IPvXAddress MultitreePartnerList::getRandomChild(int stripe, const std::set<IPvX
 		}
 	}
 	return child;
-
 }
 
 IPvXAddress MultitreePartnerList::getChildWithMostChildren(int stripe, const std::set<IPvXAddress> &skipNodes)
