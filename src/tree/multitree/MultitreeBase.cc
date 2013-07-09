@@ -1,3 +1,5 @@
+#include <cenvir.h>
+
 #include "limits.h"
 #include "MultitreeBase.h"
 #include "DpControlInfo_m.h"
@@ -638,10 +640,13 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 
 void MultitreeBase::printStatus(void)
 {
-	EV << "*******************************" << endl;
-	EV << getNodeAddress() << endl;
-	m_partnerList->printPartnerList();
-	EV << "*******************************" << endl;
+	if(!ev.isDisabled())
+	{
+		EV << "*******************************" << endl;
+		EV << getNodeAddress() << endl;
+		m_partnerList->printPartnerList();
+		EV << "*******************************" << endl;
+	}
 }
 
 
