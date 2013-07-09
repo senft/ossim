@@ -522,18 +522,18 @@ double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress 
 	//EV << "K1: " << getStripeDensityCosts(childList, stripe);
 	//EV << " K2: " << getForwardingCosts(childList, stripe, child);
 	//EV << " K3: " << getBalanceCosts(childList, stripe, child);
-	//EV << " K4: " << getDepencyCosts(child);
+	//EV << " K4: " << getDependencyCosts(child);
 	//EV << "Total: " << param_weightK1 * getStripeDensityCosts(childList, stripe)
 	//	+ param_weightK2 * getForwardingCosts(childList, stripe, child)
 	//	+ param_weightK3 * getBalanceCosts(childList, stripe, child)
-	//	+ param_weightK4 * getDepencyCosts(child) << endl;
+	//	+ param_weightK4 * getDependencyCosts(child) << endl;
 	//EV << "****************************************" << endl;
 
 	// K_1 + 2 * K_2 + 3 * K_3 + 4 * K_4
 	return param_weightK1 * getStripeDensityCosts(childList, stripe)
 		+ param_weightK2 * getForwardingCosts(childList, stripe, child)
 		+ param_weightK3 * getBalanceCosts(childList, stripe, child)
-		+ param_weightK4 * getDepencyCosts(child);
+		+ param_weightK4 * getDependencyCosts(child);
 }
 
 double MultitreeBase::getStripeDensityCosts(successorList childList, int stripe) // K_sel ,K_1
@@ -574,7 +574,7 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
 }
 
 // TODO rename...
-double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
+double MultitreeBase::getDependencyCosts(IPvXAddress child) // K_4
 {
 	int numConnections = 0;
 	for (int i = 0; i < numStripes; i++)

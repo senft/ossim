@@ -143,7 +143,7 @@ private:
 	double getStripeDensityCosts(successorList childList, int stripe); // K_sel, K_1
     int getForwardingCosts(successorList childList, int stripe, IPvXAddress child); // K_forw, K_2
     double getBalanceCosts(successorList childList, int stripe, IPvXAddress child); //K_bal, K_3
-    double getDepencyCosts(IPvXAddress child); //K_4
+    double getDependencyCosts(IPvXAddress child); //K_4
 
 	double param_delayOptimization;
 };
