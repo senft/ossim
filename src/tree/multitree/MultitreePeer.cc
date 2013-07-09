@@ -435,6 +435,8 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 {
 	int numReqStripes = stripes.size();
 
+	TreeConnectRequestPacket *pkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
+
 	for (int i = 0; i < numReqStripes; i++)
 	{
 		int stripe = stripes[i];
@@ -444,14 +446,9 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 			throw cException("Trying to connect to %s in an invalid state (%d) in stripe %d.",
 					sAddr, m_state[stripe], stripe);
 		}
-	}
 
-	TreeConnectRequestPacket *pkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
+		EV << "Sending ConnectRequest for stripe(s) ";
 
-	EV << "Sending ConnectRequest for stripe(s) ";
-	for (int i = 0; i < numReqStripes; i++)
-	{
-		int stripe = stripes[i];
 		int numSucc = m_partnerList->getNumSuccessors(stripe);
 		IPvXAddress currentParent = m_partnerList->getParent(stripe);
 		long lastReceivedChunk = lastSeqNumber[stripe];
