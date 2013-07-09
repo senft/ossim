@@ -573,26 +573,17 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
     return  (x - childsSuccessors) / x;
 }
 
+// TODO rename...
 double MultitreeBase::getDepencyCosts(IPvXAddress child) // K_4
 {
 	int numConnections = 0;
-
 	for (int i = 0; i < numStripes; i++)
 	{
-		std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[i];
-       	std::vector<IPvXAddress> &curChildren = m_partnerList->getChildren(i);
-
-       	for(std::vector<IPvXAddress>::iterator it = curChildren.begin(); it != curChildren.end(); ++it)
-       	{
-			IPvXAddress curChild = (IPvXAddress)*it;
-			if ( child.equals(curChild) && curDisconnectingChildren.find(child) == curDisconnectingChildren.end() )
-			{
-				numConnections++;
-				break;
-			}
+		if(m_partnerList->hasChild(i, child) && disconnectingChildren[i].find(child) == disconnectingChildren[i].end() )
+		{
+			numConnections++;
 		}
 	}
-
     return (double)numConnections / (double)numStripes;
 }
 
