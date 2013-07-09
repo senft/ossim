@@ -985,7 +985,7 @@ void MultitreePeer::optimize(void)
 		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 			return;
 
-	int stripe = preferredStripe;
+	int stripe = selectPreferredStripe(preferredStripe);
 
 	if(!m_partnerList->hasChildren(stripe))
 		return;

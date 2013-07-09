@@ -223,7 +223,10 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				IPvXAddress childsChild = (IPvXAddress)*itCurParent;
 				int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, childsChild);
 				m_partnerList->updateNumChildsSuccessors(stripe, childsChild, currentSucc - (1 + numSucc));
-				scheduleSuccessorInfo(stripe);
+
+				// There probably is no SuccessorsUpdate needed, because nothing changes for the
+				// nodes above me
+				//scheduleSuccessorInfo(stripe);
 
 			}
 			else if(hasBWLeft(accept.size() + 1))
@@ -602,12 +605,6 @@ double MultitreeBase::getGainThreshold(void)
     {
 		int out = m_partnerList->getNumOutgoingConnections(i);
 		int disconnecting = disconnectingChildren[i].size();
-
-		if(out < disconnecting)
-		{
-			throw cException("Stripe %d: More disconnecting children (%d) than normal children (%d).",
-					i, disconnecting, out );
-		}
 
 		outDegree += out;
 		outDegree -= disconnecting;
