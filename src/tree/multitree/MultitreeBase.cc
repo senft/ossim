@@ -222,13 +222,13 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				accept.push_back(request);
 				m_partnerList->addChild(stripe, senderAddress, numSucc);
 
-				IPvXAddress childsChild = (IPvXAddress)*itCurParent;
-				int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, childsChild);
-				m_partnerList->updateNumChildsSuccessors(stripe, childsChild, currentSucc - (1 + numSucc));
+				//IPvXAddress childsChild = (IPvXAddress)*itCurParent;
+				//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, childsChild);
+				//m_partnerList->updateNumChildsSuccessors(stripe, childsChild, currentSucc - (1 + numSucc));
 
 				// There probably is no SuccessorsUpdate needed, because nothing changes for the
 				// nodes above me
-				//scheduleSuccessorInfo(stripe);
+				scheduleSuccessorInfo(stripe);
 
 			}
 			else if(hasBWLeft(accept.size() + 1))
@@ -247,22 +247,22 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					accept.push_back(request);
 					m_partnerList->addChild(stripe, senderAddress, numSucc);
 
-					if(itCurParent != myChildren.end())
-					{
-						//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
-						//// The nodes old parent is one of my children. So I can already
-						//// update my partnerlist (that child now has 1 successors less)
-						//m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, 
-						//		currentSucc - (1 + numSucc));
+					//if(itCurParent != myChildren.end())
+					//{
+					//	//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
+					//	//// The nodes old parent is one of my children. So I can already
+					//	//// update my partnerlist (that child now has 1 successors less)
+					//	//m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, 
+					//	//		currentSucc - (1 + numSucc));
 
-						//// Since I just got a child of one of my children nothing changed
-						//// for the nodes above me. So there is no need to send a
-						//// SuccessorInfo 
-					}
-					else
-					{
+					//	//// Since I just got a child of one of my children nothing changed
+					//	//// for the nodes above me. So there is no need to send a
+					//	//// SuccessorInfo 
+					//}
+					//else
+					//{
 						scheduleSuccessorInfo(stripe);
-					}
+					//}
 				}
 				else
 				{

@@ -51,7 +51,7 @@ protected:
 	std::map<int, std::set<IPvXAddress> > disconnectingChildren;
 	std::map<int, std::vector<IPvXAddress> > requestedChildship;
 
-    TreeJoinState     		*m_state;
+    TreeJoinState *m_state;
 
     int m_localPort, m_destPort;
 
