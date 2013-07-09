@@ -53,13 +53,17 @@ public:
 
 	void printPartnerList(void);
 protected:
+
+private:
+	bool numOutgoingChanged;
+	int outgoingConnections;
+
 	int numStripes;
 
 	IPvXAddress* parents;
 	std::vector<std::map<IPvXAddress, int> > mChildren;
 	std::vector<std::set<IPvXAddress> > vChildren;
 
-private:
 
 };
 
