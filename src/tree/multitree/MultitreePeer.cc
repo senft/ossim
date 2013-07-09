@@ -1009,9 +1009,9 @@ void MultitreePeer::optimize(void)
 
 		double gainIf = getGain(children, stripe, alternativeParent);
 		EV << "GAIN: " << gainIf << endl;
-		EV << "THRESHOLD: " << getGainThreshold() << endl;
+		EV << "THRESHOLD: " << gainThreshold << endl;
 
-		if(gainIf >= getGainThreshold() && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
+		if(gainIf >= gainThreshold && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 		{
 			// Drop costliest to cheapest
 			dropNode(stripe, linkToDrop, alternativeParent);
@@ -1019,6 +1019,7 @@ void MultitreePeer::optimize(void)
 			children[alternativeParent] += 1 + children[linkToDrop];
 			children.erase(children.find(linkToDrop));
 			gain = true;
+			gainThreshold = getGainThreshold();
 		}
 	}
 
@@ -1117,5 +1118,4 @@ bool MultitreePeer::isPreferredStripe(int stripe)
 bool MultitreePeer::canAccept(ConnectRequest request)
 {
 	return true;
-	return isPreferredStripe(request.stripe) || (m_partnerList->getNumActiveTrees() <= 1);
 }

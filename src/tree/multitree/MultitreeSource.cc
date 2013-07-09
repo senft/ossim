@@ -218,8 +218,6 @@ void MultitreeSource::optimize(void)
 {
 	// TODO maybe start with the tree I have the most children in
 
-	//int stripe = getPreferredStripe();
-
 	printStatus();
 
 	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
@@ -250,9 +248,9 @@ void MultitreeSource::optimize(void)
 			double gainIf = getGain(children[stripe], stripe, alternativeParent);
 
 			EV << "GAIN: " << gainIf << endl;
-			EV << "THRESHOLD: " << getGainThreshold() << endl;
+			EV << "THRESHOLD: " << gainThreshold << endl;
 
-			if(gainIf >= getGainThreshold() && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
+			if(gainIf >= gainThreshold && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 			{
 				// Drop costliest to cheapest
 				dropNode(stripe, linkToDrop, alternativeParent);
