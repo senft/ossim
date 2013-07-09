@@ -169,9 +169,9 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
 
-			std::vector<IPvXAddress> myChildren = m_partnerList->getChildren(stripe);
+			std::set<IPvXAddress> &myChildren = m_partnerList->getChildren(stripe);
 
-			std::vector<IPvXAddress>::iterator itCurParent = 
+			std::set<IPvXAddress>::iterator itCurParent = 
 				std::find(myChildren.begin(), myChildren.end(), request.currentParent);
 
 			int numSucc = request.numSuccessors;

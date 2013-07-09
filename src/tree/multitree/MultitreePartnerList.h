@@ -40,8 +40,8 @@ public:
 	void addChild(int stripe, IPvXAddress address, int successors);
 	void removeChild(IPvXAddress address);
 	void removeChild(int stripe, IPvXAddress address);
-	std::vector<IPvXAddress> &getChildren(int stripe);
-	std::map<IPvXAddress, int> &getChildrenWithCount(int stripe);
+	std::set<IPvXAddress> &getChildren(int stripe);
+	std::map<IPvXAddress, int> getChildrenWithCount(int stripe);
 
 	IPvXAddress getLaziestForwardingChild(int stripe, const std::set<IPvXAddress> &skipNodes);
 	IPvXAddress getChildWithMostChildren(int stripe, const std::set<IPvXAddress> &skipNodes);
@@ -57,7 +57,7 @@ protected:
 
 	IPvXAddress* parents;
 	std::vector<std::map<IPvXAddress, int> > mChildren;
-	std::vector<std::vector<IPvXAddress> > vChildren;
+	std::vector<std::set<IPvXAddress> > vChildren;
 
 private:
 

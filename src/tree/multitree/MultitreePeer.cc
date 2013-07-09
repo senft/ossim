@@ -207,7 +207,7 @@ void MultitreePeer::handleTimerLeave()
 
 			m_state[i] = TREE_JOIN_STATE_LEAVING;
 
-			std::vector<IPvXAddress> children = m_partnerList->getChildren(i);
+			std::set<IPvXAddress> &children = m_partnerList->getChildren(i);
 
 			// TODO try busiest child here
 			std::set<IPvXAddress> skipNodes;
@@ -216,7 +216,7 @@ void MultitreePeer::handleTimerLeave()
 			dropNode(i, laziestChild, m_partnerList->getParent(i));
 
 			// ... and all other children to that 'lazy' node
-			for (std::vector<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
+			for (std::set<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
 			{
 				IPvXAddress addr = (IPvXAddress)*it;
 				if(!addr.equals(laziestChild))
@@ -853,8 +853,8 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 	stripePkt->setHopCount(++hopcount);
 
 	// Forward to children
-	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
-	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
+	std::set<IPvXAddress> &children = m_partnerList->getChildren(stripe);
+	for(std::set<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
 	{
 		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
 	}

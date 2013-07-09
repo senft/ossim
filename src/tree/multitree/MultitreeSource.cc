@@ -155,9 +155,9 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 
 	stripePkt->setHopCount(++hopcount);
 
-	std::vector<IPvXAddress> children = m_partnerList->getChildren(stripe);
+	std::set<IPvXAddress> &children = m_partnerList->getChildren(stripe);
 
-	for(std::vector<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
+	for(std::set<IPvXAddress>::iterator it = children.begin(); it != children.end(); ++it)
 	{
 		sendToDispatcher(stripePkt->dup(), m_localPort, (IPvXAddress)*it, m_destPort);
 	}
@@ -355,8 +355,8 @@ bool MultitreeSource::canAccept(ConnectRequest request)
 
 	bool triedAllChildren = true;
 	std::vector<IPvXAddress> lastRequests = request.lastRequests;
-	std::vector<IPvXAddress> myChildren = m_partnerList->getChildren(stripe);
-	for(std::vector<IPvXAddress>::iterator it = myChildren.begin(); it != myChildren.end(); ++it)
+	std::set<IPvXAddress> &myChildren = m_partnerList->getChildren(stripe);
+	for(std::set<IPvXAddress>::iterator it = myChildren.begin(); it != myChildren.end(); ++it)
 	{
 		if( std::find(lastRequests.begin(), lastRequests.end(), (IPvXAddress)*it) == lastRequests.end() )
 		{

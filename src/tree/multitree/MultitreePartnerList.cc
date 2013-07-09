@@ -25,7 +25,7 @@ void MultitreePartnerList::initialize(int stage)
 		for (int i = 0; i < numStripes; i++)
 		{
 			mChildren.push_back(std::map<IPvXAddress, int>());
-			vChildren.push_back(std::vector<IPvXAddress>());
+			vChildren.push_back(std::set<IPvXAddress>());
 		}
     }
 }
@@ -50,7 +50,7 @@ void MultitreePartnerList::clear(void)
 	for (int i = 0; i < numStripes; i++)
 	{
 		mChildren.push_back(std::map<IPvXAddress, int>());
-		vChildren.push_back(std::vector<IPvXAddress>());
+		vChildren.push_back(std::set<IPvXAddress>());
 	}
 }
 
@@ -70,13 +70,13 @@ bool MultitreePartnerList::hasChildren(void)
 
 bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
 {
-	return (std::find(vChildren[stripe].begin(), vChildren[stripe].end(), address) != vChildren[stripe].end());
+	return vChildren[stripe].find(address) != vChildren[stripe].end();
 }
 
 void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int successors)
 {
 	mChildren[stripe].insert( std::pair<IPvXAddress, int>(address, successors) );
-	vChildren[stripe].push_back(address);
+	vChildren[stripe].insert(address);
 }
 
 IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const std::set<IPvXAddress> &skipNodes)
@@ -194,7 +194,7 @@ IPvXAddress MultitreePartnerList::getBestLazyChild(int stripe, const std::set<IP
 	return child;
 }
 
-std::vector<IPvXAddress> &MultitreePartnerList::getChildren(int stripe)
+std::set<IPvXAddress> &MultitreePartnerList::getChildren(int stripe)
 {
 	return vChildren[stripe];
 }
@@ -202,7 +202,7 @@ std::vector<IPvXAddress> &MultitreePartnerList::getChildren(int stripe)
 /** 
  * Return all children (incl. number of successors) of the given stripe
 */
-std::map<IPvXAddress, int> &MultitreePartnerList::getChildrenWithCount(int stripe)
+std::map<IPvXAddress, int> MultitreePartnerList::getChildrenWithCount(int stripe)
 {
 	return mChildren[stripe];
 }
@@ -210,7 +210,7 @@ std::map<IPvXAddress, int> &MultitreePartnerList::getChildrenWithCount(int strip
 void MultitreePartnerList::removeChild(int stripe, IPvXAddress address)
 {
 	mChildren[stripe].erase(address);
-	vChildren[stripe].erase(std::find(vChildren[stripe].begin(), vChildren[stripe].end(), address));
+	vChildren[stripe].erase(vChildren[stripe].find(address));
 }
 
 void MultitreePartnerList::removeChild(IPvXAddress address)
