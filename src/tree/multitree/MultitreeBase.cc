@@ -222,54 +222,27 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				accept.push_back(request);
 				m_partnerList->addChild(stripe, senderAddress, numSucc);
 
-				//IPvXAddress childsChild = (IPvXAddress)*itCurParent;
-				//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, childsChild);
-				//m_partnerList->updateNumChildsSuccessors(stripe, childsChild, currentSucc - (1 + numSucc));
+				if(!onlyPreferredStripes)
+				{
+					doOptimize = true;
+				}
 
-				// There probably is no SuccessorsUpdate needed, because nothing changes for the
-				// nodes above me
-				scheduleSuccessorInfo(stripe);
+				int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
+				// The nodes old parent is one of my children. So I can already
+				// update my partnerlist (that child now has 1 successors less)
+				m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, 
+						currentSucc - (1 + numSucc));
 
 			}
 			else if(hasBWLeft(accept.size() + 1))
 			{
 
-				if(preferredStripe == -1)
-					preferredStripe = stripe;
+				accept.push_back(request);
+				m_partnerList->addChild(stripe, senderAddress, numSucc);
 
-				if(canAccept(request))
+				if(!onlyPreferredStripes)
 				{
-					if(!isPreferredStripe(stripe))
-					{
-						doOptimize = true;
-					}
-
-					accept.push_back(request);
-					m_partnerList->addChild(stripe, senderAddress, numSucc);
-
-					//if(itCurParent != myChildren.end())
-					//{
-					//	//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
-					//	//// The nodes old parent is one of my children. So I can already
-					//	//// update my partnerlist (that child now has 1 successors less)
-					//	//m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, 
-					//	//		currentSucc - (1 + numSucc));
-
-					//	//// Since I just got a child of one of my children nothing changed
-					//	//// for the nodes above me. So there is no need to send a
-					//	//// SuccessorInfo 
-					//}
-					//else
-					//{
-						scheduleSuccessorInfo(stripe);
-					//}
-				}
-				else
-				{
-					EV << "Received ConnectRequest from " << senderAddress << " (stripe " << stripe
-						<< ") but already it haven't tried all my children or I have most "
-						<< " sucessors/children in that stripe, or its not my preferred stripe. Rejecting..." << endl;
-					reject.push_back(request);
+					doOptimize = true;
 				}
 
 			}
@@ -359,9 +332,13 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 
 		if(param_sendMissingChunks)
 		{
+			EV << "Sending missing chunks to new child." << endl;
 			int lastChunk = request.lastReceivedChunk;
 			sendChunksToNewChild(stripe, address, lastChunk);
 		}
+
+		scheduleSuccessorInfo(stripe);
+
 	}
 
 	gainThreshold = getGainThreshold();

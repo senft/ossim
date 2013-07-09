@@ -112,8 +112,6 @@ protected:
 
 	virtual void optimize(void) = 0;
 
-	int preferredStripe;
-
 	double param_weightT;
 	double param_weightK1;
     double param_weightK2;
@@ -131,8 +129,6 @@ private:
 	void getAppSetting(void);
 	void acceptConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
 	void rejectConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
-
-    virtual bool canAccept(ConnectRequest request) = 0;
 
     virtual void scheduleSuccessorInfo(int stripe) = 0;
 

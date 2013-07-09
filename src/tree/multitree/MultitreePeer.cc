@@ -62,8 +62,6 @@ void MultitreePeer::initialize(int stage)
 			numSuccChanged[i] = false;
 		}
 
-		preferredStripe = -1;
-
 		firstSequenceNumber = -1L;
 
 		m_count_prev_chunkMiss = 0L;
@@ -437,6 +435,7 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 
 	TreeConnectRequestPacket *pkt = new TreeConnectRequestPacket("TREE_CONNECT_REQUEST");
 
+	EV << "Sending ConnectRequest for stripe(s) ";
 	for (int i = 0; i < numReqStripes; i++)
 	{
 		int stripe = stripes[i];
@@ -447,7 +446,6 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 					sAddr, m_state[stripe], stripe);
 		}
 
-		EV << "Sending ConnectRequest for stripe(s) ";
 
 		int numSucc = m_partnerList->getNumSuccessors(stripe);
 		IPvXAddress currentParent = m_partnerList->getParent(stripe);
@@ -982,7 +980,7 @@ void MultitreePeer::optimize(void)
 		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 			return;
 
-	int stripe = selectPreferredStripe(preferredStripe);
+	int stripe = getStripeToOptimize();
 
 	if(!m_partnerList->hasChildren(stripe))
 		return;
@@ -1079,43 +1077,38 @@ void MultitreePeer::optimize(void)
 	}
 }
 
-int MultitreePeer::selectPreferredStripe(int start)
+int MultitreePeer::getStripeToOptimize(void)
 {
-	int maxIndex = start;
-	int maxNum = m_partnerList->getNumOutgoingConnections(maxIndex);
+	int maxIndex = intrand(numStripes);
+	int maxChildren = m_partnerList->getNumOutgoingConnections(maxIndex);
+	int maxSucc = m_partnerList->getNumSuccessors(maxIndex);
+
 	int startWith = maxIndex;
 	for(int i = 0; i < numStripes; ++i)
 	{
 		int check = (startWith + i) % numStripes;
-		int currentNum = m_partnerList->getNumOutgoingConnections(check);
+		int currentChildren = m_partnerList->getNumOutgoingConnections(check);
+		int currentSucc = m_partnerList->getNumSuccessors(check);
 
-		if( maxNum < currentNum )
+		if( maxChildren < currentChildren || (maxChildren == currentChildren && maxSucc < currentSucc) )
 		{
 			maxIndex = check;
-			maxNum = currentNum;
+			maxChildren = currentChildren;
+			maxSucc = currentSucc;
 		}
 	}
 
-	EV << "Preferred stripe is: " << maxIndex << endl;
 	return maxIndex;
 }
 
 bool MultitreePeer::isPreferredStripe(int stripe)
 {
-	if(preferredStripe == -1)
+	int numChildren = m_partnerList->getNumOutgoingConnections(stripe);
+
+	for (int i = 0; i < numStripes; i++)
 	{
-		return true;
+		if(i != stripe && m_partnerList->getNumOutgoingConnections(i) > numChildren)
+			return false;
 	}
-
-	preferredStripe = selectPreferredStripe(stripe);
-
-	m_gstat->gatherPreferredStripe(getNodeAddress(), preferredStripe);
-
-	return stripe == preferredStripe;
-}
-
-
-bool MultitreePeer::canAccept(ConnectRequest request)
-{
 	return true;
 }
