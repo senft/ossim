@@ -306,8 +306,6 @@ void MultitreeSource::optimize(void)
 		stripe = (stripe + 1) % numStripes;
 	}
 
-	double threshold = getGainThreshold();
-
 	for (std::map<IPvXAddress, std::map<int, int> >::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
 	{
 		TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
@@ -320,7 +318,7 @@ void MultitreeSource::optimize(void)
 			PassNodeRequest request;
 			request.stripe = stripes->first;
 			request.remainingBW = stripes->second;
-			request.threshold = threshold;
+			request.threshold = gainThreshold;
 			request.dependencyFactor = depFactor;
 
 			reqPkt->getRequests().push_back(request);

@@ -105,6 +105,7 @@ protected:
 	double getCosts(successorList childList, int stripe, IPvXAddress child);
 	double getGain(successorList childList, int stripe, IPvXAddress child);
 	double getGainThreshold(void);
+	double gainThreshold;
 
 	void getCostliestChild(successorList childList, int fromStripe, IPvXAddress &address);
 	void getCheapestChild(successorList childList, int fromStripe, IPvXAddress &address, IPvXAddress skipAddress);
@@ -118,7 +119,6 @@ protected:
     double param_weightK2;
 	double param_weightK3;
 	double param_weightK4;
-
 
 private:
 	bool param_optimize;

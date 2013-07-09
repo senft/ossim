@@ -364,6 +364,8 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 		}
 	}
 
+	gainThreshold = getGainThreshold();
+
 	//printStatus();
 }
 
@@ -409,6 +411,8 @@ void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 {
 	EV << "Removing child: " << address << " (stripe: " << stripe << ")" << endl;
 	m_partnerList->removeChild(stripe, address);
+
+	gainThreshold = getGainThreshold();
 
 	std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[stripe];
 	if(curDisconnectingChildren.find(address) != curDisconnectingChildren.end())
@@ -634,6 +638,7 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 		// If that node is no parent, mark it as disconnecting
 		disconnectingChildren[stripe].insert(address);
 
+	gainThreshold = getGainThreshold();
 	numDR++;
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
@@ -705,6 +710,4 @@ void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int la
       }
     }
   }
-
 }
-

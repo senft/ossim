@@ -1058,8 +1058,6 @@ void MultitreePeer::optimize(void)
 		children[child]--;
 	}
 
-	double gainThreshold = getGainThreshold();
-
 	EV << "threshold: " << gainThreshold << endl;
 	
 	for (std::map<IPvXAddress, int>::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
