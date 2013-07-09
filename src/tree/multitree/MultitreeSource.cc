@@ -247,8 +247,7 @@ void MultitreeSource::optimize(void)
 			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
 			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
 
-			//double gainIf = getGain(children[stripe], stripe, alternativeParent, linkToDrop);
-			double gainIf = getGain(children[stripe], stripe, alternativeParent, IPvXAddress());
+			double gainIf = getGain(children[stripe], stripe, alternativeParent);
 
 			EV << "GAIN: " << gainIf << endl;
 			EV << "THRESHOLD: " << getGainThreshold() << endl;
