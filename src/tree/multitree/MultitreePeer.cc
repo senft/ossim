@@ -1080,19 +1080,23 @@ void MultitreePeer::optimize(void)
 
 int MultitreePeer::selectPreferredStripe(int start)
 {
-	int max = start;
-	int startWith = max;
+	int maxIndex = start;
+	int maxNum = m_partnerList->getNumOutgoingConnections(maxIndex);
+	int startWith = maxIndex;
 	for(int i = 0; i < numStripes; ++i)
 	{
 		int check = (startWith + i) % numStripes;
-		if( m_partnerList->getNumOutgoingConnections(max) < m_partnerList->getNumOutgoingConnections(check) )
+		int currentNum = m_partnerList->getNumOutgoingConnections(check);
+
+		if( maxNum < currentNum )
 		{
-			max = check;
+			maxIndex = check;
+			maxNum = currentNum;
 		}
 	}
 
-	EV << "Preferred stripe is: " << max << endl;
-	return max;
+	EV << "Preferred stripe is: " << maxIndex << endl;
+	return maxIndex;
 }
 
 bool MultitreePeer::isPreferredStripe(int stripe)
