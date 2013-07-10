@@ -223,13 +223,28 @@ void MultitreeSource::optimize(void)
 	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
 
 	std::vector<std::map<IPvXAddress, int> > children;
+
+	int maxIndex = 0;
+	int maxChildren = m_partnerList->getNumOutgoingConnections(maxIndex);
 	for (int stripe = 0; stripe < numStripes; stripe++)
 	{
-
-		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
-
 		// Get children of current stripe
         children.push_back(m_partnerList->getChildrenWithCount(stripe));
+
+		int currentNumChildren = children[stripe].size();
+		if(currentNumChildren > maxChildren)
+		{
+			maxChildren = currentNumChildren;
+			maxIndex = stripe;
+		}
+	}
+
+	int stripe = maxIndex;
+	int steps = 0;
+	while(steps++ < numStripes)
+	{
+		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
+
 
 		bool gain = true;
 		while(gain && children[stripe].size() > 1)
@@ -261,13 +276,15 @@ void MultitreeSource::optimize(void)
 			}
 		}
 
+		stripe = ++stripe % numStripes;
+
 	}			
 
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
 	// TODO Start with tree with most children
-	int stripe = 0;
+	stripe = 0;
 
 	// <node, <stripe, remainingBW> >
 	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
