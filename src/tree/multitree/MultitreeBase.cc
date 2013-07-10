@@ -158,7 +158,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	bool onlyPreferredStripes = true;
 	// 2 runs: 1 for the preferred stripes, 1 for the remaining
 	
-	printStatus();
 	for (int i = 0; i < 2; i++)
 	{
 		for(std::vector<ConnectRequest>::const_iterator it = requests.begin(); it != requests.end(); ++it)
@@ -260,12 +259,19 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 	}
 
 	if(!accept.empty())
+	{
 		acceptConnectRequests(accept, senderAddress);
+		printStatus();
+	}
 	if(!reject.empty())
+	{
 		rejectConnectRequests(reject, senderAddress);
+	}
 
 	if(doOptimize)
+	{
 		scheduleOptimization();
+	}
 }
 
 void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address)
@@ -394,6 +400,8 @@ void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 	std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[stripe];
 	if(curDisconnectingChildren.find(address) != curDisconnectingChildren.end())
 		curDisconnectingChildren.erase(curDisconnectingChildren.find(address));
+
+	printStatus();
 }
 
 void MultitreeBase::getSender(cPacket *pkt, IPvXAddress &senderAddress, int &senderPort)
@@ -500,17 +508,17 @@ void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXA
 
 double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress child)
 {
-	//EV << "****************************************" << endl;
-	//EV << child << endl;
-	//EV << "K1: " << getStripeDensityCosts(childList, stripe);
-	//EV << " K2: " << getForwardingCosts(childList, stripe, child);
-	//EV << " K3: " << getBalanceCosts(childList, stripe, child);
-	//EV << " K4: " << getDependencyCosts(child);
-	//EV << "Total: " << param_weightK1 * getStripeDensityCosts(childList, stripe)
-	//	+ param_weightK2 * getForwardingCosts(childList, stripe, child)
-	//	+ param_weightK3 * getBalanceCosts(childList, stripe, child)
-	//	+ param_weightK4 * getDependencyCosts(child) << endl;
-	//EV << "****************************************" << endl;
+	EV << "****************************************" << endl;
+	EV << child << endl;
+	EV << "K1: " << getStripeDensityCosts(childList, stripe);
+	EV << ", K2: " << getForwardingCosts(childList, stripe, child);
+	EV << ", K3: " << getBalanceCosts(childList, stripe, child);
+	EV << ", K4: " << getDependencyCosts(child);
+	EV << ", Total: " << param_weightK1 * getStripeDensityCosts(childList, stripe)
+		+ param_weightK2 * getForwardingCosts(childList, stripe, child)
+		+ param_weightK3 * getBalanceCosts(childList, stripe, child)
+		+ param_weightK4 * getDependencyCosts(child) << endl;
+	EV << "****************************************" << endl;
 
 	// K_1 + 2 * K_2 + 3 * K_3 + 4 * K_4
 	return param_weightK1 * getStripeDensityCosts(childList, stripe)
@@ -591,7 +599,7 @@ double MultitreeBase::getGainThreshold(void)
 	if(b == 1)
 		return INT_MIN;
 
-	return (1 - pow(b, pow(2 * t, 3)) * (1 - pow(t, 3))) + pow(t, 3);
+	return (1.0 - pow(b, pow(2.0 * t, 3.0)) * (1.0 - pow(t, 3.0))) + pow(t, 3.0);
 }
 
 void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
