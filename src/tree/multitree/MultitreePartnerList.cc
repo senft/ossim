@@ -184,7 +184,6 @@ IPvXAddress MultitreePartnerList::getChildWithMostChildren(int stripe, const std
 IPvXAddress MultitreePartnerList::getBestLazyChild(int stripe, const std::set<IPvXAddress> &skipNodes)
 {
 	IPvXAddress child = getLaziestForwardingChild(stripe, skipNodes);
-	child = getLaziestForwardingChild(stripe, skipNodes);
 
 	if(child.isUnspecified())
 		child = getChildWithLeastChildren(stripe, skipNodes);

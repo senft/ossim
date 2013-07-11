@@ -200,6 +200,10 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					<< "). Tell him he can stay..." << endl;
 				accept.push_back(request);
 
+				// This is most likely a "failed" optimization-drop. That means I already updated
+				// the number of successors of the parent I dropped the node to. That should be
+				// reverted.
+
 				disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
 
 			}
