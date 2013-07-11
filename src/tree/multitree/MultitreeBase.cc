@@ -206,6 +206,19 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 				disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
 
+				//if(request.lastRequests.size() < 1)
+				//{
+				//	IPvXAddress droppedTo = (IPvXAddress)*request.lastRequests.begin();
+				//	int succDroppedTo = m_partnerList->getNumChildsSuccessors(stripe, droppedTo);
+				//	m_partnerList->updateNumChildsSuccessors(stripe, droppedTo, succDroppedTo - 1 - request.numSuccessors);
+				//}
+				//else
+				//{
+				//	// TODO
+				//	EV << "STRANGE" << endl;
+				//}
+				scheduleSuccessorInfo(stripe);
+
 			}
 			else if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
 			{
@@ -230,11 +243,18 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					doOptimize = true;
 				}
 
-				int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
-				// The nodes old parent is one of my children. So I can already
-				// update my partnerlist (that child now has 1 successors less)
-				m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, 
-						currentSucc - (1 + numSucc));
+				EV << "New child has " << numSucc << " succ." << endl;
+
+				//// The nodes old parent is one of my children. So I can already
+				//// update my partnerlist (that child now has 1 successors less)
+				//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
+				//int newSucc = currentSucc - (1 + numSucc);
+				//if(newSucc < 0)
+				//	// The child node probably accepted a child, but the SuccessorsInfo didn't came
+				//	// all the way up to me.
+				//	newSucc = 0;
+				//m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, newSucc);
+				scheduleSuccessorInfo(stripe);
 
 			}
 			else if(hasBWLeft(1))
@@ -247,6 +267,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				{
 					doOptimize = true;
 				}
+
+				scheduleSuccessorInfo(stripe);
 
 			}
 			else
@@ -346,9 +368,6 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 			int lastChunk = request.lastReceivedChunk;
 			sendChunksToNewChild(stripe, address, lastChunk);
 		}
-
-		scheduleSuccessorInfo(stripe);
-
 	}
 
 	gainThreshold = getGainThreshold();
