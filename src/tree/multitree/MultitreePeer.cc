@@ -983,7 +983,7 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 void MultitreePeer::optimize(void)
 {
 	for (int i = 0; i < numStripes; i++)
-		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
+		if(m_state[i] == TREE_JOIN_STATE_IDLE || m_state[i] == TREE_JOIN_STATE_LEAVING)
 			return;
 
 	int stripe = getStripeToOptimize();
