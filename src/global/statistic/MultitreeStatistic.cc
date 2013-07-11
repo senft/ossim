@@ -57,7 +57,7 @@ void MultitreeStatistic::initialize(int stage)
 		numTrees.push_back(0);
 
 		char name[24];
-		sprintf(name, "activeNodesIn%dstripes", i);
+		sprintf(name, "nodesActiveIn%dstripes", i);
 		oVNumTrees[i].setName(name);
 	}
 
@@ -197,7 +197,7 @@ void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumC
 void MultitreeStatistic::reportNumTreesForwarding()
 {
 	int num[numStripes + 1];
-	for (int i = 0; i < numStripes; i++)
+	for (int i = 0; i < numStripes + 1; i++)
 	{
 		num[i] = 0;
 	}
