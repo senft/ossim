@@ -484,7 +484,7 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
 
 		//EV << "checking: " << curAddress << ", gain: " << curGain << endl;
 
-		if(curMaxGain < curGain)
+		if(curMaxGain < curGain || (curMaxGain == curGain && intrand(2) == 0))
 		{
 			curMaxGain = curGain;
 			curMaxAddress = curAddress;
@@ -522,7 +522,7 @@ void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXA
 
 			//EV << "checking: " << curAddress << ", costs: " << curCosts << endl;
 
-			if(curMaxCosts < curCosts)
+			if(curMaxCosts < curCosts || (curMaxCosts == curCosts && intrand(2) == 0))
 			{
 				curMaxCosts = curCosts;
 				curMaxAddress = curAddress;
