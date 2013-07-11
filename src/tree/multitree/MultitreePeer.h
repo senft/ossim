@@ -19,6 +19,8 @@ private:
 	int *stat_retrys;
 	std::vector<simtime_t> beginConnecting;
 
+	simsignal_t sig_numTrees;
+
 	long firstSequenceNumber;
 
 	bool *numSuccChanged;
