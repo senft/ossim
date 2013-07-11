@@ -337,7 +337,8 @@ void MultitreePartnerList::printPartnerList(void)
 	for (int i = 0; i < numStripes; i++)
 	{
 		EV << "*********** Stripe " << i << " **********" << endl;
-		EV << "Parent  : " << parents[i] << " (" << getNumOutgoingConnections(i) << " children, " << getNumSuccessors(i) << " successors)" << endl;
+		EV << "Parent  : " << parents[i] << " (" << getNumOutgoingConnections(i) << " children, "
+			<< getNumSuccessors(i) << " successors)" << endl;
 		EV << "Children: ";
 
 		std::map<IPvXAddress, int> curChildren = mChildren[i];

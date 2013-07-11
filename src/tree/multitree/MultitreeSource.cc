@@ -83,8 +83,6 @@ void MultitreeSource::processPacket(cPacket *pkt)
     }
     }
 
-	printStatus();
-
     delete pkt;
 }
 
@@ -231,6 +229,7 @@ void MultitreeSource::optimize(void)
 
 	std::vector<std::map<IPvXAddress, int> > children;
 
+	// Get stripe with most children
 	int maxIndex = 0;
 	int maxChildren = m_partnerList->getNumOutgoingConnections(maxIndex);
 	for (int stripe = 0; stripe < numStripes; stripe++)

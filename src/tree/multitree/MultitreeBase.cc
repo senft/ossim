@@ -535,7 +535,7 @@ void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXA
 double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress child)
 {
 	EV << "****************************************" << endl;
-	EV << child << endl;
+	EV << child << ": ";
 	EV << "K1: " << getStripeDensityCosts(childList, stripe);
 	EV << ", K2: " << getForwardingCosts(childList, stripe, child);
 	EV << ", K3: " << getBalanceCosts(childList, stripe, child);
@@ -544,7 +544,6 @@ double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress 
 		+ param_weightK2 * getForwardingCosts(childList, stripe, child)
 		+ param_weightK3 * getBalanceCosts(childList, stripe, child)
 		+ param_weightK4 * getDependencyCosts(child) << endl;
-	EV << "****************************************" << endl;
 
 	// K_1 + 2 * K_2 + 3 * K_3 + 4 * K_4
 	return param_weightK1 * getStripeDensityCosts(childList, stripe)
@@ -568,26 +567,25 @@ int MultitreeBase::getForwardingCosts(successorList childList, int stripe, IPvXA
 
 double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXAddress child) // K_bal, K_3
 {
-    double myChildren = childList.size();
-	double mySuccessors = myChildren;
+    double numChildren = childList.size();
+
+	double numSucc = numChildren;
 	for (successorList::iterator it = childList.begin() ; it != childList.end(); ++it)
 	{
-		mySuccessors += it->second;
+		numSucc += it->second;
 	}
+
+	if(numChildren == numSucc)
+		// None of my children has children themself
+		return 1;
 
     int childsSuccessors = childList[child];
 
-	//EV << "fanout: " << myChildren << " mySucc: " << mySuccessors << " childsSucc: " << childsSuccessors << endl; 
+	//EV << "fanout: " << numChildren << " mySucc: " << numSucc << " childsSucc: " << childsSuccessors << endl; 
 
-	if(myChildren == 0) // TODO is this ok?
-		return 0;
+    double meanNumSucc = (numSucc / numChildren) - 1.0;
 
-    double x = (mySuccessors / myChildren) - 1.0;
-
-	if(x == 0) // TODO is this ok?
-		return 0;
-
-    return  (x - childsSuccessors) / x;
+    return  (meanNumSucc - childsSuccessors) / meanNumSucc;
 }
 
 // TODO rename...
