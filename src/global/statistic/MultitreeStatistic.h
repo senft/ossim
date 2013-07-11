@@ -2,6 +2,7 @@
 #include "NotificationBoard.h"
 #include "AppCommon.h"
 #include "ActivePeerTable.h"
+#include "AppSettingMultitree.h"
 #include "IPvXAddress.h"
 #include <fstream>
 #include "StatisticBase.h"
@@ -52,7 +53,8 @@ private:
 	void reportConnectionTime();
 	void reportRetrys();
 
-	ActivePeerTable *m_apTable;
+	ActivePeerTable			*m_apTable;
+    AppSettingMultitree   	*m_appSetting;
 
 	simsignal_t sig_BWUtil;
 	simsignal_t sig_packetLoss;
@@ -64,9 +66,15 @@ private:
 	std::map<IPvXAddress, int> preferredStripes;
 	std::map<IPvXAddress, int> currentBWUtilization;
 	std::map<IPvXAddress, int> maxBWUtilization;
-	std::map<IPvXAddress, int> numTreesForwarding;
+	std::map<IPvXAddress, int> totalNumTreesForwarding;
 	std::vector<double> connectionTimes;
 	std::vector<int> retrys;
+	std::vector<int> numTrees;
+
+	//std::vector<cOutVector> oVNumTrees;
+	cOutVector *oVNumTrees;
+
+	int numStripes;
 
 	int awakeNodes;
 

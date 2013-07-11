@@ -11,6 +11,11 @@ void MultitreePeer::initialize(int stage)
 {
 	MultitreeBase::initialize(stage);
 
+	if(stage == 0)
+	{
+        sig_numTrees            = registerSignal("Signal_Num_Trees");
+	}
+
 	if(stage == 2)
 	{
 		bindToGlobalModule();
@@ -241,6 +246,7 @@ void MultitreePeer::handleTimerReportStatistic()
 	// Report number of trees I am forwarding in
 	int numActiveTrees = m_partnerList->getNumActiveTrees();
 	m_gstat->gatherNumTreesForwarding(getNodeAddress(), numActiveTrees);
+	emit(sig_numTrees, numActiveTrees);
 
 	// Report hit/missing chunks
 	if (m_player->getState() == PLAYER_STATE_PLAYING)
