@@ -20,6 +20,9 @@ public:
 	int getNumOutgoingConnections(void);
 	int getNumOutgoingConnections(int stripe);
 
+	bool nodeForwardingInOtherStripe(int stripe, IPvXAddress node);
+	bool nodeHasMoreChildrenInOtherStripe(int stripe, IPvXAddress node);
+
 	int getNumChildren(void);
 	int getNumSuccessors(int stripe);
     int getNumChildsSuccessors(int stripe, IPvXAddress address);

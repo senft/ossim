@@ -946,8 +946,16 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 	}
 
 	IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+
 	//IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 	//IPvXAddress address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
+
+	//while(m_partnerList->nodeForwardingInOtherStripe(stripe, address) && !address.isUnspecified())
+	while(m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, address) && !address.isUnspecified())
+	{
+		skipNodes.insert(address);
+		address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+	}
 
 	if( address.isUnspecified() ||
 		!m_partnerList->hasChildren(stripe) ||

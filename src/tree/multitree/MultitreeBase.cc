@@ -471,6 +471,9 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
 	{
 		IPvXAddress curAddress = it->first;
 
+		if(m_partnerList->hasParent(curAddress))
+			continue;
+
 		if(curAddress.equals(skipAddress) 
 				|| disconnectingChildren[stripe].find(curAddress) != disconnectingChildren[stripe].end())
 		{

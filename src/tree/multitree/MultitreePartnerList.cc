@@ -356,3 +356,30 @@ int MultitreePartnerList::getNumActiveTrees(void)
 	}
 	return numActiveTrees;
 }
+
+bool MultitreePartnerList::nodeForwardingInOtherStripe(int stripe, IPvXAddress node)
+{
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(i == stripe)
+			continue;
+
+		if(hasParent(i, node) || getNumChildsSuccessors(i, node) > 0)
+			return true;
+	}
+	return false;
+}
+
+bool MultitreePartnerList::nodeHasMoreChildrenInOtherStripe(int stripe, IPvXAddress node)
+{
+	int numSucc = getNumChildsSuccessors(stripe, node);
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(i == stripe)
+			continue;
+
+		if(hasParent(i, node) || getNumChildsSuccessors(i, node) > numSucc)
+			return true;
+	}
+	return false;
+}
