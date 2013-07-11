@@ -233,7 +233,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 						currentSucc - (1 + numSucc));
 
 			}
-			else if(hasBWLeft(accept.size() + 1))
+			else if(hasBWLeft(1))
 			{
 
 				accept.push_back(request);
