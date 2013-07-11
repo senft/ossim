@@ -768,7 +768,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 		//successorList children = m_partnerList->getChildrenWithCount(stripe);
 
-		std::set<IPvXAddress> curDisconnectingChildren = disconnectingChildren[stripe];
+		std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[stripe];
 
 		std::set<IPvXAddress> skipNodes;
 		for(std::set<IPvXAddress>::iterator it = curDisconnectingChildren.begin(); it != curDisconnectingChildren.end(); ++it)
@@ -792,7 +792,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
-			if(gain < threshold)
+			if(gain < threshold)// || m_partnerList->getNumChildsSuccessors(stripe, child) > dependencyFactor)
 			{
 				dropNode(stripe, child, senderAddress);
 				remainingBW--;
@@ -1027,6 +1027,10 @@ void MultitreePeer::optimize(void)
 		{
 			// Drop costliest to cheapest
 			dropNode(stripe, linkToDrop, alternativeParent);
+
+			//int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
+			//int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
+			//m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
 
 			children[alternativeParent] += 1 + children[linkToDrop];
 			children.erase(children.find(linkToDrop));
