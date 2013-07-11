@@ -247,16 +247,14 @@ void MultitreeSource::optimize(void)
 
 	int stripe = maxIndex;
 	int steps = 0;
-	while(steps++ < numStripes)
+	int noGainIn = 0;
+	while(noGainIn < numStripes)
 	{
 		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
-
-		bool gain = true;
-		while(gain && children[stripe].size() > 1)
+		bool gain = false;
+		if(children[stripe].size() > 1)
 		{
-			gain = false;
-
 			IPvXAddress linkToDrop;	
 			getCostliestChild(children[stripe], stripe, linkToDrop);
 
@@ -276,11 +274,18 @@ void MultitreeSource::optimize(void)
 				// Drop costliest to cheapest
 				dropNode(stripe, linkToDrop, alternativeParent);
 
+				//int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
+				//int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
+				//m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
+
 				children[stripe][alternativeParent] += 1 + children[stripe][linkToDrop];
 				children[stripe].erase(children[stripe].find(linkToDrop));
 				gain = true;
 			}
 		}
+
+		if(!gain)
+			noGainIn++;
 
 		stripe = ++stripe % numStripes;
 
@@ -289,8 +294,20 @@ void MultitreeSource::optimize(void)
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
-	// TODO Start with tree with most children
-	stripe = 0;
+	// Get stripe with least children
+	int minIndex = 0;
+	int minChildren = children[0].size();
+	for (int stripe = 1; stripe < numStripes; stripe++)
+	{
+		int currentNumChildren = children[stripe].size();
+		if(currentNumChildren < minChildren)
+		{
+			minChildren = currentNumChildren;
+			minIndex = stripe;
+		}
+	}
+
+	stripe = minIndex;
 
 	// <node, <stripe, remainingBW> >
 	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
