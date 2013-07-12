@@ -314,17 +314,19 @@ void MultitreeSource::optimize(void)
 	{
 
 		int maxSucc = 0;
+		int maxActiveTrees = 0;
 		IPvXAddress child;
 
 		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
-			if( it->second > maxSucc 
-					&& disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() )
+			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
+					&& m_partnerList->getNumActiveTrees(it->first) > maxActiveTrees
+					|| (it->second > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees )
+					)
 			{
-				// Make sure I didnt already send a DisconenctRequest to the child, to not send
-				// multiple DisconnectRequests
 				maxSucc = it->second;
 				child = it->first;
+				maxActiveTrees = m_partnerList->getNumActiveTrees(it->first);
 			}
 		}
 

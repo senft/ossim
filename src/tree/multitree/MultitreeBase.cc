@@ -489,7 +489,9 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
 			continue;
 
 		if(curAddress.equals(skipAddress) 
-				|| disconnectingChildren[stripe].find(curAddress) != disconnectingChildren[stripe].end())
+				|| disconnectingChildren[stripe].find(curAddress) != disconnectingChildren[stripe].end()
+				|| m_partnerList->nodeForwardingInOtherStripe(stripe, curAddress)
+			)
 		{
 			continue;
 		}
@@ -575,7 +577,12 @@ double MultitreeBase::getStripeDensityCosts(successorList childList, int stripe)
 
 int MultitreeBase::getForwardingCosts(successorList childList, int stripe, IPvXAddress child) // K_forw, K_2
 {
-    return (childList[child] == 0);
+	//if(childList[child] > 0)
+	//	return 0;
+	//return !m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, child);
+    if(childList[child] <= 0 || m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, child))
+		return 1;
+	return 0;
 }
 
 double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXAddress child) // K_bal, K_3
