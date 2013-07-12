@@ -141,11 +141,11 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 			counts[it->second]++;
 		}
 
-		EV << m_apTable->getNumActivePeer() << " nodes in total." << endl;
-		for (std::map<int, int>::const_iterator it = counts.begin() ; it != counts.end(); ++it)
-		{
-			EV << "stripe " << it->first << ": " << it->second << " nodes" << endl;
-		}
+		//EV << m_apTable->getNumActivePeer() << " nodes in total." << endl;
+		//for (std::map<int, int>::const_iterator it = counts.begin() ; it != counts.end(); ++it)
+		//{
+		//	EV << "stripe " << it->first << ": " << it->second << " nodes" << endl;
+		//}
 
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
@@ -196,6 +196,7 @@ void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumC
 
 void MultitreeStatistic::reportNumTreesForwarding()
 {
+	//EV << totalNumTreesForwarding.size() << " nodes have reported their number of active trees." << endl;
 	int num[numStripes + 1];
 	for (int i = 0; i < numStripes + 1; i++)
 	{

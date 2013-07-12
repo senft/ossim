@@ -496,12 +496,11 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
 double MultitreeBase::getGain(successorList childList, int stripe, IPvXAddress child)
 {
 	//EV << "*************** GAIN *******************" << endl;
-	//EV << "Stripe: " << stripe << " Child: " << child << endl;
-	//EV << "K3: " << getBalanceCosts(childList, stripe, child) << endl;
-	//EV << "K2: " << getForwardingCosts(childList, stripe, child) << endl;
-	//EV << "Total: " << (param_weightK3 * getBalanceCosts(childList, stripe, child))
-	//   	- (param_weightK2 * getForwardingCosts(childList, stripe, child)) << endl;
-	//EV << "****************************************" << endl;
+	//EV << " Child: " << child << ": ";
+	//EV << "K3: " << getBalanceCosts(childList, stripe, child);
+	//EV << ", K2: " << getForwardingCosts(childList, stripe, child);
+	//EV << ", Total: " << (param_weightK3 * getBalanceCosts(childList, stripe, child))
+	//   	- (param_weightK2 * getForwardingCosts(childList, stripe, child));
 
 	// K_3 - K_2
 	return (param_weightK3 * getBalanceCosts(childList, stripe, child))
@@ -657,7 +656,7 @@ void MultitreeBase::printStatus(void)
 	if(!ev.isDisabled())
 	{
 		EV << "*******************************" << endl;
-		EV << getNodeAddress() << endl;
+		EV << getNodeAddress() << " (" << m_partnerList->getNumActiveTrees() << " active stripes)" << endl;
 		m_partnerList->printPartnerList();
 		EV << "*******************************" << endl;
 	}

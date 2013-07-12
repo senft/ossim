@@ -163,8 +163,6 @@ void MultitreeSource::onNewChunk(int sequenceNumber)
 
 IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests)
 {
-	//printStatus();
-
 	//EV << "Searching alternative parent for " << forNode << ", currentParent="
 	//	<< currentParent << ", alread tried to connect to " << lastRequests.size()
 	//	<< " nodes." << endl;

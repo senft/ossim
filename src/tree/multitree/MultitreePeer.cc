@@ -513,7 +513,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			// There already is another parent for this stripe (I disconnected from it, though).
 			// So now I should tell him that it can stop forwarding packets to me
 			EV << "Switching parent in stripe: " << stripe << " old: " << m_partnerList->getParent(stripe)
-				<< " new: " << address << ". ";
+				<< " new: " << address << ". " << endl;
 
 			if(!address.equals(oldParent))
 				// No need to give an alternative when disconnecting from a parent
