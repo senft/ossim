@@ -236,7 +236,7 @@ void MultitreeSource::optimize(void)
         children.push_back(m_partnerList->getChildrenWithCount(stripe));
 
 		int currentNumChildren = children[stripe].size();
-		if(currentNumChildren > maxChildren)
+		if(currentNumChildren > maxChildren || (currentNumChildren == maxChildren && intrand(2) == 0))
 		{
 			maxChildren = currentNumChildren;
 			maxIndex = stripe;
@@ -261,24 +261,27 @@ void MultitreeSource::optimize(void)
 
 			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
 			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
-
-			double gainIf = getGain(children[stripe], stripe, alternativeParent);
-
-			EV << "GAIN: " << gainIf << endl;
-			EV << "THRESHOLD: " << gainThreshold << endl;
-
-			if(gainIf >= gainThreshold && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
+			
+			if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 			{
-				// Drop costliest to cheapest
-				dropNode(stripe, linkToDrop, alternativeParent);
+				double gainIf = getGain(children[stripe], stripe, alternativeParent);
+
+				EV << "GAIN: " << gainIf << endl;
+				EV << "THRESHOLD: " << gainThreshold << endl;
+
+				if(gainIf >= gainThreshold)
+				{
+					// Drop costliest to cheapest
+					dropNode(stripe, linkToDrop, alternativeParent);
 
 					int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
 					int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
 					m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
 
-				children[stripe][alternativeParent] += 1 + children[stripe][linkToDrop];
-				children[stripe].erase(children[stripe].find(linkToDrop));
-				gain = true;
+					children[stripe][alternativeParent] += 1 + children[stripe][linkToDrop];
+					children[stripe].erase(children[stripe].find(linkToDrop));
+					gain = true;
+				}
 			}
 		}
 
@@ -295,13 +298,15 @@ void MultitreeSource::optimize(void)
 	// Get stripe with least children
 	int minIndex = 0;
 	int minChildren = children[0].size();
-	for (int stripe = 1; stripe < numStripes; stripe++)
+	for (int i = 1; i < numStripes; i++)
 	{
-		int currentNumChildren = children[stripe].size();
-		if(currentNumChildren < minChildren)
+		int currentNumChildren = children[i].size();
+		if(currentNumChildren < minChildren
+				|| (currentNumChildren == minChildren && intrand(2) == 0)
+				)
 		{
 			minChildren = currentNumChildren;
-			minIndex = stripe;
+			minIndex = i;
 		}
 	}
 
