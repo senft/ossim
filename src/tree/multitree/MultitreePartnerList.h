@@ -27,7 +27,7 @@ public:
 	int getNumSuccessors(int stripe);
     int getNumChildsSuccessors(int stripe, IPvXAddress address);
 
-    void updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors);
+    bool updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors);
 
 	bool hasParent(IPvXAddress address);
 	bool hasParent(int stripe, IPvXAddress address);
@@ -53,6 +53,7 @@ public:
 	IPvXAddress getBestLazyChild(int stripe, const std::set<IPvXAddress> &skipNodes);
 
 	int getNumActiveTrees(void);
+	int getNumActiveTrees(IPvXAddress child);
 
 	void printPartnerList(void);
 protected:

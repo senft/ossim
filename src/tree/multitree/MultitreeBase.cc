@@ -391,16 +391,18 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 		SuccessorInfo update = (SuccessorInfo)*it;
 		int stripe = update.stripe;
 
-		if(m_partnerList->hasChild(stripe, address))
-		{
-			int numSucc = update.numSuccessors;
-			int oldSucc = m_partnerList->getNumChildsSuccessors(stripe, address);
+		int oldSucc = m_partnerList->getNumChildsSuccessors(stripe, address);
 
-			if(numSucc != oldSucc)
+		if(oldSucc != -1)
+		{
+			int newSucc = update.numSuccessors;
+			if(newSucc != oldSucc)
 			{
 				changes = true;
 				scheduleSuccessorInfo(stripe);
-				m_partnerList->updateNumChildsSuccessors(stripe, address, numSucc);
+				// TODO: this way hasChild() is called twice (in getNumChildsSucc()
+				// + updateNumChildsSuccessors()
+				m_partnerList->updateNumChildsSuccessors(stripe, address, newSucc);
 			}
 		}
 	}

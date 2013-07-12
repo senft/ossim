@@ -324,9 +324,17 @@ int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address
 		return -1;
 }
 
-void MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors)
+bool MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors)
 {
-	mChildren[stripe][address] =  numSuccessors;
+	if(hasChild(stripe, address))
+	{
+		mChildren[stripe][address] =  numSuccessors;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void MultitreePartnerList::printPartnerList(void)
@@ -386,4 +394,17 @@ bool MultitreePartnerList::nodeHasMoreChildrenInOtherStripe(int stripe, IPvXAddr
 			return true;
 	}
 	return false;
+}
+
+int MultitreePartnerList::getNumActiveTrees(IPvXAddress node)
+{
+	int activeTrees;
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(hasParent(i, node) || getNumChildsSuccessors(i, node) > 0)
+		{
+			activeTrees++;
+		}
+	}
+	return activeTrees;
 }
