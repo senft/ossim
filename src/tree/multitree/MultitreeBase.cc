@@ -517,8 +517,8 @@ double MultitreeBase::getGain(successorList childList, int stripe, IPvXAddress c
 	//   	- (param_weightK2 * getForwardingCosts(childList, stripe, child));
 
 	// K_3 - K_2
-	return (param_weightK3 * getBalanceCosts(childList, stripe, child))
-		- (param_weightK2 * getForwardingCosts(childList, stripe, child));
+	return (getBalanceCosts(childList, stripe, child))
+		- (getForwardingCosts(childList, stripe, child));
 }
 
 void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXAddress &address)
