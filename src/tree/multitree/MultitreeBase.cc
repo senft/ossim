@@ -206,20 +206,20 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 				disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
 
-				IPvXAddress droppedTo = (IPvXAddress)*request.lastRequests.begin();
-				if(request.lastRequests.size())
+				if(request.lastRequests.size() > 0)
 				{
-				  int succDroppedTo = m_partnerList->getNumChildsSuccessors(stripe, droppedTo);
-				  int newSucc = succDroppedTo - 1 - request.numSuccessors;
-				  if(newSucc < 0)
-					  // The childs successor might be bigger, if it accepted a new child while
-					  // being dropped
-					  newSucc = 0;
-				  m_partnerList->updateNumChildsSuccessors(stripe, droppedTo, newSucc);
+					IPvXAddress droppedTo = (IPvXAddress)*request.lastRequests.begin();
+					int succDroppedTo = m_partnerList->getNumChildsSuccessors(stripe, droppedTo);
+					int newSucc = succDroppedTo - 1 - request.numSuccessors;
+					if(newSucc < 0)
+						// The childs successor might be bigger, if it accepted a new child while
+						// being dropped
+						newSucc = 0;
+					m_partnerList->updateNumChildsSuccessors(stripe, droppedTo, newSucc);
 				}
 				else
 				{
-					// TODO
+					// TODO this should never happen... but it does..
 					EV << "child: " << senderAddress << ", stripe: " << stripe << endl;
 					//throw cException("CR von child");
 				}
