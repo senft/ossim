@@ -206,18 +206,24 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 				disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
 
-				//if(request.lastRequests.size() < 1)
-				//{
-				//	IPvXAddress droppedTo = (IPvXAddress)*request.lastRequests.begin();
-				//	int succDroppedTo = m_partnerList->getNumChildsSuccessors(stripe, droppedTo);
-				//	m_partnerList->updateNumChildsSuccessors(stripe, droppedTo, succDroppedTo - 1 - request.numSuccessors);
-				//}
-				//else
-				//{
-				//	// TODO
-				//	EV << "STRANGE" << endl;
-				//}
-				scheduleSuccessorInfo(stripe);
+				IPvXAddress droppedTo = (IPvXAddress)*request.lastRequests.begin();
+				if(request.lastRequests.size())
+				{
+				  int succDroppedTo = m_partnerList->getNumChildsSuccessors(stripe, droppedTo);
+				  int newSucc = succDroppedTo - 1 - request.numSuccessors;
+				  if(newSucc < 0)
+					  // The childs successor might be bigger, if it accepted a new child while
+					  // being dropped
+					  newSucc = 0;
+				  m_partnerList->updateNumChildsSuccessors(stripe, droppedTo, newSucc);
+				}
+				else
+				{
+					// TODO
+					EV << "child: " << senderAddress << ", stripe: " << stripe << endl;
+					//throw cException("CR von child");
+				}
+				//scheduleSuccessorInfo(stripe);
 
 			}
 			else if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
@@ -243,18 +249,22 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					doOptimize = true;
 				}
 
-				EV << "New child has " << numSucc << " succ." << endl;
+				//EV << "New child has " << numSucc << " succ." << endl;
 
-				//// The nodes old parent is one of my children. So I can already
-				//// update my partnerlist (that child now has 1 successors less)
-				//int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
-				//int newSucc = currentSucc - (1 + numSucc);
-				//if(newSucc < 0)
-				//	// The child node probably accepted a child, but the SuccessorsInfo didn't came
-				//	// all the way up to me.
-				//	newSucc = 0;
-				//m_partnerList->updateNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent, newSucc);
-				scheduleSuccessorInfo(stripe);
+
+				// The nodes old parent is one of my children. So I can already
+				// update my partnerlist (that child now has a successors less)
+				IPvXAddress oldParent = (IPvXAddress)*itCurParent;
+				int currentSucc = m_partnerList->getNumChildsSuccessors(stripe, (IPvXAddress)*itCurParent);
+				int newSucc = currentSucc - (1 + numSucc);
+				if(newSucc < 0)
+					// The child node probably accepted a child, but the SuccessorsInfo didn't came
+					// all the way up to me.
+					newSucc = 0;
+				m_partnerList->updateNumChildsSuccessors(stripe, oldParent, newSucc);
+				//scheduleSuccessorInfo(stripe);
+				
+				scheduleOptimization();
 
 			}
 			else if(hasBWLeft(1))
@@ -425,6 +435,8 @@ void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 	std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[stripe];
 	if(curDisconnectingChildren.find(address) != curDisconnectingChildren.end())
 		curDisconnectingChildren.erase(curDisconnectingChildren.find(address));
+
+	scheduleOptimization();
 
 	printStatus();
 }

@@ -272,9 +272,9 @@ void MultitreeSource::optimize(void)
 				// Drop costliest to cheapest
 				dropNode(stripe, linkToDrop, alternativeParent);
 
-				//int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
-				//int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
-				//m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
+					int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
+					int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
+					m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
 
 				children[stripe][alternativeParent] += 1 + children[stripe][linkToDrop];
 				children[stripe].erase(children[stripe].find(linkToDrop));
