@@ -46,6 +46,8 @@ void MultitreeBase::initialize(int stage)
 		param_delayOptimization = par("delayOptimization");
 		param_optimize = par("optimize");
 
+		param_sendMissingChunks = par("sendMissingChunks");
+
 		param_weightT = par("weightT");
 		param_weightK1 = par("weightK1");
 		param_weightK2 = par("weightK2");
