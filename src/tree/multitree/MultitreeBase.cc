@@ -726,7 +726,7 @@ void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int la
   //EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
   if(lastChunk != -1)
   {
-    for (int i = lastChunk; i <= lastSeqNumber[stripe]; i++)
+    for (int i = lastChunk + 1; i <= lastSeqNumber[stripe]; i++)
     {
       if(m_videoBuffer->isInBuffer(i))
       {
