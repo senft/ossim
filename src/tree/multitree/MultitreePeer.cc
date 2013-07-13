@@ -214,6 +214,10 @@ void MultitreePeer::handleTimerLeave()
 
 			// TODO try busiest child here
 			std::set<IPvXAddress> skipNodes;
+			for(std::set<IPvXAddress>::iterator it = disconnectingChildren[i].begin(); it != disconnectingChildren[i].end(); ++it)
+			{
+				skipNodes.insert((IPvXAddress)*it);
+			}
 			IPvXAddress laziestChild = m_partnerList->getBestLazyChild(i, skipNodes);
 			// Drop the child with the least successors to my parent...
 			dropNode(i, laziestChild, m_partnerList->getParent(i));
@@ -222,7 +226,7 @@ void MultitreePeer::handleTimerLeave()
 			for (std::set<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
 			{
 				IPvXAddress addr = (IPvXAddress)*it;
-				if(!addr.equals(laziestChild))
+				if(!addr.equals(laziestChild) && disconnectingChildren[i].find(addr) == disconnectingChildren[i].end())
 					dropNode(i, addr, laziestChild);
 			}
 
