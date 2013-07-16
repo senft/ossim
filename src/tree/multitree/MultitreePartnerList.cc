@@ -91,8 +91,8 @@ IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const st
 		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
 		if(!skipNode)
 		{
-			//if(it->second < minSucc || (it->second == minSucc && intrand(2) == 0))
-			if(it->second < minSucc)
+			if(it->second < minSucc || (it->second == minSucc && intrand(2) == 0))
+			//if(it->second < minSucc)
 			{
 				minSucc = it->second;
 				child = it->first;
@@ -117,8 +117,8 @@ IPvXAddress MultitreePartnerList::getLaziestForwardingChild(int stripe, const st
 		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
 		if(!skipNode)
 		{
-			//if((it->second > 0 && it->second < minSucc) || (it->second == minSucc && intrand(2) == 0))
-			if(it->second > 0 && it->second < minSucc)
+			if((it->second > 0 && it->second < minSucc) || (it->second == minSucc && intrand(2) == 0))
+			//if(it->second > 0 && it->second < minSucc)
 			{
 				minSucc = it->second;
 				child = it->first;
@@ -168,8 +168,8 @@ IPvXAddress MultitreePartnerList::getChildWithMostChildren(int stripe, const std
 		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
 		if(!skipNode)
 		{
-			//if(it->second > maxSucc || (it->second == maxSucc && intrand(2) == 0))
-			if(it->second > maxSucc)
+			if(it->second > maxSucc || (it->second == maxSucc && intrand(2) == 0))
+			//if(it->second > maxSucc)
 			{
 				maxSucc = it->second;
 				busiestChild = it->first;
