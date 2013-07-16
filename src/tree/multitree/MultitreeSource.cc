@@ -295,28 +295,28 @@ void MultitreeSource::optimize(void)
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
-	// Get stripe with least children
-	int minIndex = 0;
-	int minChildren = children[0].size();
-	for (int i = 1; i < numStripes; i++)
-	{
-		int currentNumChildren = children[i].size();
-		if(currentNumChildren < minChildren
-				|| (currentNumChildren == minChildren && intrand(2) == 0)
-				)
-		{
-			minChildren = currentNumChildren;
-			minIndex = i;
-		}
-	}
-
-	stripe = minIndex;
 
 	// <node, <stripe, remainingBW> >
 	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
 	int treesWithNoMoreChildren = 0;
 	while(remainingBW > 0 && treesWithNoMoreChildren < numStripes)
 	{
+
+		// Get stripe with least children
+		int minIndex = 0;
+		int minChildren = children[0].size();
+		for (int i = 1; i < numStripes; i++)
+		{
+			int currentNumChildren = children[i].size();
+			if(currentNumChildren < minChildren
+					|| (currentNumChildren == minChildren && intrand(2) == 0)
+					)
+			{
+				minChildren = currentNumChildren;
+				minIndex = i;
+			}
+		}
+		stripe = minIndex;
 
 		int maxSucc = 0;
 		int maxActiveTrees = 0;
@@ -325,8 +325,10 @@ void MultitreeSource::optimize(void)
 		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
 			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-					&& m_partnerList->getNumActiveTrees(it->first) > maxActiveTrees
+					&& (m_partnerList->getNumActiveTrees(it->first) > maxActiveTrees
 					|| (it->second > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees )
+					|| (it->second == maxSucc && m_partnerList->getNumActiveTrees(it->first) == maxActiveTrees && intrand(2) == 0)
+					)
 					)
 			{
 				maxSucc = it->second;
