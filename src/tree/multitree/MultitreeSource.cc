@@ -259,13 +259,13 @@ void MultitreeSource::optimize(void)
 			IPvXAddress alternativeParent;	
 			getCheapestChild(children[stripe], stripe, alternativeParent, linkToDrop);
 
-			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
-			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
-			
 			if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 			{
 				double gainIf = getGain(children[stripe], stripe, alternativeParent);
 
+				EV << "COSTLIEST CHILD: " << linkToDrop << endl;
+				EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+			
 				EV << "GAIN: " << gainIf << endl;
 				EV << "THRESHOLD: " << gainThreshold << endl;
 

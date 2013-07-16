@@ -212,24 +212,28 @@ void MultitreePeer::handleTimerLeave()
 
 			std::set<IPvXAddress> &children = m_partnerList->getChildren(i);
 
-			// TODO try busiest child here
 			std::set<IPvXAddress> skipNodes;
 			for(std::set<IPvXAddress>::iterator it = disconnectingChildren[i].begin(); it != disconnectingChildren[i].end(); ++it)
 			{
 				skipNodes.insert((IPvXAddress)*it);
 			}
-			IPvXAddress laziestChild = m_partnerList->getBestLazyChild(i, skipNodes);
-			// Drop the child with the least successors to my parent...
-			dropNode(i, laziestChild, m_partnerList->getParent(i));
+			// Choose one specific child...
+			IPvXAddress child = m_partnerList->getBestLazyChild(i, skipNodes);
+			//IPvXAddress child = m_partnerList->getChildWithMostChildren(i, skipNodes);
 
-			// ... and all other children to that 'lazy' node
-			for (std::set<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
+			if(!child.isUnspecified())
 			{
-				IPvXAddress addr = (IPvXAddress)*it;
-				if(!addr.equals(laziestChild) && disconnectingChildren[i].find(addr) == disconnectingChildren[i].end())
-					dropNode(i, addr, laziestChild);
-			}
+				// ...drop that one child to my parent...
+				dropNode(i, child, m_partnerList->getParent(i));
 
+				// ... and all other children to that one node
+				for (std::set<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
+				{
+					IPvXAddress addr = (IPvXAddress)*it;
+					if(!addr.equals(child) && disconnectingChildren[i].find(addr) == disconnectingChildren[i].end())
+						dropNode(i, addr, child);
+				}
+			}
 		}
 	}
 
@@ -238,7 +242,6 @@ void MultitreePeer::handleTimerLeave()
 		m_partnerList->clear();
 		leave();
 	}
-
 }
 
 void MultitreePeer::handleTimerReportStatistic()
@@ -491,6 +494,15 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	IPvXAddress address;
 	getSender(pkt, address);
 
+	bool anyParentUnspec = false;
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_partnerList->getParent(i).isUnspecified())
+		{
+			anyParentUnspec = true;
+		}
+	}
+
 	for(std::vector<ConnectConfirm>::iterator it = confirms.begin(); it != confirms.end(); ++it)
 	{
 		int stripe = ((ConnectConfirm)*it).stripe;
@@ -540,30 +552,30 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 		m_state[stripe] = TREE_JOIN_STATE_ACTIVE;
 		m_partnerList->addParent(stripe, address);
 		beginConnecting[stripe] = -1;
-
-		//m_gstat->reportConnectionRetry(stat_retrys[stripe]);
-		//stat_retrys[stripe] = 0;
 	}
 
 	printStatus();
 
-	for (int i = 0; i < numStripes; i++)
+	if(anyParentUnspec)
 	{
-		// TODO Make sure this only happens when switching from no parent at all to a parent
-		if(m_partnerList->getParent(i).isUnspecified())
+		for (int i = 0; i < numStripes; i++)
 		{
-			return;
+			// TODO Make sure this only happens when switching from no parent at all to a parent
+			if(m_partnerList->getParent(i).isUnspecified())
+			{
+				return;
+			}
 		}
+
+		// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me
+		// (to connect to me)
+		EV << "Adding myself to ActivePeerTable" << endl;
+		m_apTable->addAddress(getNodeAddress());
+
+		// Start collecting statistics
+		if(!timer_reportStatistic->isScheduled())
+			scheduleAt(simTime() + 2, timer_reportStatistic);
 	}
-
-	// Add myself to ActivePeerList when I have <numStripes> parents, so other peers can find me
-	// (to connect to me)
-	EV << "Adding myself to ActivePeerTable" << endl;
-	m_apTable->addAddress(getNodeAddress());
-
-	// Start collecting statistics
-	if(!timer_reportStatistic->isScheduled())
-		scheduleAt(simTime() + 2, timer_reportStatistic);
 }
 
 void MultitreePeer::processDisconnectRequest(cPacket* pkt)
@@ -779,6 +791,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 		{
 			skipNodes.insert( (IPvXAddress)*it );
 		}
+
 		while(remainingBW > 0)
 		{
 			IPvXAddress child = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
@@ -952,7 +965,6 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 	}
 
 	IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
-
 	//IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 	//IPvXAddress address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 
@@ -1025,23 +1037,26 @@ void MultitreePeer::optimize(void)
 		EV << "COSTLIEST CHILD: " << linkToDrop << endl;
 		EV << "CHEAPEST CHILD: " << alternativeParent << endl;
 
-		double gainIf = getGain(children, stripe, alternativeParent);
-		EV << "GAIN: " << gainIf << endl;
-		EV << "THRESHOLD: " << gainThreshold << endl;
-
-		if(gainIf >= gainThreshold && !linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
+		if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 		{
-			// Drop costliest to cheapest
-			dropNode(stripe, linkToDrop, alternativeParent);
+			double gainIf = getGain(children, stripe, alternativeParent);
+			EV << "GAIN: " << gainIf << endl;
+			EV << "THRESHOLD: " << gainThreshold << endl;
 
-			int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
-			int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
-			m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
+			if(gainIf >= gainThreshold)
+			{
+				// Drop costliest to cheapest
+				dropNode(stripe, linkToDrop, alternativeParent);
 
-			children[alternativeParent] += 1 + children[linkToDrop];
-			children.erase(children.find(linkToDrop));
-			gain = true;
-			gainThreshold = getGainThreshold();
+				int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
+				int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
+				m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
+
+				children[alternativeParent] += 1 + children[linkToDrop];
+				children.erase(children.find(linkToDrop));
+				gain = true;
+				gainThreshold = getGainThreshold();
+			}
 		}
 	}
 
