@@ -810,8 +810,9 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
-			if(gain < threshold// || m_partnerList->getNumChildsSuccessors(stripe, child) > dependencyFactor)
-				|| m_partnerList->getNumActiveTrees() > 1
+			if((gain < threshold// || m_partnerList->getNumChildsSuccessors(stripe, child) > dependencyFactor)
+				|| m_partnerList->getNumActiveTrees() > 1)
+				&& !isDisconnecting(stripe, child)
 				)
 			{
 				dropNode(stripe, child, senderAddress);
