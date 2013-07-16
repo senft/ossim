@@ -99,6 +99,8 @@ protected:
     void handleTimerOptimization();
 	cMessage *timer_optimization;
 
+	bool isDisconnecting(int stripe, IPvXAddress child);
+
     int getMaxOutConnections(void);
 
 	// Optimization functions
@@ -124,7 +126,7 @@ private:
 
 	void cancelAndDeleteTimer(void);
 
-	double getBWCapacity(void);
+	double getBWCapacityFromChannel(void);
 
 	void getAppSetting(void);
 	void acceptConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);

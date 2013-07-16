@@ -41,7 +41,7 @@ void MultitreeBase::initialize(int stage)
 			lastSeqNumber[i] = -1L;
 		}
 
-		//bwCapacity = getBWCapacity();
+		//bwCapacity = getBWCapacityFromChannel();
 		bwCapacity = par("bwCapacity");
 		param_delayOptimization = par("delayOptimization");
 		param_optimize = par("optimize");
@@ -221,11 +221,11 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				}
 				else
 				{
-					// TODO this should never happen... but it does..
-					EV << "child: " << senderAddress << ", stripe: " << stripe << endl;
-					//throw cException("CR von child");
+					// This happens when I give an invalid alternative parent. The node will
+					// reconnect to me (wihthout having tried other peers, hence lastRequests.size()
+					// == 0). I cannot "recreate" the numbers of successors now, because I don't
+					// know which node I dropped to.
 				}
-				//scheduleSuccessorInfo(stripe);
 
 			}
 			else if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
@@ -650,7 +650,7 @@ double MultitreeBase::getGainThreshold(void)
 
 void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent)
 {
-	if(disconnectingChildren[stripe].find(address) != disconnectingChildren[stripe].end())
+	if(isDisconnecting(stripe, address))
 		// Only drop if not already disconnecting
 		return;
 
@@ -666,7 +666,7 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 	pkt->getRequests().push_back(request);
 
 	if(!m_partnerList->hasParent(stripe, address))
-		// If that node is no parent, mark it as disconnecting
+		// If that node is no parent, mark it as disconnecting child
 		disconnectingChildren[stripe].insert(address);
 
 	gainThreshold = getGainThreshold();
@@ -686,7 +686,7 @@ void MultitreeBase::printStatus(void)
 }
 
 
-double MultitreeBase::getBWCapacity(void)
+double MultitreeBase::getBWCapacityFromChannel(void)
 {
 	double rate;
     cModule* nodeModule = getParentModule();
@@ -723,22 +723,27 @@ int MultitreeBase::getMaxOutConnections()
 
 void MultitreeBase::sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk)
 {
-  //EV << "Childs last chunk was: " <<  lastChunk << ", my last forwarded chunk was: " << lastSeqNumber << endl;
-  if(lastChunk != -1)
-  {
-    for (int i = lastChunk + 1; i <= lastSeqNumber[stripe]; i++)
-    {
-      if(m_videoBuffer->isInBuffer(i))
-      {
-        VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(i);
-        VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
+	//EV << "Childs last chunk was: " <<  lastChunk << endl;
+	if(lastChunk == -1)
+		return;
 
-        if(stripePkt->getStripe() == stripe)
-        {
-          //EV << "Sending chunk: " << i << endl;
-          sendToDispatcher(stripePkt->dup(), m_localPort, address, m_destPort);
-        }
-      }
-    }
-  }
+	for (int i = lastChunk + 1; i <= lastSeqNumber[stripe]; i++)
+	{
+		if(m_videoBuffer->isInBuffer(i))
+		{
+			VideoChunkPacket *chunkPkt = m_videoBuffer->getChunk(i);
+			VideoStripePacket *stripePkt = check_and_cast<VideoStripePacket *>(chunkPkt);
+
+			if(stripePkt->getStripe() == stripe)
+			{
+				//EV << "Sending chunk: " << i << endl;
+				sendToDispatcher(stripePkt->dup(), m_localPort, address, m_destPort);
+			}
+		}
+	}
+}
+
+bool MultitreeBase::isDisconnecting(int stripe, IPvXAddress child)
+{
+	return disconnectingChildren[stripe].find(child) != disconnectingChildren[stripe].end();
 }
