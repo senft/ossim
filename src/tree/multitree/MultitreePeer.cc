@@ -804,8 +804,9 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 				k3 = (dependencyFactor - (double)m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
 			else
 				k3 = 0;
-			int k2 = (m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1;
-			double gain = param_weightK3 * k3 - param_weightK2 * (double)k2;
+			//int k2 = (m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1;
+			int k2 = 1 - ((m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1);
+			double gain = k3 - (double)k2;
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
