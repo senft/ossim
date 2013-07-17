@@ -523,13 +523,13 @@ double MultitreeBase::getGain(successorList childList, int stripe, IPvXAddress c
 	//EV << "*************** GAIN *******************" << endl;
 	//EV << " Child: " << child << ": ";
 	//EV << "K3: " << getBalanceCosts(childList, stripe, child);
-	//EV << ", K2: " << getForwardingCosts(childList, stripe, child);
+	//EV << ", K2: " << getForwardingCosts(stripe, child);
 	//EV << ", Total: " << (param_weightK3 * getBalanceCosts(childList, stripe, child))
-	//   	- (param_weightK2 * getForwardingCosts(childList, stripe, child));
+	//   	- (param_weightK2 * getForwardingCosts(stripe, child));
 
 	// K_3 - K_2
 	return (getBalanceCosts(childList, stripe, child))
-		- (getForwardingCosts(childList, stripe, child));
+		- (getForwardingCosts(stripe, child));
 }
 
 void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXAddress &address)
@@ -561,17 +561,17 @@ double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress 
 	EV << "****************************************" << endl;
 	EV << child << ": ";
 	EV << "K1: " << getStripeDensityCosts(childList, stripe);
-	EV << ", K2: " << getForwardingCosts(childList, stripe, child);
+	EV << ", K2: " << getForwardingCosts(stripe, child);
 	EV << ", K3: " << getBalanceCosts(childList, stripe, child);
 	EV << ", K4: " << getDependencyCosts(child);
 	EV << ", Total: " << param_weightK1 * getStripeDensityCosts(childList, stripe)
-		+ param_weightK2 * getForwardingCosts(childList, stripe, child)
+		+ param_weightK2 * getForwardingCosts(stripe, child)
 		+ param_weightK3 * getBalanceCosts(childList, stripe, child)
 		+ param_weightK4 * getDependencyCosts(child) << endl;
 
 	// K_1 + 2 * K_2 + 3 * K_3 + 4 * K_4
 	return param_weightK1 * getStripeDensityCosts(childList, stripe)
-		+ param_weightK2 * getForwardingCosts(childList, stripe, child)
+		+ param_weightK2 * getForwardingCosts(stripe, child)
 		+ param_weightK3 * getBalanceCosts(childList, stripe, child)
 		+ param_weightK4 * getDependencyCosts(child);
 }
@@ -584,7 +584,7 @@ double MultitreeBase::getStripeDensityCosts(successorList childList, int stripe)
 	return 1 - (fanout / outCapacity);
 }
 
-int MultitreeBase::getForwardingCosts(successorList childList, int stripe, IPvXAddress child) // K_forw, K_2
+int MultitreeBase::getForwardingCosts(int stripe, IPvXAddress child) // K_forw, K_2
 {
 	//if(childList[child] > 0)
 	//	return 0;

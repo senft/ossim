@@ -773,14 +773,14 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 		int remainingBW = request.remainingBW;
 		double threshold = request.threshold;
-		double dependencyFactor = request.dependencyFactor;
+		double meanNumSucc = request.dependencyFactor;
 
 		IPvXAddress senderAddress;
 		getSender(pkt, senderAddress);
 
 		EV << "PassNodeRequest from parent " << senderAddress << " (stripe: " << stripe << ") (remainingBW: "
-			<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
-			dependencyFactor << ")" << endl;
+			<< remainingBW <<", threshold: " << threshold << ", meanNumSucc: " <<
+			meanNumSucc << ")" << endl;
 
 		std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[stripe];
 
@@ -798,17 +798,19 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 				break;
 
 			double k3;
-			if(dependencyFactor != 0)
-				k3 = (dependencyFactor - (double)m_partnerList->getNumChildsSuccessors(stripe, child)) / dependencyFactor;
+			if(meanNumSucc != 0)
+				k3 = (meanNumSucc - (double)m_partnerList->getNumChildsSuccessors(stripe, child)) / meanNumSucc;
 			else
 				k3 = 0;
+
+			int k2 = getForwardingCosts(stripe, child);
 			//int k2 = (m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1;
-			int k2 = 1 - ((m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1);
+			//int k2 = 1 - ((m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1);
 			double gain = k3 - (double)k2;
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
-			if((gain < threshold// || m_partnerList->getNumChildsSuccessors(stripe, child) > dependencyFactor)
+			if((gain < threshold// || m_partnerList->getNumChildsSuccessors(stripe, child) > meanNumSucc)
 				|| m_partnerList->getNumActiveTrees() > 1)
 				&& !isDisconnecting(stripe, child)
 				)
@@ -1039,7 +1041,8 @@ void MultitreePeer::optimize(void)
 
 		if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 		{
-			double gainIf = getGain(children, stripe, alternativeParent);
+			//double gainIf = getGain(children, stripe, alternativeParent);
+			double gainIf = getGain(children, stripe, linkToDrop);
 			EV << "GAIN: " << gainIf << endl;
 			EV << "THRESHOLD: " << gainThreshold << endl;
 

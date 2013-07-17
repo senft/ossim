@@ -120,6 +120,8 @@ protected:
 	double param_weightK3;
 	double param_weightK4;
 
+    int getForwardingCosts(int stripe, IPvXAddress child); // K_forw, K_2
+
 private:
 	bool param_optimize;
 	bool param_sendMissingChunks;
@@ -139,7 +141,6 @@ private:
 	virtual bool isPreferredStripe(int stripe) = 0;
 
 	double getStripeDensityCosts(successorList childList, int stripe); // K_sel, K_1
-    int getForwardingCosts(successorList childList, int stripe, IPvXAddress child); // K_forw, K_2
     double getBalanceCosts(successorList childList, int stripe, IPvXAddress child); //K_bal, K_3
     double getDependencyCosts(IPvXAddress child); //K_4
 
