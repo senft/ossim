@@ -33,7 +33,7 @@ public:
 	void reportAwakeNode(void);
 	void reportNodeLeft(void);
 
-	void reportChunkArrival(const int hopcount);
+	void reportChunkArrival(int stripe, int hopcount);
 
 	void gatherPreferredStripe(const IPvXAddress node, int stripe);
 	void gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn);
@@ -70,9 +70,10 @@ private:
 	std::vector<double> connectionTimes;
 	std::vector<int> retrys;
 	std::vector<int> numTrees;
+	std::vector<int> hopcounts;
 
-	//std::vector<cOutVector> oVNumTrees;
 	cOutVector *oVNumTrees;
+	cOutVector *oVHopcount;
 
 	int numStripes;
 
@@ -87,6 +88,7 @@ private:
 	double meanBWUtil;
 	double meanConnectionTime;
 	double meanNumTrees;
+	double meanHopcount;
 };
 
 #endif /* MULTITREE_STATISTIC_H_ */

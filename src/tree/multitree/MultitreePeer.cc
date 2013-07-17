@@ -870,7 +870,7 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
 
 	int hopcount = stripePkt->getHopCount();
 
-	m_gstat->reportChunkArrival(hopcount);
+	m_gstat->reportChunkArrival(stripe, hopcount);
 
 	stripePkt->setHopCount(++hopcount);
 

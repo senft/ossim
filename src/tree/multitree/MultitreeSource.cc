@@ -294,14 +294,13 @@ void MultitreeSource::optimize(void)
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
 
-
 	// <node, <stripe, remainingBW> >
 	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
 	int treesWithNoMoreChildren = 0;
 	while(remainingBW > 0 && treesWithNoMoreChildren < numStripes)
 	{
 
-		// Get stripe with least children
+		// Get stripe with least children...
 		int minIndex = 0;
 		int minChildren = children[0].size();
 		for (int i = 1; i < numStripes; i++)
@@ -321,6 +320,7 @@ void MultitreeSource::optimize(void)
 		int maxActiveTrees = 0;
 		IPvXAddress child;
 
+		// ... and the node with the most successors...
 		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
 			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
@@ -342,6 +342,8 @@ void MultitreeSource::optimize(void)
 			stripe = (stripe + 1) % numStripes;
 			continue;
 		}
+
+		// ... and request a node from that child
 
 		remainingBW--;
 		requestNodes[child][stripe]++;
