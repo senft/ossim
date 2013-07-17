@@ -1077,7 +1077,7 @@ void MultitreePeer::optimize(void)
 		IPvXAddress child;
 		for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
 		{
-			if( it->second > maxSucc 
+			if( (it->second > maxSucc || it->second == maxSucc && intrand(2) == 0)
 					&& curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
 			{
 				// Make sure I didnt already send a DisconenctRequest to the child, to not send
