@@ -24,7 +24,7 @@ enum TreeJoinState
     TREE_JOIN_STATE_LEAVING         = 3  // Leaving
 };
 
-typedef std::map<IPvXAddress, int> successorList;
+typedef std::map<IPvXAddress, std::vector<int> > successorList;
 
 class MultitreeBase : public CommBase, public VideoBufferListener
 {

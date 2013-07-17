@@ -284,16 +284,13 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 
 	for (int i = 0; i < numStripes; i++)
 	{
-		if(numSuccChanged[i])
-		{
-			int numSucc = m_partnerList->getNumSuccessors(i);
+		int numSucc = m_partnerList->getNumSuccessors(i);
 
-			SuccessorInfo info;
-			info.stripe = i;
-			info.numSuccessors = numSucc;
+		SuccessorInfo info;
+		info.stripe = i;
+		info.numSuccessors = numSucc;
 
-			pkt->getUpdates().push_back(info);
-		}
+		pkt->getUpdates().push_back(info);
 	}
 
 	set<IPvXAddress> sentTo;
@@ -466,7 +463,10 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 
 		ConnectRequest request;
 		request.stripe = stripe;
-		request.numSuccessors = numSucc;
+		for (int j = 0; j < numStripes; j++)
+		{
+			request.numSuccessors.push_back(m_partnerList->getNumSuccessors(j));
+		}
 		request.lastReceivedChunk = lastReceivedChunk;
 		request.currentParent = currentParent;
 		request.lastRequests = requestedChildship[stripe];
@@ -782,8 +782,6 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 			<< remainingBW <<", threshold: " << threshold << ", depFactor: " <<
 			dependencyFactor << ")" << endl;
 
-		//successorList children = m_partnerList->getChildrenWithCount(stripe);
-
 		std::set<IPvXAddress> &curDisconnectingChildren = disconnectingChildren[stripe];
 
 		std::set<IPvXAddress> skipNodes;
@@ -1021,7 +1019,7 @@ void MultitreePeer::optimize(void)
 
 	printStatus();
 
-	std::map<IPvXAddress, int> children = m_partnerList->getChildrenWithCount(stripe);
+	std::map<IPvXAddress, std::vector<int> > children = m_partnerList->getChildrenWithCount(stripe);
 
 	EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
@@ -1054,7 +1052,7 @@ void MultitreePeer::optimize(void)
 				int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
 				m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
 
-				children[alternativeParent] += 1 + children[linkToDrop];
+				children[alternativeParent][stripe] += 1 + children[linkToDrop][stripe];
 				children.erase(children.find(linkToDrop));
 				gain = true;
 				gainThreshold = getGainThreshold();
@@ -1075,14 +1073,14 @@ void MultitreePeer::optimize(void)
 	{
 		int maxSucc = 0;
 		IPvXAddress child;
-		for (std::map<IPvXAddress, int>::iterator it = children.begin() ; it != children.end(); ++it)
+		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
 		{
-			if( (it->second > maxSucc || it->second == maxSucc && intrand(2) == 0)
+			if( (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0))
 					&& curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
 			{
 				// Make sure I didnt already send a DisconenctRequest to the child, to not send
 				// multiple DisconnectRequests
-				maxSucc = it->second;
+				maxSucc = it->second[stripe];
 				child = it->first;
 			}
 		}
@@ -1092,7 +1090,7 @@ void MultitreePeer::optimize(void)
 
 		remainingBW--;
 		requestNodes[child]++;
-		children[child]--;
+		children[child][stripe]--;
 	}
 
 	EV << "threshold: " << gainThreshold << endl;

@@ -224,7 +224,7 @@ void MultitreeSource::optimize(void)
 
 	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
 
-	std::vector<std::map<IPvXAddress, int> > children;
+	std::vector<std::map<IPvXAddress, std::vector<int> > > children;
 
 	// Get stripe with most children
 	int maxIndex = 0;
@@ -258,12 +258,12 @@ void MultitreeSource::optimize(void)
 			IPvXAddress alternativeParent;	
 			getCheapestChild(children[stripe], stripe, alternativeParent, linkToDrop);
 
+			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
+			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+
 			if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 			{
 				double gainIf = getGain(children[stripe], stripe, alternativeParent);
-
-				EV << "COSTLIEST CHILD: " << linkToDrop << endl;
-				EV << "CHEAPEST CHILD: " << alternativeParent << endl;
 			
 				EV << "GAIN: " << gainIf << endl;
 				EV << "THRESHOLD: " << gainThreshold << endl;
@@ -277,7 +277,7 @@ void MultitreeSource::optimize(void)
 					int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
 					m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
 
-					children[stripe][alternativeParent] += 1 + children[stripe][linkToDrop];
+					children[stripe][alternativeParent][stripe] += 1 + children[stripe][linkToDrop][stripe];
 					children[stripe].erase(children[stripe].find(linkToDrop));
 					gain = true;
 				}
@@ -321,16 +321,16 @@ void MultitreeSource::optimize(void)
 		IPvXAddress child;
 
 		// ... and the node with the most successors...
-		for (std::map<IPvXAddress, int>::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
+		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
 			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
 					&& (m_partnerList->getNumActiveTrees(it->first) > maxActiveTrees
-					|| (it->second > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees )
-					|| (it->second == maxSucc && m_partnerList->getNumActiveTrees(it->first) == maxActiveTrees && intrand(2) == 0)
+					|| (it->second[stripe] > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees )
+					|| (it->second[stripe] == maxSucc && m_partnerList->getNumActiveTrees(it->first) == maxActiveTrees && intrand(2) == 0)
 					)
 					)
 			{
-				maxSucc = it->second;
+				maxSucc = it->second[stripe];
 				child = it->first;
 				maxActiveTrees = m_partnerList->getNumActiveTrees(it->first);
 			}
@@ -347,7 +347,7 @@ void MultitreeSource::optimize(void)
 
 		remainingBW--;
 		requestNodes[child][stripe]++;
-		children[stripe][child]--;
+		children[stripe][child][stripe]--;
 
 		stripe = (stripe + 1) % numStripes;
 	}

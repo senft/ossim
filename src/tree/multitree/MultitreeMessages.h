@@ -4,7 +4,7 @@
 struct ConnectRequest
 {
 	int stripe;
-	int numSuccessors;
+	std::vector<int> numSuccessors;
 	long lastReceivedChunk;
 	IPvXAddress currentParent;
 	std::vector<IPvXAddress> lastRequests;

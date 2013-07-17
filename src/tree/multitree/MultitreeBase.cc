@@ -177,7 +177,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			std::set<IPvXAddress>::iterator itCurParent = 
 				std::find(myChildren.begin(), myChildren.end(), request.currentParent);
 
-			int numSucc = request.numSuccessors;
+			int numSucc = request.numSuccessors[stripe];
 
 			if(m_state[stripe] == TREE_JOIN_STATE_LEAVING)
 			{
@@ -214,7 +214,7 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				{
 					IPvXAddress droppedTo = (IPvXAddress)*request.lastRequests.begin();
 					int succDroppedTo = m_partnerList->getNumChildsSuccessors(stripe, droppedTo);
-					int newSucc = succDroppedTo - 1 - request.numSuccessors;
+					int newSucc = succDroppedTo - 1 - numSucc;
 					if(newSucc < 0)
 						// The childs successor might be bigger, if it accepted a new child while
 						// being dropped
@@ -357,6 +357,11 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 		std::vector<IPvXAddress> lastRequests = request.lastRequests;
 		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequests);
 
+		for (int j = 0; j < numStripes; j++)
+		{
+			m_partnerList->updateNumChildsSuccessors(j, address, request.numSuccessors[j]);
+		}
+
 		ConnectConfirm confirm;
 		confirm.stripe = stripe;
 		confirm.alternativeParent = alternativeParent;
@@ -485,7 +490,7 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
     IPvXAddress curMaxAddress;
 	double curMaxGain = INT_MIN;
 
-	for(std::map<IPvXAddress, int>::iterator it = childList.begin() ; it != childList.end(); ++it)
+	for(successorList::iterator it = childList.begin() ; it != childList.end(); ++it)
 	{
 		IPvXAddress curAddress = it->first;
 
@@ -532,7 +537,7 @@ void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXA
     IPvXAddress curMaxAddress;
 	double curMaxCosts = INT_MIN;
 
-	for(std::map<IPvXAddress, int>::iterator it = childList.begin() ; it != childList.end(); ++it)
+	for(successorList::iterator it = childList.begin() ; it != childList.end(); ++it)
 	{
 		IPvXAddress curAddress = it->first;
 		if ( disconnectingChildren[stripe].find(curAddress) == disconnectingChildren[stripe].end() )
@@ -584,7 +589,9 @@ int MultitreeBase::getForwardingCosts(successorList childList, int stripe, IPvXA
 	//if(childList[child] > 0)
 	//	return 0;
 	//return !m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, child);
-    if(childList[child] <= 0 || m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, child))
+
+    //if(childList[child][stripe] <= 0 || m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, child))
+    if(m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, child))
 		return 1;
 	return 0;
 }
@@ -596,14 +603,14 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
 	double numSucc = numChildren;
 	for (successorList::iterator it = childList.begin() ; it != childList.end(); ++it)
 	{
-		numSucc += it->second;
+		numSucc += it->second[stripe];
 	}
 
 	if(numChildren == numSucc)
 		// None of my children has children themself
 		return 1;
 
-    int childsSuccessors = childList[child];
+    int childsSuccessors = childList[child][stripe];
 
 	//EV << "fanout: " << numChildren << " mySucc: " << numSucc << " childsSucc: " << childsSuccessors << endl; 
 
