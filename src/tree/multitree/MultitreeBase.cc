@@ -492,7 +492,7 @@ void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAd
 
 		if(curAddress.equals(skipAddress) 
 				|| disconnectingChildren[stripe].find(curAddress) != disconnectingChildren[stripe].end()
-				|| m_partnerList->nodeForwardingInOtherStripe(stripe, curAddress)
+				|| m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, curAddress)
 			)
 		{
 			continue;
