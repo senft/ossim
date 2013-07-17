@@ -8,6 +8,7 @@ MultitreeStatistic::~MultitreeStatistic(){}
 void MultitreeStatistic::finish()
 {
 	delete[] oVNumTrees;
+	delete[] oVHopcount;
 }
 
 void MultitreeStatistic::initialize(int stage)
@@ -51,6 +52,7 @@ void MultitreeStatistic::initialize(int stage)
 	maxRetrys = 0;
 
 	oVNumTrees = new cOutVector[numStripes + 1];
+	oVHopcount = new cOutVector[numStripes + 1];
 
 	for (int i = 0; i < numStripes + 1; i++)
 	{
@@ -59,6 +61,13 @@ void MultitreeStatistic::initialize(int stage)
 		char name[24];
 		sprintf(name, "nodesActiveIn%dstripes", i);
 		oVNumTrees[i].setName(name);
+	}
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		char name[24];
+		sprintf(name, "hopcountTree%d", i);
+		oVHopcount[i].setName(name);
 	}
 
 	WATCH(m_count_chunkHit);
@@ -134,18 +143,11 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportConnectionTime();
 		reportRetrys();
 
-		// TODO refactor
 		std::map<int, int> counts;
 		for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
 		{
 			counts[it->second]++;
 		}
-
-		//EV << m_apTable->getNumActivePeer() << " nodes in total." << endl;
-		//for (std::map<int, int>::const_iterator it = counts.begin() ; it != counts.end(); ++it)
-		//{
-		//	EV << "stripe " << it->first << ": " << it->second << " nodes" << endl;
-		//}
 
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
@@ -236,9 +238,10 @@ void MultitreeStatistic::reportPacketLoss()
 	emit(sig_packetLoss, (double)m_count_chunkMiss / (double)m_count_allChunk);
 }
 
-void MultitreeStatistic::reportChunkArrival(const int hopcount)
+void MultitreeStatistic::reportChunkArrival(int stripe, int hopcount)
 {
     emit(sig_chunkArrival, hopcount);
+	oVHopcount[stripe].record(hopcount);
 }
 
 void MultitreeStatistic::increaseChunkHit(const int &delta)
