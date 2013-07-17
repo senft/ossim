@@ -206,7 +206,9 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 				// the number of successors of the parent I dropped the node to. That should be
 				// reverted.
 
-				disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
+				std::set<IPvXAddress>::iterator asd = disconnectingChildren[stripe].find(senderAddress);
+				if(asd != disconnectingChildren[stripe].end())
+					disconnectingChildren[stripe].erase(disconnectingChildren[stripe].find(senderAddress));
 
 				if(request.lastRequests.size() > 0)
 				{
