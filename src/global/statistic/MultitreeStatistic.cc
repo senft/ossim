@@ -5,7 +5,10 @@ Define_Module(MultitreeStatistic)
 MultitreeStatistic::MultitreeStatistic(){}
 MultitreeStatistic::~MultitreeStatistic(){}
 
-void MultitreeStatistic::finish(){}
+void MultitreeStatistic::finish()
+{
+	delete[] oVNumTrees;
+}
 
 void MultitreeStatistic::initialize(int stage)
 {
@@ -13,10 +16,10 @@ void MultitreeStatistic::initialize(int stage)
     {
         sig_chunkArrival		= registerSignal("Signal_Chunk_Arrival");
         sig_packetLoss   		= registerSignal("Signal_Packet_Loss");
-        sig_connectionRetry     = registerSignal("Signal_Connection_Retry");
-        sig_numTrees            = registerSignal("Signal_Num_Trees");
+        sig_numTrees            = registerSignal("Signal_Mean_Num_Trees");
         sig_BWUtil              = registerSignal("Signal_BW_Utilization");
         sig_connTime            = registerSignal("Signal_Connection_Time");
+        sig_retrys              = registerSignal("Signal_Retrys");
 	}
 
     if (stage != 3)
@@ -27,9 +30,15 @@ void MultitreeStatistic::initialize(int stage)
     m_apTable = check_and_cast<ActivePeerTable *>(temp);
     EV << "Binding to activePeerTable is completed successfully" << endl;
 
-	timer_reportGlobal = new cMessage("GLOBAL_STATISTIC_REPORT_BWUtil");
+    temp = simulation.getModuleByPath("appSetting");
+    m_appSetting = check_and_cast<AppSettingMultitree *>(temp);
+	numStripes = m_appSetting->getNumStripes();
+
+	timer_reportGlobal = new cMessage("GLOBAL_STATISTIC_REPORT_GLOBAL");
 
 	param_interval_reportGlobal = par("interval_reportGlobal");
+
+	awakeNodes = 0;
 
 	m_count_chunkHit = 0;
 	m_count_allChunk = 0;
@@ -38,6 +47,19 @@ void MultitreeStatistic::initialize(int stage)
 	meanBWUtil = 0;
 	meanConnectionTime = 0;
 	meanNumTrees = 0;
+	meanRetrys = 0;
+	maxRetrys = 0;
+
+	oVNumTrees = new cOutVector[numStripes + 1];
+
+	for (int i = 0; i < numStripes + 1; i++)
+	{
+		numTrees.push_back(0);
+
+		char name[24];
+		sprintf(name, "nodesActiveIn%dstripes", i);
+		oVNumTrees[i].setName(name);
+	}
 
 	WATCH(m_count_chunkHit);
 	WATCH(m_count_chunkMiss);
@@ -46,8 +68,48 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(meanBWUtil);
 	WATCH(meanConnectionTime);
 	WATCH(meanNumTrees);
+	WATCH(meanRetrys);
+	WATCH(maxRetrys);
+
+	WATCH(awakeNodes);
+
+	WATCH_VECTOR(numTrees);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
+}
+
+void MultitreeStatistic::gatherPreferredStripe(const IPvXAddress node, int stripe)
+{
+	preferredStripes[node] = stripe;
+}
+
+void MultitreeStatistic::gatherRetrys(int numRetrys)
+{
+	retrys.push_back(numRetrys);
+}
+void MultitreeStatistic::reportRetrys()
+{
+	int sum = 0;
+	for(std::vector<int>::iterator it = retrys.begin(); it != retrys.end(); ++it)
+	{
+		int numRetrys = (int)*it;
+		sum += numRetrys;
+
+		if(numRetrys > maxRetrys)
+			maxRetrys = numRetrys;
+	}
+	meanRetrys = (double)sum / (double)retrys.size();
+	emit(sig_retrys, meanRetrys);
+}
+
+void MultitreeStatistic::reportAwakeNode(void)
+{
+	awakeNodes++;
+}
+
+void MultitreeStatistic::reportNodeLeft(void)
+{
+	awakeNodes--;
 }
 
 void MultitreeStatistic::handleMessage(cMessage *msg)
@@ -70,6 +132,21 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportPacketLoss();
 		reportNumTreesForwarding();
 		reportConnectionTime();
+		reportRetrys();
+
+		// TODO refactor
+		std::map<int, int> counts;
+		for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
+		{
+			counts[it->second]++;
+		}
+
+		//EV << m_apTable->getNumActivePeer() << " nodes in total." << endl;
+		//for (std::map<int, int>::const_iterator it = counts.begin() ; it != counts.end(); ++it)
+		//{
+		//	EV << "stripe " << it->first << ": " << it->second << " nodes" << endl;
+		//}
+
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
 }
@@ -119,23 +196,39 @@ void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumC
 
 void MultitreeStatistic::reportNumTreesForwarding()
 {
-	if(numTreesForwarding.size() > 0)
+	//EV << totalNumTreesForwarding.size() << " nodes have reported their number of active trees." << endl;
+	int num[numStripes + 1];
+	for (int i = 0; i < numStripes + 1; i++)
+	{
+		num[i] = 0;
+	}
+
+	if(totalNumTreesForwarding.size() > 0)
 	{
 		int totalTrees = 0;
 
-		for (std::map<IPvXAddress, int>::iterator it = numTreesForwarding.begin() ; it != numTreesForwarding.end(); ++it)
+		for (std::map<IPvXAddress, int>::iterator it = totalNumTreesForwarding.begin() ; it != totalNumTreesForwarding.end(); ++it)
 		{
 			totalTrees += it->second;
+			num[it->second]++;
 		}
 
-		meanNumTrees = (double)totalTrees / (double)numTreesForwarding.size();
+		meanNumTrees = (double)totalTrees / (double)totalNumTreesForwarding.size();
+
+		for (int i = 0; i < numStripes + 1; i++)
+		{
+			numTrees[i] = num[i];
+			oVNumTrees[i].record(num[i]);
+		}
+
 		emit(sig_numTrees, meanNumTrees);
 	}
+
 }
 
 void MultitreeStatistic::gatherNumTreesForwarding(const IPvXAddress node, int numTrees)
 {
-	numTreesForwarding[node] = numTrees;
+	totalNumTreesForwarding[node] = numTrees;
 }
 
 void MultitreeStatistic::reportPacketLoss()
@@ -146,11 +239,6 @@ void MultitreeStatistic::reportPacketLoss()
 void MultitreeStatistic::reportChunkArrival(const int hopcount)
 {
     emit(sig_chunkArrival, hopcount);
-}
-
-void MultitreeStatistic::reportConnectionRetry(const int count)
-{
-    emit(sig_connectionRetry, count);
 }
 
 void MultitreeStatistic::increaseChunkHit(const int &delta)

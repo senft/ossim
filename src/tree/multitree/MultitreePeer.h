@@ -19,6 +19,8 @@ private:
 	int *stat_retrys;
 	std::vector<simtime_t> beginConnecting;
 
+	simsignal_t sig_numTrees;
+
 	long firstSequenceNumber;
 
 	bool *numSuccChanged;
@@ -27,6 +29,7 @@ private:
 	double param_intervalReportStats;
 	double param_intervalReconnect;
 	double param_delaySuccessorInfo;
+	double param_delayRetryConnect;
 
 	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests);
 
@@ -47,6 +50,7 @@ private:
 	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);
 
 	virtual bool isPreferredStripe(int stripe);
+	int getStripeToOptimize(void);
 
 	void connectVia(IPvXAddress address, const std::vector<int> &stripes);
 
@@ -59,6 +63,7 @@ private:
 	void handleTimerLeave(void);
 	void handleTimerSuccessorInfo(void);
 	void handleTimerReportStatistic(void);
+	void handleTimerConnect(void);
 
 	void cancelAllTimer(void);
 	void cancelAndDeleteTimer(void);
@@ -72,8 +77,11 @@ private:
 	cMessage *timer_leave;
 	cMessage *timer_successorInfo;
 	cMessage *timer_reportStatistic;
+	cMessage *timer_connect;
 
 	long m_count_prev_chunkMiss;
 	long m_count_prev_chunkHit;
+
+	std::map<IPvXAddress, std::vector<int> > connectTo;
 };
 #endif

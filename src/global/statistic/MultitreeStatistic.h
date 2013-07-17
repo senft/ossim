@@ -2,6 +2,7 @@
 #include "NotificationBoard.h"
 #include "AppCommon.h"
 #include "ActivePeerTable.h"
+#include "AppSettingMultitree.h"
 #include "IPvXAddress.h"
 #include <fstream>
 #include "StatisticBase.h"
@@ -29,12 +30,16 @@ public:
 
 	virtual void receiveChangeNotification(int category, const cPolymorphic *details);
 
-	void reportChunkArrival(const int hopcount);
-	void reportConnectionRetry(const int count);
+	void reportAwakeNode(void);
+	void reportNodeLeft(void);
 
+	void reportChunkArrival(const int hopcount);
+
+	void gatherPreferredStripe(const IPvXAddress node, int stripe);
 	void gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn);
 	void gatherNumTreesForwarding(const IPvXAddress node, int numTrees);
 	void gatherConnectionTime(int stripe, double time);
+	void gatherRetrys(int retrys);
 
 private:
 	cMessage *timer_reportGlobal;
@@ -46,25 +51,39 @@ private:
 	void reportPacketLoss();
 	void reportNumTreesForwarding();
 	void reportConnectionTime();
+	void reportRetrys();
 
-	ActivePeerTable *m_apTable;
+	ActivePeerTable			*m_apTable;
+    AppSettingMultitree   	*m_appSetting;
 
 	simsignal_t sig_BWUtil;
 	simsignal_t sig_packetLoss;
 	simsignal_t sig_chunkArrival;
-	simsignal_t sig_connectionRetry;
 	simsignal_t sig_numTrees;
 	simsignal_t sig_connTime;
+	simsignal_t sig_retrys;
 
+	std::map<IPvXAddress, int> preferredStripes;
 	std::map<IPvXAddress, int> currentBWUtilization;
 	std::map<IPvXAddress, int> maxBWUtilization;
-	std::map<IPvXAddress, int> numTreesForwarding;
+	std::map<IPvXAddress, int> totalNumTreesForwarding;
 	std::vector<double> connectionTimes;
+	std::vector<int> retrys;
+	std::vector<int> numTrees;
+
+	//std::vector<cOutVector> oVNumTrees;
+	cOutVector *oVNumTrees;
+
+	int numStripes;
+
+	int awakeNodes;
 
 	long m_count_chunkHit;
 	long m_count_chunkMiss;
 	long m_count_allChunk;
 
+	int maxRetrys;
+	double meanRetrys;
 	double meanBWUtil;
 	double meanConnectionTime;
 	double meanNumTrees;

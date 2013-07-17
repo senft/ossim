@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import sys
 from subprocess import call
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def main():
-    call('scavetool vector -p "*hop*" -O hopcount.csv -F csv Multitree_Network-0.vec',
+def plot(file):
+    call('scavetool vector -p "*hop*" -O hopcount.csv -F csv {0}'.format(file),
          shell=True)
 
     with open('hopcount.csv') as f:
@@ -29,6 +30,10 @@ def main():
             align='left', rwidth=6.0/len(bins))
 
     plt.show()
+
+
+def main():
+    plot(sys.argv[1])
 
 if __name__ == '__main__':
     main()

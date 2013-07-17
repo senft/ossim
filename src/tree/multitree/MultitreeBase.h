@@ -51,7 +51,7 @@ protected:
 	std::map<int, std::set<IPvXAddress> > disconnectingChildren;
 	std::map<int, std::vector<IPvXAddress> > requestedChildship;
 
-    TreeJoinState     		*m_state;
+    TreeJoinState *m_state;
 
     int m_localPort, m_destPort;
 
@@ -93,40 +93,46 @@ protected:
 	void printStatus(void);
 
 	void dropNode(int stripe, IPvXAddress address, IPvXAddress alternativeParent); 
-	int getPreferredStripe();
 
 	virtual IPvXAddress getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, std::vector<IPvXAddress> lastRequests) = 0;
 
     void handleTimerOptimization();
 	cMessage *timer_optimization;
 
+	bool isDisconnecting(int stripe, IPvXAddress child);
+
     int getMaxOutConnections(void);
 
 	// Optimization functions
 	double getCosts(successorList childList, int stripe, IPvXAddress child);
-	double getGain(successorList childList, int stripe, IPvXAddress child, IPvXAddress childToDrop);
+	double getGain(successorList childList, int stripe, IPvXAddress child);
 	double getGainThreshold(void);
+	double gainThreshold;
 
 	void getCostliestChild(successorList childList, int fromStripe, IPvXAddress &address);
 	void getCheapestChild(successorList childList, int fromStripe, IPvXAddress &address, IPvXAddress skipAddress);
 
-
-	int preferredStripe;
 	virtual void optimize(void) = 0;
+
+	double param_weightT;
+	double param_weightK1;
+    double param_weightK2;
+	double param_weightK3;
+	double param_weightK4;
+
 private:
 	bool param_optimize;
 	bool param_sendMissingChunks;
 
 	void cancelAndDeleteTimer(void);
 
-	double getBWCapacity(void);
+	double getBWCapacityFromChannel(void);
 
 	void getAppSetting(void);
 	void acceptConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
 	void rejectConnectRequests(const std::vector<ConnectRequest> &requests, IPvXAddress address);
 
     virtual void scheduleSuccessorInfo(int stripe) = 0;
-	int getConnections(void);
 
 	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);
 
@@ -134,8 +140,8 @@ private:
 
 	double getStripeDensityCosts(successorList childList, int stripe); // K_sel, K_1
     int getForwardingCosts(successorList childList, int stripe, IPvXAddress child); // K_forw, K_2
-    double getBalanceCosts(successorList childList, int stripe, IPvXAddress child, IPvXAddress childToDrop); //K_bal, K_3
-    double getDepencyCosts(IPvXAddress child); //K_4
+    double getBalanceCosts(successorList childList, int stripe, IPvXAddress child); //K_bal, K_3
+    double getDependencyCosts(IPvXAddress child); //K_4
 
 	double param_delayOptimization;
 };
