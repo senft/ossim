@@ -391,6 +391,7 @@ void MultitreeSource::optimize(void)
 			EV << "Request " << request.remainingBW << " from " << it->first << ", stripe " << stripes->first << endl;
 		}
 
+		m_gstat->reportMessage();
 		numPNR++;
 		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
 	}

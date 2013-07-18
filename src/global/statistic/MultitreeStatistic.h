@@ -32,6 +32,7 @@ public:
 
 	void reportAwakeNode(void);
 	void reportNodeLeft(void);
+	void reportMessage(void);
 
 	void reportChunkArrival(int stripe, int hopcount);
 
@@ -59,6 +60,7 @@ private:
 	ActivePeerTable			*m_apTable;
     AppSettingMultitree   	*m_appSetting;
 
+	simsignal_t sig_messageCount;
 	simsignal_t sig_BWUtil;
 	simsignal_t sig_packetLoss;
 	simsignal_t sig_chunkArrival;
@@ -81,8 +83,8 @@ private:
 	std::vector<int> numTrees;
 
 	cOutVector *oVNumTrees;
-	cOutVector *oVHopcount;
 	cOutVector *oVMaxHopCount;
+	cOutVector *oVOutDegree;
 
 	int numStripes;
 
@@ -91,6 +93,8 @@ private:
 	long m_count_chunkHit;
 	long m_count_chunkMiss;
 	long m_count_allChunk;
+
+	long messageCount;
 
 	int maxRetrys;
 	double overallOutDegree;

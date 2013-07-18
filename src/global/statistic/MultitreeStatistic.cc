@@ -8,7 +8,8 @@ MultitreeStatistic::~MultitreeStatistic(){}
 void MultitreeStatistic::finish()
 {
 	delete[] oVNumTrees;
-	delete[] oVHopcount;
+	delete[] oVMaxHopCount;
+	delete[] oVOutDegree;
 }
 
 void MultitreeStatistic::initialize(int stage)
@@ -23,6 +24,7 @@ void MultitreeStatistic::initialize(int stage)
         sig_retrys              = registerSignal("Signal_Retrys");
         sig_meanOutDegree       = registerSignal("Signal_Mean_Out_Degree");
         sig_maxHopCount         = registerSignal("Signal_Max_Hop_Count");
+        sig_messageCount        = registerSignal("Signal_Num_Messages");
 	}
 
     if (stage != 3)
@@ -47,6 +49,8 @@ void MultitreeStatistic::initialize(int stage)
 	m_count_allChunk = 0;
 	m_count_chunkMiss = 0;
 
+	messageCount = 0L;
+
 	meanBWUtil = 0;
 	meanConnectionTime = 0;
 	meanNumTrees = 0;
@@ -54,8 +58,8 @@ void MultitreeStatistic::initialize(int stage)
 	maxRetrys = 0;
 
 	oVNumTrees = new cOutVector[numStripes + 1];
-	oVHopcount = new cOutVector[numStripes];
 	oVMaxHopCount = new cOutVector[numStripes];
+	oVOutDegree = new cOutVector[numStripes];
 
 	for (int i = 0; i < numStripes + 1; i++)
 	{
@@ -74,11 +78,11 @@ void MultitreeStatistic::initialize(int stage)
 		outDegreeSamples.push_back(std::map<IPvXAddress, int>());
 
 		char name[24];
-		sprintf(name, "hopcountTree%d", i);
-		oVHopcount[i].setName(name);
-
 		sprintf(name, "maxHopCountTree%d", i);
 		oVMaxHopCount[i].setName(name);
+
+		sprintf(name, "outDegreeTree%d", i);
+		oVOutDegree[i].setName(name);
 	}
 
 	WATCH(m_count_chunkHit);
@@ -92,12 +96,18 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(meanRetrys);
 	WATCH(maxRetrys);
 
+	WATCH(messageCount);
 	WATCH(awakeNodes);
 
 	WATCH_VECTOR(numTrees);
 	WATCH_VECTOR(meanOutDegree);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
+}
+
+void MultitreeStatistic::reportMessage(void)
+{
+	messageCount++;
 }
 
 void MultitreeStatistic::gatherOutDegree(const IPvXAddress node, int stripe, int degree)
@@ -161,14 +171,15 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportConnectionTime();
 		reportRetrys();
 		reportOutDegree();
-
 		reportMaxHopCount();
 
-		std::map<int, int> counts;
-		for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
-		{
-			counts[it->second]++;
-		}
+		emit(sig_messageCount, messageCount);
+
+		//std::map<int, int> counts;
+		//for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
+		//{
+		//	counts[it->second]++;
+		//}
 
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
@@ -233,7 +244,10 @@ void MultitreeStatistic::reportOutDegree()
 		}
 
 		if(sum > 0)
+		{
 			meanOutDegree[i] = (double)sum / (double)numNonZeros;
+			oVOutDegree[i].record(meanOutDegree[i]);
+		}
 	}
 
 	overallOutDegree = (double)overallDegree / (double)outDegreeSamples[0].size();
@@ -293,7 +307,6 @@ void MultitreeStatistic::reportChunkArrival(int stripe, int hopcount)
 	hopcounts[stripe].push_back(hopcount);
 
     emit(sig_chunkArrival, hopcount);
-	oVHopcount[stripe].record(hopcount);
 }
 
 void MultitreeStatistic::increaseChunkHit(const int &delta)

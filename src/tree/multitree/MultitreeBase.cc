@@ -339,6 +339,7 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 	}
 
 	numDR++;
+	m_gstat->reportMessage();
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
@@ -373,6 +374,7 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 	EV << " of node " << address << endl;
 
 	numCC++;
+	m_gstat->reportMessage();
     sendToDispatcher(pkt, m_localPort, address, m_destPort);
 
 	for (int i = 0; i < numReqStripes; i++)
@@ -680,6 +682,7 @@ void MultitreeBase::dropNode(int stripe, IPvXAddress address, IPvXAddress altern
 
 	gainThreshold = getGainThreshold();
 	numDR++;
+	m_gstat->reportMessage();
 	sendToDispatcher(pkt, m_localPort, address, m_destPort);
 }
 
