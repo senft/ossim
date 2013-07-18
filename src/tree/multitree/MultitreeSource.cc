@@ -290,8 +290,6 @@ void MultitreeSource::optimize(void)
 		if(!gain)
 			noGainIn.insert(stripe);
 
-		stripe = ++stripe % numStripes;
-
 	}			
 
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
