@@ -1090,18 +1090,40 @@ void MultitreePeer::optimize(void)
 	while(remainingBW > 0)
 	{
 		int maxSucc = 0;
+		int maxActiveTrees = 0;
 		IPvXAddress child;
 		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
 		{
-			if( (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0))
-					&& curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
+			//if( (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0))
+			//		&& curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
+			//{
+			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
+					&& ( (m_partnerList->getNumActiveTrees(it->first) > maxActiveTrees && m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first))
+					&& ((it->second[stripe] > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees )
+					|| (it->second[stripe] == maxSucc && m_partnerList->getNumActiveTrees(it->first) == maxActiveTrees && intrand(2) == 0))
+					)
+					)
 			{
-				// Make sure I didnt already send a DisconenctRequest to the child, to not send
-				// multiple DisconnectRequests
 				maxSucc = it->second[stripe];
 				child = it->first;
 			}
 		}
+
+		if(child.isUnspecified() || maxSucc <= 0)
+		{
+				for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
+			{
+				if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
+						&& (it->second[stripe] > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees
+						|| (it->second[stripe] == maxSucc && m_partnerList->getNumActiveTrees(it->first) == maxActiveTrees && intrand(2) == 0))
+						)
+				{
+					maxSucc = it->second[stripe];
+					child = it->first;
+				}
+			}	
+		}
+
 
 		if(child.isUnspecified() || maxSucc <= 0)
 			break;
