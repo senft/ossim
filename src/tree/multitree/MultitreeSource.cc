@@ -265,7 +265,8 @@ void MultitreeSource::optimize(void)
 
 			if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 			{
-				double gainIf = getGain(children[stripe], stripe, alternativeParent);
+				//double gainIf = getGain(children[stripe], stripe, alternativeParent);
+				double gainIf = getGain(children[stripe], stripe, linkToDrop);
 			
 				EV << "GAIN: " << gainIf << endl;
 				EV << "THRESHOLD: " << gainThreshold << endl;
