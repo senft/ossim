@@ -952,6 +952,8 @@ int MultitreePeer::getGreatestReceivedSeqNumber(void)
 
 IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, IPvXAddress currentParent, const std::vector<IPvXAddress> lastRequests)
 {
+	//EV << "Searching alternative node for " << forNode << " (stripe " << stripe << ")" << endl;
+
 	std::set<IPvXAddress> skipNodes;
 	skipNodes.insert(forNode);
 	skipNodes.insert(currentParent);
@@ -970,7 +972,6 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 	//IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 	//IPvXAddress address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 
-	//while(m_partnerList->nodeForwardingInOtherStripe(stripe, address) && !address.isUnspecified())
 	while(m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, address) && !address.isUnspecified())
 	{
 		skipNodes.insert(address);
@@ -987,6 +988,7 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 		}
 		else
 		{
+
 			// The node already tried connecting to my parent and all my children, so actually I
 			// cannot make a reasonable choice.. just pick a random child, or the parent (in hope
 			// the situation at that nodes changed)
@@ -1000,7 +1002,9 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 			address = m_partnerList->getRandomChild(stripe, skipNodes);
 
 			if( address.isUnspecified() || intrand(m_partnerList->getNumOutgoingConnections(stripe) + 1) == 0 )
-					address = m_partnerList->getParent(stripe);
+			{
+				address = m_partnerList->getParent(stripe);
+			}
 		}
 	}
 

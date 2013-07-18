@@ -137,8 +137,9 @@ IPvXAddress MultitreePartnerList::getLaziestForwardingChild(int stripe, const st
 		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
 		if(!skipNode)
 		{
-			if((it->second[stripe] > 0 && it->second[stripe] < minSucc) || (it->second[stripe] == minSucc && intrand(2) == 0))
-			//if(it->second > 0 && it->second < minSucc)
+			if( //!nodeHasMoreChildrenInOtherStripe(stripe, it->first) && 
+				((it->second[stripe] > 0 && it->second[stripe] < minSucc)
+				|| (it->second[stripe] == minSucc && (int)intrand(2) == 0)))
 			{
 				minSucc = it->second[stripe];
 				child = it->first;
@@ -212,9 +213,6 @@ IPvXAddress MultitreePartnerList::getBestLazyChild(int stripe, const std::set<IP
 	{
 		child = getChildWithLeastChildren(stripe, skipNodes);
 	}
-
-	//if(child.isUnspecified())
-	//	child = getRandomChild(stripe, skipNodes);
 
 	return child;
 }
