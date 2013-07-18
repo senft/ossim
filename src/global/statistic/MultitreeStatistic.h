@@ -38,6 +38,7 @@ public:
 	void gatherPreferredStripe(const IPvXAddress node, int stripe);
 	void gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn);
 	void gatherNumTreesForwarding(const IPvXAddress node, int numTrees);
+	void gatherOutDegree(const IPvXAddress node, int stripe, int degree);
 	void gatherConnectionTime(int stripe, double time);
 	void gatherRetrys(int retrys);
 
@@ -47,6 +48,7 @@ private:
 
 	void handleTimerMessage(cMessage *msg);
 
+	void reportOutDegree();
 	void reportBWUtilization();
 	void reportPacketLoss();
 	void reportNumTreesForwarding();
@@ -62,6 +64,10 @@ private:
 	simsignal_t sig_numTrees;
 	simsignal_t sig_connTime;
 	simsignal_t sig_retrys;
+	simsignal_t sig_meanOutDegree;
+
+	std::vector<std::map<IPvXAddress, int> > outDegreeSamples;
+	std::vector<double> meanOutDegree;
 
 	std::map<IPvXAddress, int> preferredStripes;
 	std::map<IPvXAddress, int> currentBWUtilization;
@@ -84,6 +90,7 @@ private:
 	long m_count_allChunk;
 
 	int maxRetrys;
+	double overallOutDegree;
 	double meanRetrys;
 	double meanBWUtil;
 	double meanConnectionTime;

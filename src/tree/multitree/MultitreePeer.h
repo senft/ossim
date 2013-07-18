@@ -20,6 +20,7 @@ private:
 	std::vector<simtime_t> beginConnecting;
 
 	simsignal_t sig_numTrees;
+	simsignal_t sig_outDegree;
 
 	long firstSequenceNumber;
 

@@ -21,6 +21,7 @@ void MultitreeStatistic::initialize(int stage)
         sig_BWUtil              = registerSignal("Signal_BW_Utilization");
         sig_connTime            = registerSignal("Signal_Connection_Time");
         sig_retrys              = registerSignal("Signal_Retrys");
+        sig_meanOutDegree       = registerSignal("Signal_Mean_Out_Degree");
 	}
 
     if (stage != 3)
@@ -65,6 +66,9 @@ void MultitreeStatistic::initialize(int stage)
 
 	for (int i = 0; i < numStripes; i++)
 	{
+		meanOutDegree.push_back(0);
+		outDegreeSamples.push_back(std::map<IPvXAddress, int>());
+
 		char name[24];
 		sprintf(name, "hopcountTree%d", i);
 		oVHopcount[i].setName(name);
@@ -74,6 +78,7 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(m_count_chunkMiss);
 	WATCH(m_count_allChunk);
 
+	WATCH(overallOutDegree);
 	WATCH(meanBWUtil);
 	WATCH(meanConnectionTime);
 	WATCH(meanNumTrees);
@@ -83,8 +88,14 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(awakeNodes);
 
 	WATCH_VECTOR(numTrees);
+	WATCH_VECTOR(meanOutDegree);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
+}
+
+void MultitreeStatistic::gatherOutDegree(const IPvXAddress node, int stripe, int degree)
+{
+	outDegreeSamples[stripe][node] = degree;
 }
 
 void MultitreeStatistic::gatherPreferredStripe(const IPvXAddress node, int stripe)
@@ -142,6 +153,7 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportNumTreesForwarding();
 		reportConnectionTime();
 		reportRetrys();
+		reportOutDegree();
 
 		std::map<int, int> counts;
 		for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
@@ -188,6 +200,35 @@ void MultitreeStatistic::reportConnectionTime()
 		meanConnectionTime = sum / (double)connectionTimes.size();
 		emit(sig_connTime, meanConnectionTime);
 	}
+}
+
+void MultitreeStatistic::reportOutDegree()
+{
+	int overallDegree = 0;
+
+	for (int i = 0; i < numStripes; i++)
+	{
+		meanOutDegree[i] = 0;
+		int sum = 0;
+		int numNonZeros = 0;
+
+		for (std::map<IPvXAddress, int>::iterator it = outDegreeSamples[i].begin() ; it != outDegreeSamples[i].end(); ++it)
+		{
+			int degree = it->second;
+			if(degree > 0)
+			{
+				overallDegree += degree;
+				sum += degree;
+				numNonZeros++;
+			}
+		}
+
+		if(sum > 0)
+			meanOutDegree[i] = (double)sum / (double)numNonZeros;
+	}
+
+	overallOutDegree = (double)overallDegree / (double)outDegreeSamples[0].size();
+	emit(sig_meanOutDegree, overallOutDegree);
 }
 
 void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn)

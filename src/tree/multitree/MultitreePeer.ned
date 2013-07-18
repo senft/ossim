@@ -15,5 +15,6 @@ simple MultitreePeer extends MultitreeBase
 		double delaySuccessorInfo @unit(s) = default(10ms);
 		double delayRetryConnect @unit(s) = default(10ms);
 		
-        @statistic[numTrees](source="Signal_Num_Trees"; record=vector,last);
+        @statistic[numTrees](source="Signal_Num_Trees"; record=vector);
+        @statistic[outDegree](source="Signal_Out_Degree"; record=vector);
 }

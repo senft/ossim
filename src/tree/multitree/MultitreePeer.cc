@@ -14,6 +14,7 @@ void MultitreePeer::initialize(int stage)
 	if(stage == 0)
 	{
         sig_numTrees            = registerSignal("Signal_Num_Trees");
+        sig_outDegree           = registerSignal("Signal_Out_Degree");
 	}
 
 	if(stage == 2)
@@ -25,7 +26,6 @@ void MultitreePeer::initialize(int stage)
 
 	if(stage == 3)
 	{
-
 		param_retryLeave = par("retryLeave");
 		param_intervalReportStats =  par("intervalReportStats");
 		param_delaySuccessorInfo =  par("delaySuccessorInfo");
@@ -246,9 +246,18 @@ void MultitreePeer::handleTimerLeave()
 
 void MultitreePeer::handleTimerReportStatistic()
 {
+	int overallOutDegree = 0;
+	// Report out-degree per tree
+	for (int i = 0; i < numStripes; i++)
+	{
+		int degree = m_partnerList->getNumOutgoingConnections(i);
+		overallOutDegree += degree;
+		m_gstat->gatherOutDegree(getNodeAddress(), i, degree);
+	}
+	emit(sig_outDegree, overallOutDegree);
+
 	// Report bandwidth usage
-	m_gstat->gatherBWUtilization(getNodeAddress(),
-			m_partnerList->getNumOutgoingConnections(), getMaxOutConnections());
+	m_gstat->gatherBWUtilization(getNodeAddress(), overallOutDegree, getMaxOutConnections());
 
 	// Report number of trees I am forwarding in
 	int numActiveTrees = m_partnerList->getNumActiveTrees();
