@@ -54,6 +54,7 @@ private:
 	void reportNumTreesForwarding();
 	void reportConnectionTime();
 	void reportRetrys();
+	void reportMaxHopCount();
 
 	ActivePeerTable			*m_apTable;
     AppSettingMultitree   	*m_appSetting;
@@ -66,6 +67,8 @@ private:
 	simsignal_t sig_retrys;
 	simsignal_t sig_meanOutDegree;
 
+	simsignal_t sig_maxHopCount;
+
 	std::vector<std::map<IPvXAddress, int> > outDegreeSamples;
 	std::vector<double> meanOutDegree;
 
@@ -76,10 +79,10 @@ private:
 	std::vector<double> connectionTimes;
 	std::vector<int> retrys;
 	std::vector<int> numTrees;
-	std::vector<int> hopcounts;
 
 	cOutVector *oVNumTrees;
 	cOutVector *oVHopcount;
+	cOutVector *oVMaxHopCount;
 
 	int numStripes;
 
@@ -96,6 +99,8 @@ private:
 	double meanConnectionTime;
 	double meanNumTrees;
 	double meanHopcount;
+
+	std::vector<std::vector<int> > hopcounts;
 };
 
 #endif /* MULTITREE_STATISTIC_H_ */

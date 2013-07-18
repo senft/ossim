@@ -22,6 +22,7 @@ void MultitreeStatistic::initialize(int stage)
         sig_connTime            = registerSignal("Signal_Connection_Time");
         sig_retrys              = registerSignal("Signal_Retrys");
         sig_meanOutDegree       = registerSignal("Signal_Mean_Out_Degree");
+        sig_maxHopCount         = registerSignal("Signal_Max_Hop_Count");
 	}
 
     if (stage != 3)
@@ -53,7 +54,8 @@ void MultitreeStatistic::initialize(int stage)
 	maxRetrys = 0;
 
 	oVNumTrees = new cOutVector[numStripes + 1];
-	oVHopcount = new cOutVector[numStripes + 1];
+	oVHopcount = new cOutVector[numStripes];
+	oVMaxHopCount = new cOutVector[numStripes];
 
 	for (int i = 0; i < numStripes + 1; i++)
 	{
@@ -66,12 +68,17 @@ void MultitreeStatistic::initialize(int stage)
 
 	for (int i = 0; i < numStripes; i++)
 	{
+		hopcounts.push_back(std::vector<int>());
+
 		meanOutDegree.push_back(0);
 		outDegreeSamples.push_back(std::map<IPvXAddress, int>());
 
 		char name[24];
 		sprintf(name, "hopcountTree%d", i);
 		oVHopcount[i].setName(name);
+
+		sprintf(name, "maxHopCountTree%d", i);
+		oVMaxHopCount[i].setName(name);
 	}
 
 	WATCH(m_count_chunkHit);
@@ -154,6 +161,8 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportConnectionTime();
 		reportRetrys();
 		reportOutDegree();
+
+		reportMaxHopCount();
 
 		std::map<int, int> counts;
 		for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
@@ -281,6 +290,8 @@ void MultitreeStatistic::reportPacketLoss()
 
 void MultitreeStatistic::reportChunkArrival(int stripe, int hopcount)
 {
+	hopcounts[stripe].push_back(hopcount);
+
     emit(sig_chunkArrival, hopcount);
 	oVHopcount[stripe].record(hopcount);
 }
@@ -300,4 +311,24 @@ void MultitreeStatistic::increaseChunkMiss(const int &delta)
 void MultitreeStatistic::receiveChangeNotification(int category, const cPolymorphic *details)
 {
 	return;
+}
+
+void MultitreeStatistic::reportMaxHopCount()
+{
+	for (int i = 0; i < numStripes; ++i)
+	{
+		int max = 0;
+		for(std::vector<int>::iterator it = hopcounts[i].begin(); it != hopcounts[i].end(); ++it)
+		{
+			int currentHopCount = (int)*it;
+
+			if(currentHopCount > max)
+				max = currentHopCount;
+		}
+
+		oVMaxHopCount[i].record(max);
+
+		hopcounts[i].clear();
+	}
+
 }

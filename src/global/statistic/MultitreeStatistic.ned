@@ -14,4 +14,6 @@ simple MultitreeStatistic like IStreamingStatistic
         @statistic[conntime](source="Signal_Connection_Time"; record=vector);
         @statistic[retrys](source="Signal_Retrys"; record=vector);
         @statistic[meanOutDegree](source="Signal_Mean_Out_Degree"; record=vector);
+
+        @statistic[maxHopCount](source="Signal_Max_Hop_Count"; record=vector);
 }
