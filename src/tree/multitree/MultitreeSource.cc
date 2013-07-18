@@ -179,7 +179,6 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 	IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
 	//IPvXAddress address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 	
-	//while(m_partnerList->nodeForwardingInOtherStripe(stripe, address) && !address.isUnspecified())
 	while(m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, address) && !address.isUnspecified())
 	{
 		skipNodes.insert(address);
@@ -226,27 +225,30 @@ void MultitreeSource::optimize(void)
 
 	std::vector<std::map<IPvXAddress, std::vector<int> > > children;
 
-	// Get stripe with most children
-	int maxIndex = 0;
-	int maxChildren = m_partnerList->getNumOutgoingConnections(maxIndex);
 	for (int stripe = 0; stripe < numStripes; stripe++)
 	{
-		// Get children of current stripe
         children.push_back(m_partnerList->getChildrenWithCount(stripe));
-
-		int currentNumChildren = children[stripe].size();
-		if(currentNumChildren > maxChildren || (currentNumChildren == maxChildren && intrand(2) == 0))
-		{
-			maxChildren = currentNumChildren;
-			maxIndex = stripe;
-		}
 	}
 
-	int stripe = maxIndex;
-	int steps = 0;
-	int noGainIn = 0;
-	while(noGainIn < numStripes)
+	int stripe;
+	std::set<int> noGainIn;
+	while(noGainIn.size() < numStripes)
 	{
+		// Get stripe with most children
+		int maxChildren = INT_MIN;
+		for (int i = 0; i < numStripes; i++)
+		{
+			if(noGainIn.find(i) != noGainIn.end())
+				continue;
+
+			int currentNumChildren = children[i].size();
+			if(currentNumChildren > maxChildren || (currentNumChildren == maxChildren && intrand(2) == 0))
+			{
+				maxChildren = currentNumChildren;
+				stripe = i;
+			}
+		}
+
 		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
 		bool gain = false;
@@ -285,7 +287,7 @@ void MultitreeSource::optimize(void)
 		}
 
 		if(!gain)
-			noGainIn++;
+			noGainIn.insert(stripe);
 
 		stripe = ++stripe % numStripes;
 
