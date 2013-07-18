@@ -305,8 +305,8 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 	set<IPvXAddress> sentTo;
 	for (int i = 0; i < numStripes; i++)
 	{
-		if(numSuccChanged[i])
-		{
+		//if(numSuccChanged[i])
+		//{
 			IPvXAddress parent = m_partnerList->getParent(i);
         	if( !parent.isUnspecified() && sentTo.find(parent) == sentTo.end() )
 			{
@@ -316,7 +316,7 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 				sendToDispatcher(pkt->dup(), m_localPort, parent, m_destPort);
         	}
 			numSuccChanged[i] = false;
-		}
+	//	}
 	}
 	delete pkt;
 }
