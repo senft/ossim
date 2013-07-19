@@ -36,7 +36,7 @@ void MultitreeBase::initialize(int stage)
 		m_state = new TreeJoinState[numStripes];
 
 		lastSeqNumber = new long[numStripes];
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			lastSeqNumber[i] = -1L;
 		}
@@ -134,7 +134,7 @@ void MultitreeBase::bindToStatisticModule(void)
 void MultitreeBase::processConnectRequest(cPacket *pkt)
 {
 	bool allIdle = true;
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(m_state[i] != TREE_JOIN_STATE_IDLE)
 		{
@@ -357,7 +357,7 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 		std::vector<IPvXAddress> lastRequests = request.lastRequests;
 		IPvXAddress alternativeParent = getAlternativeNode(stripe, address, currentParent, lastRequests);
 
-		for (int j = 0; j < numStripes; j++)
+		for (size_t j = 0; j < numStripes; j++)
 		{
 			m_partnerList->updateNumChildsSuccessors(j, address, request.numSuccessors[j]);
 		}
@@ -625,7 +625,7 @@ double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXA
 double MultitreeBase::getDependencyCosts(IPvXAddress child) // K_4
 {
 	int numConnections = 0;
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(m_partnerList->hasChild(i, child) && disconnectingChildren[i].find(child) == disconnectingChildren[i].end() )
 		{
@@ -640,7 +640,7 @@ double MultitreeBase::getGainThreshold(void)
 	double t = param_weightT;
 
     int outDegree = 0;
-    for (int i = 0; i < numStripes; i++)
+    for (size_t i = 0; i < numStripes; i++)
     {
 		int out = m_partnerList->getNumOutgoingConnections(i);
 		int disconnecting = disconnectingChildren[i].size();

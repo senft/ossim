@@ -51,7 +51,7 @@ void MultitreePeer::initialize(int stage)
 
 		scheduleAt(simTime() + par("startTime").doubleValue(), timer_getJoinTime);
 
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			beginConnecting.push_back(-1);
 		}
@@ -60,7 +60,7 @@ void MultitreePeer::initialize(int stage)
 		numSuccChanged = new bool[numStripes];
 		fallbackParent = new IPvXAddress[numStripes];
 
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_IDLE;
 			stat_retrys[i] = 0;
@@ -74,7 +74,7 @@ void MultitreePeer::initialize(int stage)
 
 		WATCH(param_delayRetryConnect);
 		WATCH(param_delaySuccessorInfo);
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			WATCH(lastSeqNumber[i]);
 			WATCH(beginConnecting[i]);
@@ -143,7 +143,7 @@ void MultitreePeer::handleTimerMessage(cMessage *msg)
 
 void MultitreePeer::handleTimerJoin()
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(m_state[i] != TREE_JOIN_STATE_IDLE)
 			// Something can't be right here
@@ -153,7 +153,7 @@ void MultitreePeer::handleTimerJoin()
 	m_gstat->reportAwakeNode();
 
 	std::vector<int> stripes;
-	for (int i = 0; i < numStripes; ++i)
+	for (size_t i = 0; i < numStripes; ++i)
 	{
 		stripes.push_back(i);
 	}
@@ -167,7 +167,7 @@ void MultitreePeer::handleTimerLeave()
 	// It might happen, that I have sent a ConnectionRequest somewhere and
 	// before the ConnectConfirm arrived, my leave timer kicks in. Thats why
 	// the states have to be checked here.
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(m_state[i] != TREE_JOIN_STATE_ACTIVE)
 		{
@@ -186,7 +186,7 @@ void MultitreePeer::handleTimerLeave()
 	// Remove myself from ActivePeerTable
 	m_apTable->removeAddress(getNodeAddress());
 
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(!m_partnerList->hasChildren(i))
 		{
@@ -248,7 +248,7 @@ void MultitreePeer::handleTimerReportStatistic()
 {
 	int overallOutDegree = 0;
 	// Report out-degree per tree
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		int degree = m_partnerList->getNumOutgoingConnections(i);
 		overallOutDegree += degree;
@@ -291,7 +291,7 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 
     TreeSuccessorInfoPacket *pkt = new TreeSuccessorInfoPacket("TREE_SUCCESSOR_INFO");
 
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		int numSucc = m_partnerList->getNumSuccessors(i);
 
@@ -303,7 +303,7 @@ void MultitreePeer::handleTimerSuccessorInfo(void)
 	}
 
 	set<IPvXAddress> sentTo;
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		//if(numSuccChanged[i])
 		//{
@@ -467,13 +467,13 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 		}
 
 
-		int numSucc = m_partnerList->getNumSuccessors(stripe);
+		//int numSucc = m_partnerList->getNumSuccessors(stripe);
 		IPvXAddress currentParent = m_partnerList->getParent(stripe);
 		long lastReceivedChunk = lastSeqNumber[stripe];
 
 		ConnectRequest request;
 		request.stripe = stripe;
-		for (int j = 0; j < numStripes; j++)
+		for (size_t j = 0; j < numStripes; j++)
 		{
 			request.numSuccessors.push_back(m_partnerList->getNumSuccessors(j));
 		}
@@ -506,7 +506,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	getSender(pkt, address);
 
 	bool anyParentUnspec = false;
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(m_partnerList->getParent(i).isUnspecified())
 		{
@@ -569,7 +569,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 	if(anyParentUnspec)
 	{
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			// TODO Make sure this only happens when switching from no parent at all to a parent
 			if(m_partnerList->getParent(i).isUnspecified())
@@ -585,7 +585,7 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 
 		// Start collecting statistics
 		if(!timer_reportStatistic->isScheduled())
-			scheduleAt(simTime() + 2, timer_reportStatistic);
+			scheduleAt(simTime(), timer_reportStatistic);
 	}
 }
 
@@ -915,7 +915,7 @@ void MultitreePeer::onNewChunk(int sequenceNumber)
  */
 void MultitreePeer::startPlayer(void)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(m_state[i] == TREE_JOIN_STATE_LEAVING)
 			return;
@@ -926,7 +926,7 @@ void MultitreePeer::startPlayer(void)
 
 	int current = firstSequenceNumber;
 	int currentStart = firstSequenceNumber;
-	int streak = 0;
+	unsigned int streak = 0;
 
 	while(m_player->getState() == PLAYER_STATE_IDLE && current <= max)
 	{
@@ -957,7 +957,7 @@ void MultitreePeer::startPlayer(void)
 int MultitreePeer::getGreatestReceivedSeqNumber(void)
 {
 	int max = lastSeqNumber[0];
-	for (int i = 1; i < numStripes; i++)
+	for (size_t i = 1; i < numStripes; i++)
 	{
 		if(lastSeqNumber[i] > max)
 			max = lastSeqNumber[i];
@@ -1029,7 +1029,7 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 
 void MultitreePeer::optimize(void)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 		if(m_state[i] == TREE_JOIN_STATE_IDLE || m_state[i] == TREE_JOIN_STATE_LEAVING)
 			return;
 
@@ -1094,7 +1094,6 @@ void MultitreePeer::optimize(void)
 	while(remainingBW > 0)
 	{
 		int maxSucc = 0;
-		int maxActiveTrees = 0;
 		IPvXAddress child;
 		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
 		{
@@ -1160,7 +1159,7 @@ int MultitreePeer::getStripeToOptimize(void)
 	int maxSucc = m_partnerList->getNumSuccessors(maxIndex);
 
 	int startWith = maxIndex;
-	for(int i = 0; i < numStripes; ++i)
+	for(size_t i = 0; i < numStripes; ++i)
 	{
 		int check = (startWith + i) % numStripes;
 		int currentChildren = m_partnerList->getNumOutgoingConnections(check);
@@ -1177,11 +1176,11 @@ int MultitreePeer::getStripeToOptimize(void)
 	return maxIndex;
 }
 
-bool MultitreePeer::isPreferredStripe(int stripe)
+bool MultitreePeer::isPreferredStripe(unsigned int stripe)
 {
 	int numChildren = m_partnerList->getNumOutgoingConnections(stripe);
 
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(i != stripe && m_partnerList->getNumOutgoingConnections(i) > numChildren)
 			return false;

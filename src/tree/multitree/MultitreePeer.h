@@ -50,7 +50,7 @@ private:
 
 	void disconnectFromParent(int stripe, IPvXAddress alternativeParent);
 
-	virtual bool isPreferredStripe(int stripe);
+	virtual bool isPreferredStripe(unsigned int stripe);
 	int getStripeToOptimize(void);
 
 	void connectVia(IPvXAddress address, const std::vector<int> &stripes);

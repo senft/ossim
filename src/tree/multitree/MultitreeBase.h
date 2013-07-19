@@ -55,7 +55,7 @@ protected:
 
     int m_localPort, m_destPort;
 
-	int numStripes;
+	unsigned int numStripes;
 
 	/*
 	 * The bandwidth capacity of this node. A bandwidth capacity of 1 means,
@@ -138,7 +138,7 @@ private:
 
 	void sendChunksToNewChild(int stripe, IPvXAddress address, int lastChunk);
 
-	virtual bool isPreferredStripe(int stripe) = 0;
+	virtual bool isPreferredStripe(unsigned int stripe) = 0;
 
 	double getStripeDensityCosts(successorList childList, int stripe); // K_sel, K_1
     double getBalanceCosts(successorList childList, int stripe, IPvXAddress child); //K_bal, K_3

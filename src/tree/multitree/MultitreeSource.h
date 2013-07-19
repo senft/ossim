@@ -27,7 +27,7 @@ private:
 
 	virtual void scheduleSuccessorInfo(int stripe);
 
-	virtual bool isPreferredStripe(int stripe);
+	virtual bool isPreferredStripe(unsigned int stripe);
 	
     void bindToGlobalModule(void);
     void bindToTreeModule(void);

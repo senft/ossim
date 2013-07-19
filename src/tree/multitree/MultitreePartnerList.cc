@@ -22,7 +22,7 @@ void MultitreePartnerList::initialize(int stage)
 
 		parents = new IPvXAddress[numStripes];
 
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			mChildren.push_back(std::map<IPvXAddress, std::vector<int> >());
 			vChildren.push_back(std::set<IPvXAddress>());
@@ -47,21 +47,21 @@ void MultitreePartnerList::clear(void)
 
 	mChildren.clear();
 	vChildren.clear();
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		mChildren.push_back(std::map<IPvXAddress, std::vector<int> >());
 		vChildren.push_back(std::set<IPvXAddress>());
 	}
 }
 
-bool MultitreePartnerList::hasChildren(int stripe)
+bool MultitreePartnerList::hasChildren(unsigned int stripe)
 {
 	return mChildren[stripe].size() > 0;
 }
 
 bool MultitreePartnerList::hasChildren(void)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 		if(hasChildren(i))
 			return true;
 
@@ -70,7 +70,7 @@ bool MultitreePartnerList::hasChildren(void)
 
 bool MultitreePartnerList::hasChild(IPvXAddress address)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(hasChild(i, address))
 			return true;
@@ -78,16 +78,16 @@ bool MultitreePartnerList::hasChild(IPvXAddress address)
 	return false;
 }
 
-bool MultitreePartnerList::hasChild(int stripe, IPvXAddress address)
+bool MultitreePartnerList::hasChild(unsigned int stripe, IPvXAddress address)
 {
 	return vChildren[stripe].find(address) != vChildren[stripe].end();
 }
 
-void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int successors)
+void MultitreePartnerList::addChild(unsigned int stripe, IPvXAddress address, int successors)
 {
 	mChildren[stripe].insert( std::pair<IPvXAddress, std::vector<int> >(address, std::vector<int>()) );
 
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		mChildren[stripe][address].push_back(0);
 	}
@@ -98,7 +98,7 @@ void MultitreePartnerList::addChild(int stripe, IPvXAddress address, int success
 	numOutgoingChanged = true;
 }
 
-IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const std::set<IPvXAddress> &skipNodes)
+IPvXAddress MultitreePartnerList::getChildWithLeastChildren(unsigned int stripe, const std::set<IPvXAddress> &skipNodes)
 {
 	IPvXAddress child;
 	const std::map<IPvXAddress, std::vector<int> > curChildren = mChildren[stripe];
@@ -126,7 +126,7 @@ IPvXAddress MultitreePartnerList::getChildWithLeastChildren(int stripe, const st
  * Returns the child that has the least (but at least one) successor. It is also possible to specify
  * some nodes that should not be chosen here.
  */
-IPvXAddress MultitreePartnerList::getLaziestForwardingChild(int stripe, const std::set<IPvXAddress> &skipNodes)
+IPvXAddress MultitreePartnerList::getLaziestForwardingChild(unsigned int stripe, const std::set<IPvXAddress> &skipNodes)
 {
 	IPvXAddress child;
 	const std::map<IPvXAddress, std::vector<int> > curChildren = mChildren[stripe];
@@ -149,7 +149,7 @@ IPvXAddress MultitreePartnerList::getLaziestForwardingChild(int stripe, const st
 	return child;
 }
 
-IPvXAddress MultitreePartnerList::getRandomChild(int stripe, const std::set<IPvXAddress> &skipNodes)
+IPvXAddress MultitreePartnerList::getRandomChild(unsigned int stripe, const std::set<IPvXAddress> &skipNodes)
 {
 	IPvXAddress child;
 	const std::map<IPvXAddress, std::vector<int> > curChildren = mChildren[stripe];
@@ -178,7 +178,7 @@ IPvXAddress MultitreePartnerList::getRandomChild(int stripe, const std::set<IPvX
 	return child;
 }
 
-IPvXAddress MultitreePartnerList::getChildWithMostChildren(int stripe, const std::set<IPvXAddress> &skipNodes)
+IPvXAddress MultitreePartnerList::getChildWithMostChildren(unsigned int stripe, const std::set<IPvXAddress> &skipNodes)
 {
 	int maxSucc = -1;
 	IPvXAddress busiestChild;
@@ -205,7 +205,7 @@ IPvXAddress MultitreePartnerList::getChildWithMostChildren(int stripe, const std
  *    1.) Find the node with least successors, that has at least 1 successor
  *    2.) If 1. didn't yield a result, find the child with least successors
  */
-IPvXAddress MultitreePartnerList::getBestLazyChild(int stripe, const std::set<IPvXAddress> &skipNodes)
+IPvXAddress MultitreePartnerList::getBestLazyChild(unsigned int stripe, const std::set<IPvXAddress> &skipNodes)
 {
 	IPvXAddress child = getLaziestForwardingChild(stripe, skipNodes);
 
@@ -217,7 +217,7 @@ IPvXAddress MultitreePartnerList::getBestLazyChild(int stripe, const std::set<IP
 	return child;
 }
 
-std::set<IPvXAddress> &MultitreePartnerList::getChildren(int stripe)
+std::set<IPvXAddress> &MultitreePartnerList::getChildren(unsigned int stripe)
 {
 	return vChildren[stripe];
 }
@@ -225,12 +225,12 @@ std::set<IPvXAddress> &MultitreePartnerList::getChildren(int stripe)
 /** 
  * Return all children (incl. number of successors) of the given stripe
 */
-std::map<IPvXAddress, std::vector<int> > MultitreePartnerList::getChildrenWithCount(int stripe)
+std::map<IPvXAddress, std::vector<int> > MultitreePartnerList::getChildrenWithCount(unsigned int stripe)
 {
 	return mChildren[stripe];
 }
 
-void MultitreePartnerList::removeChild(int stripe, IPvXAddress address)
+void MultitreePartnerList::removeChild(unsigned int stripe, IPvXAddress address)
 {
 	mChildren[stripe].erase(address);
 	vChildren[stripe].erase(vChildren[stripe].find(address));
@@ -239,7 +239,7 @@ void MultitreePartnerList::removeChild(int stripe, IPvXAddress address)
 
 void MultitreePartnerList::removeChild(IPvXAddress address)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		removeChild(i, address);
 	}
@@ -247,14 +247,14 @@ void MultitreePartnerList::removeChild(IPvXAddress address)
 
 
 
-bool MultitreePartnerList::hasParent(int stripe, IPvXAddress address)
+bool MultitreePartnerList::hasParent(unsigned int stripe, IPvXAddress address)
 {
 	return parents[stripe].equals(address);
 }
 
 bool MultitreePartnerList::hasParent(IPvXAddress address)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(hasParent(i, address))
 			return true;
@@ -262,23 +262,23 @@ bool MultitreePartnerList::hasParent(IPvXAddress address)
 	return false;
 }
 
-void MultitreePartnerList::addParent(int stripe, IPvXAddress address){
+void MultitreePartnerList::addParent(unsigned int stripe, IPvXAddress address){
 	parents[stripe] = address;
 }
 
 void MultitreePartnerList::addParent(IPvXAddress address){
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		addParent(i, address);
 	}
 }
 
-IPvXAddress MultitreePartnerList::getParent(int stripe)
+IPvXAddress MultitreePartnerList::getParent(unsigned int stripe)
 {
 	return parents[stripe];
 }
 
-void MultitreePartnerList::removeParent(int stripe)
+void MultitreePartnerList::removeParent(unsigned int stripe)
 {
 	IPvXAddress address;
 	parents[stripe] = address;
@@ -288,7 +288,7 @@ std::vector<int> MultitreePartnerList::removeParent(IPvXAddress address)
 {
 	std::vector<int> affectedStripes;
 
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(address.equals(parents[i]))
 		{
@@ -305,8 +305,8 @@ int MultitreePartnerList::getNumOutgoingConnections(void)
 {
 	if(numOutgoingChanged)
 	{
-		int sum = 0, i;
-		for (i = 0; i < numStripes; i++)
+		int sum = 0;
+		for (size_t i = 0; i < numStripes; i++)
 		{
     	    sum = sum + getNumOutgoingConnections(i);
 		}
@@ -320,12 +320,12 @@ int MultitreePartnerList::getNumOutgoingConnections(void)
 	}
 }
 
-int MultitreePartnerList::getNumOutgoingConnections(int stripe)
+int MultitreePartnerList::getNumOutgoingConnections(unsigned int stripe)
 {
 	return vChildren[stripe].size();
 }
 
-int MultitreePartnerList::getNumSuccessors(int stripe)
+int MultitreePartnerList::getNumSuccessors(unsigned int stripe)
 {
 	int sum = 0;
 	std::map<IPvXAddress, std::vector<int> > curChildren = mChildren[stripe];
@@ -336,9 +336,9 @@ int MultitreePartnerList::getNumSuccessors(int stripe)
 	return sum;
 }
 
-int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address)
+int MultitreePartnerList::getNumChildsSuccessors(unsigned int stripe, IPvXAddress address)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(hasChild(i, address))
 			return mChildren[i][address][stripe];
@@ -346,11 +346,11 @@ int MultitreePartnerList::getNumChildsSuccessors(int stripe, IPvXAddress address
 	return -1;
 }
 
-bool MultitreePartnerList::updateNumChildsSuccessors(int stripe, IPvXAddress address, int numSuccessors)
+bool MultitreePartnerList::updateNumChildsSuccessors(unsigned int stripe, IPvXAddress address, int numSuccessors)
 {
 	if(hasChild(address))
 	{
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			if(hasChild(i, address))
 			{
@@ -370,7 +370,7 @@ void MultitreePartnerList::printPartnerList(void)
 	if(ev.isDisabled())
 		return;
 
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		EV << "*********** Stripe " << i << " **********" << endl;
 		EV << "Parent  : " << parents[i] << " (" << getNumOutgoingConnections(i) << " children, "
@@ -382,7 +382,7 @@ void MultitreePartnerList::printPartnerList(void)
 		{
 			EV << it->first.str() << " (" << it->second[i] << " successors [";
 
-			for (int i = 0; i < numStripes; i++)
+			for (size_t i = 0; i < numStripes; i++)
 			{
 				EV << it->second[i] << ",";
 			}
@@ -396,7 +396,7 @@ void MultitreePartnerList::printPartnerList(void)
 int MultitreePartnerList::getNumActiveTrees(void)
 {
 	int numActiveTrees = 0;
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(hasChildren(i))
 			numActiveTrees++;
@@ -404,9 +404,9 @@ int MultitreePartnerList::getNumActiveTrees(void)
 	return numActiveTrees;
 }
 
-bool MultitreePartnerList::nodeForwardingInOtherStripe(int stripe, IPvXAddress node)
+bool MultitreePartnerList::nodeForwardingInOtherStripe(unsigned int stripe, IPvXAddress node)
 {
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(i == stripe)
 			continue;
@@ -417,10 +417,10 @@ bool MultitreePartnerList::nodeForwardingInOtherStripe(int stripe, IPvXAddress n
 	return false;
 }
 
-bool MultitreePartnerList::haveMoreChildrenInOtherStripe(int stripe)
+bool MultitreePartnerList::haveMoreChildrenInOtherStripe(unsigned int stripe)
 {
 	int numChildren = getNumOutgoingConnections(stripe);
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(i == stripe)
 			continue;
@@ -431,10 +431,10 @@ bool MultitreePartnerList::haveMoreChildrenInOtherStripe(int stripe)
 	return false;
 }
 
-bool MultitreePartnerList::nodeHasMoreChildrenInOtherStripe(int stripe, IPvXAddress node)
+bool MultitreePartnerList::nodeHasMoreChildrenInOtherStripe(unsigned int stripe, IPvXAddress node)
 {
 	int numSucc = getNumChildsSuccessors(stripe, node);
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(i == stripe)
 			continue;
@@ -448,7 +448,7 @@ bool MultitreePartnerList::nodeHasMoreChildrenInOtherStripe(int stripe, IPvXAddr
 int MultitreePartnerList::getNumActiveTrees(IPvXAddress node)
 {
 	int activeTrees;
-	for (int i = 0; i < numStripes; i++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(hasParent(i, node) || getNumChildsSuccessors(i, node) > 0)
 		{

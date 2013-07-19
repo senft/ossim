@@ -8,7 +8,7 @@ public:
     AppSettingMultitree(void);
     virtual ~AppSettingMultitree(void);
 
-	inline int getNumStripes(void){ return param_numStripes; };
+	inline unsigned int getNumStripes(void){ return param_numStripes; };
 
 	inline int getChunkSize(void) { return param_chunkSize; };
 	inline int getPacketSizeVideoChunk(void) { return param_chunkSize + 8; }; // 4 for seq_num, 4 for stripe_num
@@ -22,7 +22,7 @@ protected:
     virtual void initialize(void);
     virtual void finish(void);
 
-    int param_numStripes;
+    unsigned int param_numStripes;
 
     int param_chunkSize;
     int param_videoStreamBitRate;
@@ -32,7 +32,6 @@ protected:
 
     int param_bufferMapSize_seconds;
     int m_videoStreamChunkRate;
- 
 };
 
 #endif /* APPSETTINGMULTITREE_H_ */

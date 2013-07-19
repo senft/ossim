@@ -22,7 +22,7 @@ void MultitreeSource::initialize(int stage)
 
 	if(stage == 3)
 	{
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			m_state[i] = TREE_JOIN_STATE_ACTIVE;
 		}
@@ -135,7 +135,7 @@ void MultitreeSource::scheduleSuccessorInfo(int stripe)
 	// Do nothing because a source has no parents...
 }
 
-bool MultitreeSource::isPreferredStripe(int stripe)
+bool MultitreeSource::isPreferredStripe(unsigned int stripe)
 {
 	return true;
 }
@@ -225,7 +225,7 @@ void MultitreeSource::optimize(void)
 
 	std::vector<std::map<IPvXAddress, std::vector<int> > > children;
 
-	for (int stripe = 0; stripe < numStripes; stripe++)
+	for (unsigned int stripe = 0; stripe < numStripes; stripe++)
 	{
         children.push_back(m_partnerList->getChildrenWithCount(stripe));
 	}
@@ -236,7 +236,7 @@ void MultitreeSource::optimize(void)
 	{
 		// Get stripe with most children
 		int maxChildren = INT_MIN;
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			if(noGainIn.find(i) != noGainIn.end())
 				continue;
@@ -304,7 +304,7 @@ void MultitreeSource::optimize(void)
 		// Get stripe with least children...
 		int minIndex = 0;
 		int minChildren = INT_MAX;
-		for (int i = 0; i < numStripes; i++)
+		for (size_t i = 0; i < numStripes; i++)
 		{
 			if(treesWithNoMoreChildren.find(i) != treesWithNoMoreChildren.end())
 				continue;
@@ -323,7 +323,6 @@ void MultitreeSource::optimize(void)
 		EV << "Try to request in stripe " << stripe << endl;
 
 		int maxSucc = 0;
-		int maxActiveTrees = 0;
 		IPvXAddress child;
 
 		// ... and the node that should be requested from...
@@ -335,7 +334,6 @@ void MultitreeSource::optimize(void)
 			{
 				maxSucc = it->second[stripe];
 				child = it->first;
-				maxActiveTrees = m_partnerList->getNumActiveTrees(it->first);
 			}
 		}
 
@@ -348,7 +346,6 @@ void MultitreeSource::optimize(void)
 				{
 					maxSucc = it->second[stripe];
 					child = it->first;
-					maxActiveTrees = m_partnerList->getNumActiveTrees(it->first);
 				}
 			}
 		}
