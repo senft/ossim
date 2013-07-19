@@ -612,7 +612,7 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 
 			// TODO if the node knew, that the DRQ came from a child I dropped because of a PNR I
 			// could omit the update
-			scheduleSuccessorInfo(stripe);
+			//scheduleSuccessorInfo(stripe);
 			continue;
 		}
 

@@ -266,9 +266,8 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					// all the way up to me.
 					newSucc = 0;
 				m_partnerList->updateNumChildsSuccessors(stripe, oldParent, newSucc);
-				//scheduleSuccessorInfo(stripe);
 				
-				scheduleOptimization();
+				//scheduleOptimization();
 
 			}
 			else if(hasBWLeft(1))
@@ -420,10 +419,10 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 			if(newSucc != oldSucc)
 			{
 				changes = true;
-				scheduleSuccessorInfo(stripe);
-				// TODO: this way hasChild() is called twice (in getNumChildsSucc()
-				// + updateNumChildsSuccessors()
 				m_partnerList->updateNumChildsSuccessors(stripe, address, newSucc);
+
+				if(m_partnerList->hasChild(stripe, address))
+					scheduleSuccessorInfo(stripe);
 			}
 		}
 	}
@@ -447,7 +446,8 @@ void MultitreeBase::removeChild(int stripe, IPvXAddress address)
 	if(curDisconnectingChildren.find(address) != curDisconnectingChildren.end())
 		curDisconnectingChildren.erase(curDisconnectingChildren.find(address));
 
-	scheduleOptimization();
+	//scheduleOptimization();
+	//scheduleSuccessorInfo(stripe);
 
 	printStatus();
 }
