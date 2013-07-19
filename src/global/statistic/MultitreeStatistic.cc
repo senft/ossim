@@ -24,7 +24,12 @@ void MultitreeStatistic::initialize(int stage)
         sig_retrys              = registerSignal("Signal_Retrys");
         sig_meanOutDegree       = registerSignal("Signal_Mean_Out_Degree");
         sig_maxHopCount         = registerSignal("Signal_Max_Hop_Count");
-        sig_messageCount        = registerSignal("Signal_Num_Messages");
+
+        sig_messageCountCR      = registerSignal("Signal_Message_Count_CR");
+        sig_messageCountDR      = registerSignal("Signal_Message_Count_DR");
+        sig_messageCountCC      = registerSignal("Signal_Message_Count_CC");
+        sig_messageCountPNR     = registerSignal("Signal_Message_Count_PNR");
+        sig_messageCountSI      = registerSignal("Signal_Message_Count_SI");
 	}
 
     if (stage != 3)
@@ -49,7 +54,11 @@ void MultitreeStatistic::initialize(int stage)
 	m_count_allChunk = 0;
 	m_count_chunkMiss = 0;
 
-	messageCount = 0L;
+	messageCountCR = 0L;
+	messageCountDR = 0L;
+	messageCountCC = 0L;
+	messageCountPNR = 0L;
+	messageCountSI = 0L;
 
 	meanBWUtil = 0;
 	meanConnectionTime = 0;
@@ -96,7 +105,12 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(meanRetrys);
 	WATCH(maxRetrys);
 
-	WATCH(messageCount);
+	WATCH(messageCountCR);
+	WATCH(messageCountDR);
+	WATCH(messageCountCC);
+	WATCH(messageCountPNR);
+	WATCH(messageCountSI);
+
 	WATCH(awakeNodes);
 
 	WATCH_VECTOR(numTrees);
@@ -105,9 +119,25 @@ void MultitreeStatistic::initialize(int stage)
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 }
 
-void MultitreeStatistic::reportMessage(void)
+void MultitreeStatistic::reportMessageCR(void)
 {
-	messageCount++;
+	messageCountCR++;
+}
+void MultitreeStatistic::reportMessageDR(void)
+{
+	messageCountDR++;
+}
+void MultitreeStatistic::reportMessageCC(void)
+{
+	messageCountCC++;
+}
+void MultitreeStatistic::reportMessagePNR(void)
+{
+	messageCountPNR++;
+}
+void MultitreeStatistic::reportMessageSI(void)
+{
+	messageCountSI++;
 }
 
 void MultitreeStatistic::gatherOutDegree(const IPvXAddress node, int stripe, int degree)
@@ -173,7 +203,11 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportOutDegree();
 		reportMaxHopCount();
 
-		emit(sig_messageCount, messageCount);
+		emit(sig_messageCountCR, messageCountCR);
+		emit(sig_messageCountDR, messageCountDR);
+		emit(sig_messageCountCC, messageCountCC);
+		emit(sig_messageCountPNR, messageCountPNR);
+		emit(sig_messageCountSI, messageCountSI);
 
 		//std::map<int, int> counts;
 		//for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)

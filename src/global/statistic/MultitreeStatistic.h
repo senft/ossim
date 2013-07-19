@@ -32,7 +32,12 @@ public:
 
 	void reportAwakeNode(void);
 	void reportNodeLeft(void);
-	void reportMessage(void);
+
+	void reportMessageCR(void);
+	void reportMessageDR(void);
+	void reportMessageCC(void);
+	void reportMessagePNR(void);
+	void reportMessageSI(void);
 
 	void reportChunkArrival(int stripe, int hopcount);
 
@@ -60,7 +65,12 @@ private:
 	ActivePeerTable			*m_apTable;
     AppSettingMultitree   	*m_appSetting;
 
-	simsignal_t sig_messageCount;
+	simsignal_t sig_messageCountCR;
+	simsignal_t sig_messageCountDR;
+	simsignal_t sig_messageCountCC;
+	simsignal_t sig_messageCountPNR;
+	simsignal_t sig_messageCountSI;
+
 	simsignal_t sig_BWUtil;
 	simsignal_t sig_packetLoss;
 	simsignal_t sig_chunkArrival;
@@ -94,7 +104,11 @@ private:
 	long m_count_chunkMiss;
 	long m_count_allChunk;
 
-	long messageCount;
+	long messageCountCR;
+	long messageCountDR;
+	long messageCountCC;
+	long messageCountPNR;
+	long messageCountSI;
 
 	int maxRetrys;
 	double overallOutDegree;
