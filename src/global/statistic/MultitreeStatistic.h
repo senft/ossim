@@ -60,7 +60,7 @@ private:
 	void reportNumTreesForwarding();
 	void reportConnectionTime();
 	void reportRetrys();
-	void reportMaxHopCount();
+	void reportHopcounts();
 
 	ActivePeerTable			*m_apTable;
     AppSettingMultitree   	*m_appSetting;
@@ -78,8 +78,7 @@ private:
 	simsignal_t sig_connTime;
 	simsignal_t sig_retrys;
 	simsignal_t sig_meanOutDegree;
-
-	simsignal_t sig_maxHopCount;
+	simsignal_t sig_meanHopcount;
 
 	std::vector<std::map<IPvXAddress, int> > outDegreeSamples;
 	std::vector<double> meanOutDegree;
@@ -90,20 +89,31 @@ private:
 	std::map<IPvXAddress, int> totalNumTreesForwarding;
 	std::vector<double> connectionTimes;
 	std::vector<int> retrys;
-	std::vector<int> numTrees;
+	std::vector<int> nodesForwardingInITrees;
+
+	std::vector<int> maxHopcounts;
+	std::vector<double> meanHopcounts;
+	std::vector<std::vector<int> > hopcounts;
+	double meanHopcount;
+	cOutVector *oVMaxHopcount;
+	cOutVector *oVMeanHopcount;
 
 	cOutVector *oVNumTrees;
-	cOutVector *oVMaxHopCount;
 	cOutVector *oVOutDegree;
 
 	int numStripes;
 
+	int joinedNodes;
 	int awakeNodes;
+
+	double forwardingInOne;
+	double forwardingInMoreThanOne;
 
 	long m_count_chunkHit;
 	long m_count_chunkMiss;
 	long m_count_allChunk;
 
+	long messageCount;
 	long messageCountCR;
 	long messageCountDR;
 	long messageCountCC;
@@ -116,9 +126,7 @@ private:
 	double meanBWUtil;
 	double meanConnectionTime;
 	double meanNumTrees;
-	double meanHopcount;
-
-	std::vector<std::vector<int> > hopcounts;
+	double meanMaxTreeheight;
 };
 
 #endif /* MULTITREE_STATISTIC_H_ */

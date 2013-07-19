@@ -7,8 +7,38 @@ MultitreeStatistic::~MultitreeStatistic(){}
 
 void MultitreeStatistic::finish()
 {
+	recordScalar("messageCount", messageCount);
+	recordScalar("messageCountCR", messageCountCR);
+	recordScalar("messageCountDR", messageCountDR);
+	recordScalar("messageCountCC", messageCountCC);
+	recordScalar("messageCountPNR", messageCountPNR);
+	recordScalar("messageCountSI", messageCountSI);
+
+	recordScalar("meanOutDegree", overallOutDegree);
+	recordScalar("meanNumTrees", meanNumTrees);
+	recordScalar("meanHopcount", meanHopcount);
+
+	recordScalar("bwUtil", meanBWUtil);
+	
+	recordScalar("forwardingInOne", forwardingInOne);
+	recordScalar("forwardingInMoreThanOne", forwardingInMoreThanOne);
+
+	char name[24];
+	for (int i = 0; i < numStripes; i++)
+	{
+		sprintf(name, "maxHopcountInTree%d", i);
+		recordScalar(name, maxHopcounts[i]);
+
+		sprintf(name, "meanHopcountInTree%d", i);
+		recordScalar(name, meanHopcounts[i]);
+
+		sprintf(name, "meanOutDegree%d", i);
+		recordScalar(name, meanOutDegree[i]);
+	}
+
 	delete[] oVNumTrees;
-	delete[] oVMaxHopCount;
+	delete[] oVMaxHopcount;
+	delete[] oVMeanHopcount;
 	delete[] oVOutDegree;
 }
 
@@ -23,7 +53,7 @@ void MultitreeStatistic::initialize(int stage)
         sig_connTime            = registerSignal("Signal_Connection_Time");
         sig_retrys              = registerSignal("Signal_Retrys");
         sig_meanOutDegree       = registerSignal("Signal_Mean_Out_Degree");
-        sig_maxHopCount         = registerSignal("Signal_Max_Hop_Count");
+        sig_meanHopcount        = registerSignal("Signal_Mean_Hopcount");
 
         sig_messageCountCR      = registerSignal("Signal_Message_Count_CR");
         sig_messageCountDR      = registerSignal("Signal_Message_Count_DR");
@@ -54,6 +84,7 @@ void MultitreeStatistic::initialize(int stage)
 	m_count_allChunk = 0;
 	m_count_chunkMiss = 0;
 
+	messageCount = 0L;
 	messageCountCR = 0L;
 	messageCountDR = 0L;
 	messageCountCC = 0L;
@@ -66,13 +97,17 @@ void MultitreeStatistic::initialize(int stage)
 	meanRetrys = 0;
 	maxRetrys = 0;
 
+	forwardingInOne = 0;
+	forwardingInMoreThanOne = 0;
+
 	oVNumTrees = new cOutVector[numStripes + 1];
-	oVMaxHopCount = new cOutVector[numStripes];
+	oVMaxHopcount = new cOutVector[numStripes];
+	oVMeanHopcount = new cOutVector[numStripes];
 	oVOutDegree = new cOutVector[numStripes];
 
 	for (int i = 0; i < numStripes + 1; i++)
 	{
-		numTrees.push_back(0);
+		nodesForwardingInITrees.push_back(0);
 
 		char name[24];
 		sprintf(name, "nodesActiveIn%dstripes", i);
@@ -81,14 +116,19 @@ void MultitreeStatistic::initialize(int stage)
 
 	for (int i = 0; i < numStripes; i++)
 	{
+		maxHopcounts.push_back(0);
+		meanHopcounts.push_back(0);
 		hopcounts.push_back(std::vector<int>());
 
 		meanOutDegree.push_back(0);
 		outDegreeSamples.push_back(std::map<IPvXAddress, int>());
 
 		char name[24];
-		sprintf(name, "maxHopCountTree%d", i);
-		oVMaxHopCount[i].setName(name);
+		sprintf(name, "maxHopcountTree%d", i);
+		oVMaxHopcount[i].setName(name);
+
+		sprintf(name, "meanHopcountTree%d", i);
+		oVMeanHopcount[i].setName(name);
 
 		sprintf(name, "outDegreeTree%d", i);
 		oVOutDegree[i].setName(name);
@@ -104,39 +144,51 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(meanNumTrees);
 	WATCH(meanRetrys);
 	WATCH(maxRetrys);
+	WATCH(meanHopcount);
 
+	WATCH(messageCount);
 	WATCH(messageCountCR);
 	WATCH(messageCountDR);
 	WATCH(messageCountCC);
 	WATCH(messageCountPNR);
 	WATCH(messageCountSI);
 
+	WATCH(forwardingInOne);
+	WATCH(forwardingInMoreThanOne);
+
 	WATCH(awakeNodes);
 
-	WATCH_VECTOR(numTrees);
+	WATCH_VECTOR(nodesForwardingInITrees);
 	WATCH_VECTOR(meanOutDegree);
+	WATCH_VECTOR(maxHopcounts);
+	WATCH_VECTOR(meanHopcounts);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 }
 
 void MultitreeStatistic::reportMessageCR(void)
 {
+	messageCount++;
 	messageCountCR++;
 }
 void MultitreeStatistic::reportMessageDR(void)
 {
+	messageCount++;
 	messageCountDR++;
 }
 void MultitreeStatistic::reportMessageCC(void)
 {
+	messageCount++;
 	messageCountCC++;
 }
 void MultitreeStatistic::reportMessagePNR(void)
 {
+	messageCount++;
 	messageCountPNR++;
 }
 void MultitreeStatistic::reportMessageSI(void)
 {
+	messageCount++;
 	messageCountSI++;
 }
 
@@ -176,6 +228,7 @@ void MultitreeStatistic::reportAwakeNode(void)
 
 void MultitreeStatistic::reportNodeLeft(void)
 {
+	joinedNodes--;
 	awakeNodes--;
 }
 
@@ -195,25 +248,21 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 {
 	if(msg == timer_reportGlobal)
 	{
+		joinedNodes = m_apTable->getNumActivePeer();
+
 		reportBWUtilization();
 		reportPacketLoss();
 		reportNumTreesForwarding();
 		reportConnectionTime();
 		reportRetrys();
 		reportOutDegree();
-		reportMaxHopCount();
+		reportHopcounts();
 
 		emit(sig_messageCountCR, messageCountCR);
 		emit(sig_messageCountDR, messageCountDR);
 		emit(sig_messageCountCC, messageCountCC);
 		emit(sig_messageCountPNR, messageCountPNR);
 		emit(sig_messageCountSI, messageCountSI);
-
-		//std::map<int, int> counts;
-		//for (std::map<IPvXAddress, int>::const_iterator it = preferredStripes.begin() ; it != preferredStripes.end(); ++it)
-		//{
-		//	counts[it->second]++;
-		//}
 
 		scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
 	}
@@ -306,6 +355,8 @@ void MultitreeStatistic::reportNumTreesForwarding()
 	if(totalNumTreesForwarding.size() > 0)
 	{
 		int totalTrees = 0;
+		forwardingInOne = 0;
+		forwardingInMoreThanOne = 0;
 
 		for (std::map<IPvXAddress, int>::iterator it = totalNumTreesForwarding.begin() ; it != totalNumTreesForwarding.end(); ++it)
 		{
@@ -317,9 +368,15 @@ void MultitreeStatistic::reportNumTreesForwarding()
 
 		for (int i = 0; i < numStripes + 1; i++)
 		{
-			numTrees[i] = num[i];
+			nodesForwardingInITrees[i] = num[i];
 			oVNumTrees[i].record(num[i]);
+
+			if(i > 1)
+				forwardingInMoreThanOne += num[i];
 		}
+
+		forwardingInMoreThanOne /= (double)totalNumTreesForwarding.size();
+		forwardingInOne = num[1] / (double)totalNumTreesForwarding.size();
 
 		emit(sig_numTrees, meanNumTrees);
 	}
@@ -360,23 +417,43 @@ void MultitreeStatistic::receiveChangeNotification(int category, const cPolymorp
 	return;
 }
 
-void MultitreeStatistic::reportMaxHopCount()
+void MultitreeStatistic::reportHopcounts()
 {
+	int total = 0;
+	int totalSamples = 0;
+	int totalMaxHeights = 0;
 	for (int i = 0; i < numStripes; ++i)
 	{
 		int max = 0;
+		int totalPerTree = 0;
 		for(std::vector<int>::iterator it = hopcounts[i].begin(); it != hopcounts[i].end(); ++it)
 		{
-			int currentHopCount = (int)*it;
+			int currentHopcount = (int)*it;
+			if(currentHopcount > max)
+				max = currentHopcount;
 
-			if(currentHopCount > max)
-				max = currentHopCount;
+			totalPerTree += currentHopcount;
+			totalSamples++;
 		}
 
+		total += totalPerTree;
+
 		if(max > 0)
-			oVMaxHopCount[i].record(max);
+		{
+			oVMaxHopcount[i].record(max);
+			maxHopcounts[i] = max;
+			totalMaxHeights += max;
+		}
+
+		double mean = (double)totalPerTree / (double)hopcounts[i].size();
+		oVMeanHopcount[i].record(mean);
+		meanHopcounts[i] = mean;
 
 		hopcounts[i].clear();
 	}
 
+
+	meanMaxTreeheight = totalMaxHeights / numStripes;
+	meanHopcount = total / (double)totalSamples;
+	emit(sig_meanHopcount, meanHopcount);
 }
