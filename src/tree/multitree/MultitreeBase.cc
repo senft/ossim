@@ -653,7 +653,7 @@ double MultitreeBase::getGainThreshold(void)
 	//EV << "deg: " << outDegree << " max: " << (bwCapacity * numStripes) << " b: " << b << endl;
 	//EV << "t: " <<  (1 - pow(b, pow(2 * t, 3)) * (1 - pow(t, 3))) + pow(t, 3) << endl;
 
-	if(b == 1)
+	if(b >= 1)
 		return INT_MIN;
 
 	return (1.0 - pow(b, pow(2.0 * t, 3.0)) * (1.0 - pow(t, 3.0))) + pow(t, 3.0);
