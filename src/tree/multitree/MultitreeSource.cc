@@ -236,18 +236,26 @@ void MultitreeSource::optimize(void)
 	{
 		// Get stripe with most children
 		int maxChildren = INT_MIN;
+		int overallMax = INT_MIN;
 		for (size_t i = 0; i < numStripes; i++)
 		{
+			int currentNumChildren = children[i].size();
+
+			if(currentNumChildren > overallMax)
+				overallMax = currentNumChildren;
+
 			if(noGainIn.find(i) != noGainIn.end())
 				continue;
 
-			int currentNumChildren = children[i].size();
 			if(currentNumChildren > maxChildren || (currentNumChildren == maxChildren && intrand(2) == 0))
 			{
 				maxChildren = currentNumChildren;
 				stripe = i;
 			}
 		}
+
+		if(maxChildren < overallMax)
+			break;
 
 		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
@@ -319,8 +327,6 @@ void MultitreeSource::optimize(void)
 			}
 		}
 		stripe = minIndex;
-
-		EV << "Try to request in stripe " << stripe << endl;
 
 		int maxSucc = 0;
 		IPvXAddress child;
