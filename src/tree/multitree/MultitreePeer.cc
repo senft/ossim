@@ -821,8 +821,12 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
 
-			if((gain < threshold// || m_partnerList->getNumChildsSuccessors(stripe, child) > meanNumSucc)
-				|| m_partnerList->getNumActiveTrees() > 1)
+			if((gain < threshold
+				|| m_partnerList->haveMoreChildrenInOtherStripe(stripe)
+				// from now on !m_partnerList->haveMoreChildrenInOtherStripe(stripe)
+				|| m_partnerList->getNumActiveTrees() > 1 // same amount of succ in all stripes
+				|| m_partnerList->getNumActiveTrees(child) == 0
+				)
 				&& !isDisconnecting(stripe, child)
 				)
 			{
@@ -1094,15 +1098,9 @@ void MultitreePeer::optimize(void)
 		IPvXAddress child;
 		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
 		{
-			//if( (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0))
-			//		&& curDisconnectingChildren.find(it->first) == curDisconnectingChildren.end() )
-			//{
 			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-					&& ( (m_partnerList->getNumActiveTrees(it->first) > maxActiveTrees && m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first))
-					&& ((it->second[stripe] > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees )
-					|| (it->second[stripe] == maxSucc && m_partnerList->getNumActiveTrees(it->first) == maxActiveTrees && intrand(2) == 0))
-					)
-					)
+					&& m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first) 
+					&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
 			{
 				maxSucc = it->second[stripe];
 				child = it->first;
@@ -1114,9 +1112,7 @@ void MultitreePeer::optimize(void)
 				for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
 			{
 				if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-						&& (it->second[stripe] > maxSucc && m_partnerList->getNumActiveTrees(it->first) >= maxActiveTrees
-						|| (it->second[stripe] == maxSucc && m_partnerList->getNumActiveTrees(it->first) == maxActiveTrees && intrand(2) == 0))
-						)
+						&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
 				{
 					maxSucc = it->second[stripe];
 					child = it->first;

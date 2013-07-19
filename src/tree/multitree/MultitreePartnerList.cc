@@ -417,6 +417,20 @@ bool MultitreePartnerList::nodeForwardingInOtherStripe(int stripe, IPvXAddress n
 	return false;
 }
 
+bool MultitreePartnerList::haveMoreChildrenInOtherStripe(int stripe)
+{
+	int numChildren = getNumOutgoingConnections(stripe);
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(i == stripe)
+			continue;
+
+		if(getNumOutgoingConnections(i) > numChildren)
+			return true;
+	}
+	return false;
+}
+
 bool MultitreePartnerList::nodeHasMoreChildrenInOtherStripe(int stripe, IPvXAddress node)
 {
 	int numSucc = getNumChildsSuccessors(stripe, node);

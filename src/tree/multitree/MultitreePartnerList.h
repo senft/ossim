@@ -22,6 +22,7 @@ public:
 
 	bool nodeForwardingInOtherStripe(int stripe, IPvXAddress node);
 	bool nodeHasMoreChildrenInOtherStripe(int stripe, IPvXAddress node);
+	bool haveMoreChildrenInOtherStripe(int stripe);
 
 	int getNumChildren(void);
 	int getNumSuccessors(int stripe);
