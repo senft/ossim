@@ -373,7 +373,8 @@ void MultitreeStatistic::reportMaxHopCount()
 				max = currentHopCount;
 		}
 
-		oVMaxHopCount[i].record(max);
+		if(max > 0)
+			oVMaxHopCount[i].record(max);
 
 		hopcounts[i].clear();
 	}
