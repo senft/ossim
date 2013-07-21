@@ -364,6 +364,9 @@ void MultitreeStatistic::reportNumTreesForwarding()
 
 		forwardingInMoreThanOne /= (double)totalNumTreesForwarding.size();
 		forwardingInOne = num[1] / (double)totalNumTreesForwarding.size();
+		
+		emit(sig_forwardingOne, forwardingInOne);
+		emit(sig_forwaringMoreThanOne, forwardingInMoreThanOne);
 
 		emit(sig_numTrees, meanNumTrees);
 	}
