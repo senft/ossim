@@ -17,7 +17,7 @@ simple MultitreeStatistic like IStreamingStatistic
         @statistic[meanNumTrees](source="Signal_Mean_Num_Trees"; record=vector, mean);
 
 		@statistic[forwardingInOne](source="Signal_Forwarding_In_One"; record=vector, last;);
-        @statistic[forwardingInMoreThanOne](source="Signal_Forwarding_In_More_thanOne"; record=vector, last);
+        @statistic[forwardingInMoreThanOne](source="Signal_Forwarding_In_More_Than_One"; record=vector, last);
 
         @statistic[messageCountCR](source="Signal_Message_Count_CR"; record=vector, last);
         @statistic[messageCountDR](source="Signal_Message_Count_DR"; record=vector, last);

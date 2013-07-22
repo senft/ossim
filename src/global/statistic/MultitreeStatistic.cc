@@ -40,7 +40,7 @@ void MultitreeStatistic::initialize(int stage)
         sig_meanHopcount         = registerSignal("Signal_Mean_Hopcount");
 
         sig_forwardingOne        = registerSignal("Signal_Forwarding_In_One");
-        sig_forwaringMoreThanOne = registerSignal("Signal_Forwarding_In_More_Than_One");
+        sig_forwardingMoreThanOne = registerSignal("Signal_Forwarding_In_More_Than_One");
 
         sig_messageCountCR       = registerSignal("Signal_Message_Count_CR");
         sig_messageCountDR       = registerSignal("Signal_Message_Count_DR");
@@ -366,7 +366,7 @@ void MultitreeStatistic::reportNumTreesForwarding()
 		forwardingInOne = num[1] / (double)totalNumTreesForwarding.size();
 		
 		emit(sig_forwardingOne, forwardingInOne);
-		emit(sig_forwaringMoreThanOne, forwardingInMoreThanOne);
+		emit(sig_forwardingMoreThanOne, forwardingInMoreThanOne);
 
 		emit(sig_numTrees, meanNumTrees);
 	}

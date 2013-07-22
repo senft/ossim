@@ -72,7 +72,7 @@ private:
 	simsignal_t sig_messageCountSI;
 
 	simsignal_t sig_forwardingOne;
-	simsignal_t sig_forwaringMoreThanOne;
+	simsignal_t sig_forwardingMoreThanOne;
 
 	simsignal_t sig_BWUtil;
 	simsignal_t sig_packetLoss;
