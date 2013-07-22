@@ -335,6 +335,15 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		EV << "Alternative parent for " << address << " (stripe " << stripe << ") is " << alternativeParent << endl;
 
 		pkt->getRequests().push_back(dRequest);
+
+
+		// Update successors of the alternative parent
+		if(!alternativeParent.equals(getNodeAddress()))
+		{
+			int newSucc = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent) + 1;
+			m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, newSucc);
+		}
+
 	}
 
 	numDR++;
