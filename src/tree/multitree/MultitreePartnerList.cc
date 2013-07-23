@@ -447,7 +447,7 @@ bool MultitreePartnerList::nodeHasMoreChildrenInOtherStripe(unsigned int stripe,
 
 int MultitreePartnerList::getNumActiveTrees(IPvXAddress node)
 {
-	int activeTrees;
+	int activeTrees = 0;
 	for (size_t i = 0; i < numStripes; i++)
 	{
 		if(hasParent(i, node) || getNumChildsSuccessors(i, node) > 0)

@@ -230,7 +230,7 @@ void MultitreeSource::optimize(void)
         children.push_back(m_partnerList->getChildrenWithCount(stripe));
 	}
 
-	int stripe;
+	int stripe = 0;
 	std::set<int> noGainIn;
 	while(noGainIn.size() < numStripes)
 	{

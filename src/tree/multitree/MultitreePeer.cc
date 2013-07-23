@@ -779,15 +779,21 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 		PassNodeRequest request = (PassNodeRequest)*it;
 		int stripe = request.stripe;
 
+		IPvXAddress senderAddress;
+		getSender(pkt, senderAddress);
+
 		if(m_state[stripe] != TREE_JOIN_STATE_ACTIVE)
+		{
+
+			EV << "PassNodeRequest from parent " << senderAddress << " (stripe " 
+				<< stripe << ". Not currently connected (state: " << m_state[stripe] 
+				<< "). Skipping..." << endl;
 			continue;
+		}
 
 		int remainingBW = request.remainingBW;
 		double threshold = request.threshold;
 		double meanNumSucc = request.dependencyFactor;
-
-		IPvXAddress senderAddress;
-		getSender(pkt, senderAddress);
 
 		EV << "PassNodeRequest from parent " << senderAddress << " (stripe: " << stripe << ") (remainingBW: "
 			<< remainingBW <<", threshold: " << threshold << ", meanNumSucc: " <<
