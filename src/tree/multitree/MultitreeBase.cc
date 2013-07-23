@@ -255,7 +255,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 
 				//EV << "New child has " << numSucc << " succ." << endl;
 
-
 				// The nodes old parent is one of my children. So I can already
 				// update my partnerlist (that child now has a successors less)
 				IPvXAddress oldParent = (IPvXAddress)*itCurParent;
@@ -266,8 +265,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 					// all the way up to me.
 					newSucc = 0;
 				m_partnerList->updateNumChildsSuccessors(stripe, oldParent, newSucc);
-				
-				//scheduleOptimization();
 
 			}
 			else if(hasBWLeft(1))
@@ -348,6 +345,7 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 		if(!alternativeParent.equals(getNodeAddress()))
 		{
 			int newSucc = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent) + 1;
+			EV << "UPDATE " << alternativeParent << " to " << newSucc << endl;
 			m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, newSucc);
 		}
 
@@ -438,7 +436,10 @@ void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
 				m_partnerList->updateNumChildsSuccessors(stripe, address, newSucc);
 
 				if(m_partnerList->hasChild(stripe, address))
+				{
 					scheduleSuccessorInfo(stripe);
+					//scheduleOptimization();
+				}
 			}
 		}
 	}

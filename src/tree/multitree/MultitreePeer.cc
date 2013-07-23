@@ -1048,6 +1048,8 @@ void MultitreePeer::optimize(void)
 
 	std::map<IPvXAddress, std::vector<int> > children = m_partnerList->getChildrenWithCount(stripe);
 
+	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
+
 	EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
 
 	bool gain = true;
@@ -1066,8 +1068,8 @@ void MultitreePeer::optimize(void)
 
 		if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 		{
-			//double gainIf = getGain(children, stripe, alternativeParent);
-			double gainIf = getGain(children, stripe, linkToDrop);
+			double gainIf = getGain(children, stripe, alternativeParent);
+			//double gainIf = getGain(children, stripe, linkToDrop);
 			EV << "GAIN: " << gainIf << endl;
 			EV << "THRESHOLD: " << gainThreshold << endl;
 
@@ -1087,8 +1089,6 @@ void MultitreePeer::optimize(void)
 			}
 		}
 	}
-
-	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
 		
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
@@ -1100,14 +1100,22 @@ void MultitreePeer::optimize(void)
 	while(remainingBW > 0)
 	{
 		int maxSucc = 0;
+		int maxActiveTrees = 0;
 		IPvXAddress child;
 		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
 		{
+
+			int numActiveTrees = m_partnerList->getNumActiveTrees(it->first);
+
 			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-					&& m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first) 
-					&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
+				//&& numActiveTrees > maxActiveTrees
+				//&& m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first) 
+				&& m_partnerList->nodeForwardingInOtherStripe(stripe, it->first) 
+				&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) 
+				)
 			{
 				maxSucc = it->second[stripe];
+				maxActiveTrees = numActiveTrees;
 				child = it->first;
 			}
 		}
@@ -1117,7 +1125,7 @@ void MultitreePeer::optimize(void)
 				for (std::map<IPvXAddress, std::vector<int> >::iterator it = children.begin() ; it != children.end(); ++it)
 			{
 				if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-						&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
+					&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
 				{
 					maxSucc = it->second[stripe];
 					child = it->first;
@@ -1197,7 +1205,8 @@ bool MultitreePeer::isPreferredStripe(unsigned int stripe)
 bool MultitreePeer::canAccept(ConnectRequest request)
 {
 	//return true;
-	return m_partnerList->getNumActiveTrees() == 0 ||
-		isPreferredStripe(request.stripe) ||
-		request.currentParent.isUnspecified();
+	return m_partnerList->getNumActiveTrees() < (numStripes / 4)
+		|| isPreferredStripe(request.stripe)
+		//|| request.currentParent.isUnspecified()
+		;
 }

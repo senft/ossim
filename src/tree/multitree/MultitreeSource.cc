@@ -273,8 +273,8 @@ void MultitreeSource::optimize(void)
 
 			if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
 			{
-				//double gainIf = getGain(children[stripe], stripe, alternativeParent);
-				double gainIf = getGain(children[stripe], stripe, linkToDrop);
+				double gainIf = getGain(children[stripe], stripe, alternativeParent);
+				//double gainIf = getGain(children[stripe], stripe, linkToDrop);
 			
 				EV << "GAIN: " << gainIf << endl;
 				EV << "THRESHOLD: " << gainThreshold << endl;
@@ -319,7 +319,7 @@ void MultitreeSource::optimize(void)
 
 			int currentNumChildren = children[i].size();
 			if(currentNumChildren < minChildren
-					|| (currentNumChildren == minChildren && intrand(2) == 0)
+				|| (currentNumChildren == minChildren && intrand(2) == 0)
 					)
 			{
 				minChildren = currentNumChildren;
@@ -329,17 +329,25 @@ void MultitreeSource::optimize(void)
 		stripe = minIndex;
 
 		int maxSucc = 0;
+		int maxActiveTrees = 0;
 		IPvXAddress child;
 
 		// ... and the node that should be requested from...
 		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 		{
+
+			int numActiveTrees = m_partnerList->getNumActiveTrees(it->first);
+
 			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-					&& m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first)
-						&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
+				//&& numActiveTrees > maxActiveTrees
+				//&& m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first)
+				&& m_partnerList->nodeForwardingInOtherStripe(stripe, it->first) 
+				&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0))
+				)
 			{
 				maxSucc = it->second[stripe];
 				child = it->first;
+				maxActiveTrees = numActiveTrees;
 			}
 		}
 
@@ -348,7 +356,7 @@ void MultitreeSource::optimize(void)
 			for (std::map<IPvXAddress, std::vector<int> >::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
 			{
 				if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-						&& ( it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
+					&& ( it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
 				{
 					maxSucc = it->second[stripe];
 					child = it->first;
@@ -400,36 +408,37 @@ void MultitreeSource::optimize(void)
 bool MultitreeSource::canAccept(ConnectRequest request)
 {
 	return true;
-  int stripe = request.stripe;
-  bool moreSuccInOther = true;
 
-  int myNumSucc = m_partnerList->getNumSuccessors(stripe);
-
-  for (size_t i = 0; i < numStripes; i++)
-  {
-    if(i == stripe)
-      continue;
-
-    if(myNumSucc > m_partnerList->getNumSuccessors(i))
-    {
-      moreSuccInOther = false;
-    }
-
-  }
-
-  bool triedAllChildren = true;
-  std::vector<IPvXAddress> lastRequests = request.lastRequests;
-  std::set<IPvXAddress> &myChildren = m_partnerList->getChildren(stripe);
-  for(std::set<IPvXAddress>::iterator it = myChildren.begin(); it != myChildren.end(); ++it)
-  {
-    if( std::find(lastRequests.begin(), lastRequests.end(), (IPvXAddress)*it) == lastRequests.end() )
-    {
-      triedAllChildren = false;
-    }
-  }
-
-    // lastRequests.size == 0 and no current parent means this is
-  // probably due to a PassNodeRequest
-  return (triedAllChildren && moreSuccInOther)
-    || (!request.currentParent.isUnspecified() && request.lastRequests.size() == 0);
+	unsigned int stripe = request.stripe;
+	bool moreSuccInOther = true;
+	
+	int myNumSucc = m_partnerList->getNumSuccessors(stripe);
+	
+	for (size_t i = 0; i < numStripes; i++)
+	{
+	  if(i == stripe)
+	    continue;
+	
+	  if(myNumSucc > m_partnerList->getNumSuccessors(i))
+	  {
+	    moreSuccInOther = false;
+	  }
+	
+	}
+	
+	bool triedAllChildren = true;
+	std::vector<IPvXAddress> lastRequests = request.lastRequests;
+	std::set<IPvXAddress> &myChildren = m_partnerList->getChildren(stripe);
+	for(std::set<IPvXAddress>::iterator it = myChildren.begin(); it != myChildren.end(); ++it)
+	{
+	  if( std::find(lastRequests.begin(), lastRequests.end(), (IPvXAddress)*it) == lastRequests.end() )
+	  {
+	    triedAllChildren = false;
+	  }
+	}
+	
+	  // lastRequests.size == 0 and no current parent means this is
+	// probably due to a PassNodeRequest
+	return (triedAllChildren && moreSuccInOther)
+	  || (!request.currentParent.isUnspecified() && request.lastRequests.size() == 0);
 }
