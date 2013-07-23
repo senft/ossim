@@ -273,15 +273,22 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			else if(hasBWLeft(1))
 			{
 
-				accept.push_back(request);
-				m_partnerList->addChild(stripe, senderAddress, numSucc);
-
-				if(!onlyPreferredStripes)
+				if(canAccept(request))
 				{
-					doOptimize = true;
-				}
+					accept.push_back(request);
+					m_partnerList->addChild(stripe, senderAddress, numSucc);
 
-				scheduleSuccessorInfo(stripe);
+					if(!onlyPreferredStripes)
+					{
+						doOptimize = true;
+					}
+
+					scheduleSuccessorInfo(stripe);
+				}
+				else
+				{
+					reject.push_back(request);
+				}
 
 			}
 			else

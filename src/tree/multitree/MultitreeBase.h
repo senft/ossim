@@ -122,6 +122,8 @@ protected:
 
     int getForwardingCosts(int stripe, IPvXAddress child); // K_forw, K_2
 
+	virtual bool canAccept(ConnectRequest request) = 0;
+
 private:
 	bool param_optimize;
 	bool param_sendMissingChunks;

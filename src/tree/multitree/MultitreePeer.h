@@ -84,5 +84,8 @@ private:
 	long m_count_prev_chunkHit;
 
 	std::map<IPvXAddress, std::vector<int> > connectTo;
+
+
+	virtual bool canAccept(ConnectRequest request);
 };
 #endif

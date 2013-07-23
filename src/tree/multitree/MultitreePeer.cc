@@ -1193,3 +1193,11 @@ bool MultitreePeer::isPreferredStripe(unsigned int stripe)
 	}
 	return true;
 }
+
+bool MultitreePeer::canAccept(ConnectRequest request)
+{
+	//return true;
+	return m_partnerList->getNumActiveTrees() == 0 ||
+		isPreferredStripe(request.stripe) ||
+		request.currentParent.isUnspecified();
+}
