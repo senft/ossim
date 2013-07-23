@@ -47,13 +47,15 @@ def plot(ylabel, vectors):
 
     i = 0
     for vecnum in vectors.keys():
-        plt.plot(vectors[vecnum]['x'], vectors[vecnum]['y'], '--',
-                 label=vectors[vecnum]['label'], marker='o',
-                 color=cm.jet(1.*i/len(vectors)))
-        plt.scatter(vectors[vecnum]['x'], vectors[vecnum]['y'])
+        plt.plot(vectors[vecnum]['x'], vectors[vecnum]['y'], #'--',
+                 label=vectors[vecnum]['label'], #marker='o',
+                 #color=cm.jet(1.*i/len(vectors))
+                 )
+        #plt.scatter(vectors[vecnum]['x'], vectors[vecnum]['y'])
         i += 1
 
-    plt.legend(fontsize=8)
+    #plt.legend(fontsize=8)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.grid()
     plt.show()
 
