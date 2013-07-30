@@ -38,6 +38,11 @@ struct ChildCost
     {
         return (cost > other.cost);
     }
+
+	bool operator == (const ChildCost& other) const
+    {
+        return cost == other.cost && stripe == other.stripe && child.equals(other.child);
+    }
 };
 
 class MultitreeBase : public CommBase, public VideoBufferListener
@@ -120,6 +125,7 @@ protected:
 	// Optimization functions
 	double getCosts(int stripe, IPvXAddress child);
 	double getGain(int stripe, IPvXAddress child);
+	double getGain(int stripe, IPvXAddress child, IPvXAddress *linkToDrop);
 	double getGainThreshold(void);
 	double gainThreshold;
 
@@ -137,6 +143,9 @@ protected:
     int getForwardingCosts(int stripe, IPvXAddress child); // K_forw, K_2
 
 	virtual bool canAccept(ConnectRequest request) = 0;
+	bool haveMoreChildrenInOtherStripe(unsigned int stripe);
+
+	int getNumDisconnectChildren(void);
 
 private:
 	bool param_optimize;
@@ -157,10 +166,11 @@ private:
 	virtual bool isPreferredStripe(unsigned int stripe) = 0;
 
 	double getStripeDensityCosts(unsigned int stripe); // K_sel, K_1
-    double getBalanceCosts(unsigned int stripe, IPvXAddress child); //K_bal, K_3
+    double getBalanceCosts(unsigned int stripe, IPvXAddress child, IPvXAddress *linkToDrop); //K_bal, K_3
     double getDependencyCosts(IPvXAddress child); //K_4
 
 	double param_delayOptimization;
+
 };
 
 #endif

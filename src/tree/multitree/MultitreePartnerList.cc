@@ -138,20 +138,54 @@ IPvXAddress MultitreePartnerList::getLaziestForwardingChild(unsigned int stripe,
 	IPvXAddress child;
 	const std::map<IPvXAddress, std::vector<int> > curChildren = mChildren[stripe];
 	int minSucc = INT_MAX;
+	int minActiveTrees = INT_MAX;
 
 	for (std::map<IPvXAddress, std::vector<int> >::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
 	{
 		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
 		if(!skipNode)
 		{
-			//if(getNumActiveTrees(it->first) == 0)
-			//	return it->first;
+			int curActiveTrees = getNumActiveTrees(it->first);
 
-			if( //!nodeHasMoreChildrenInOtherStripe(stripe, it->first) && 
-				((it->second[stripe] > 0 && it->second[stripe] < minSucc)
-				|| (it->second[stripe] == minSucc && (int)intrand(2) == 0)))
+			if( (it->second[stripe] > 0 && it->second[stripe] < minSucc)
+				|| (it->second[stripe] == minSucc && curActiveTrees < minActiveTrees)
+				|| (it->second[stripe] == minSucc && curActiveTrees == minActiveTrees && (int)intrand(2) == 0)
+			  )
 			{
 				minSucc = it->second[stripe];
+				minActiveTrees = curActiveTrees;
+				child = it->first;
+			}
+		}
+	}
+	return child;
+}
+
+IPvXAddress MultitreePartnerList::getBusiestLazyChild(unsigned int stripe, const std::set<IPvXAddress> &skipNodes)
+{
+	// Laziest forwarding child, but with the most active trees
+	IPvXAddress child;
+	const std::map<IPvXAddress, std::vector<int> > curChildren = mChildren[stripe];
+	int minSucc = INT_MAX;
+	int maxActiveTrees = INT_MIN;
+
+	for (std::map<IPvXAddress, std::vector<int> >::const_iterator it = curChildren.begin() ; it != curChildren.end(); ++it)
+	{
+		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
+		if(!skipNode)
+		{
+			int curActiveTrees = getNumActiveTrees(it->first);
+			//EV << it->first << " has " << it->second[stripe] << " succ (min: " << minSucc 
+			//	<< ") and " << curActiveTrees << " trees (max: " << maxActiveTrees << ")" << endl;
+
+			if( 
+				(it->second[stripe] > 0 && it->second[stripe] < minSucc)
+				|| (it->second[stripe] > 0 && it->second[stripe] == minSucc && curActiveTrees > maxActiveTrees)
+				|| (it->second[stripe] > 0 && it->second[stripe] == minSucc && curActiveTrees == maxActiveTrees && intrand(2) == 0)
+				)
+			{
+				minSucc = it->second[stripe];
+				maxActiveTrees = curActiveTrees;
 				child = it->first;
 			}
 		}
@@ -428,20 +462,6 @@ bool MultitreePartnerList::nodeForwardingInOtherStripe(unsigned int stripe, IPvX
 			continue;
 
 		if(getNumChildsSuccessors(i, node) > 0)
-			return true;
-	}
-	return false;
-}
-
-bool MultitreePartnerList::haveMoreChildrenInOtherStripe(unsigned int stripe)
-{
-	int numChildren = getNumOutgoingConnections(stripe);
-	for (size_t i = 0; i < numStripes; i++)
-	{
-		if(i == stripe)
-			continue;
-
-		if(getNumOutgoingConnections(i) > numChildren)
 			return true;
 	}
 	return false;

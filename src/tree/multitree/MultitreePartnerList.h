@@ -22,7 +22,6 @@ public:
 
 	bool nodeForwardingInOtherStripe(unsigned int stripe, IPvXAddress node);
 	bool nodeHasMoreChildrenInOtherStripe(unsigned int stripe, IPvXAddress node);
-	bool haveMoreChildrenInOtherStripe(unsigned int stripe);
 
 	int getNumChildren(void);
 	int getNumSuccessors(unsigned int stripe);
@@ -47,6 +46,8 @@ public:
 	void removeChild(unsigned int stripe, IPvXAddress address);
 	std::set<IPvXAddress> &getChildren(unsigned int stripe);
 	std::map<IPvXAddress, std::vector<int> > getChildrenWithCount(unsigned int stripe);
+
+	IPvXAddress getBusiestLazyChild(unsigned int stripe, const std::set<IPvXAddress> &skipNodes);
 
 	IPvXAddress getLaziestForwardingChild(unsigned int stripe, const std::set<IPvXAddress> &skipNodes);
 	IPvXAddress getChildWithMostChildren(unsigned int stripe, const std::set<IPvXAddress> &skipNodes);

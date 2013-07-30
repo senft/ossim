@@ -217,88 +217,103 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 
 void MultitreeSource::optimize(void)
 {
-	// TODO maybe start with the tree I have the most children in
+	std::vector<ChildCost> childCosts;
 
 	printStatus();
 
-	int remainingBW = getMaxOutConnections() - m_partnerList->getNumOutgoingConnections();
+	// nodes from who I should not request children
+	std::map<int, std::set<IPvXAddress> > skipNodes;
 
-	std::vector<std::map<IPvXAddress, std::vector<int> > > children;
-
-	for (unsigned int stripe = 0; stripe < numStripes; stripe++)
+	for (size_t i = 0; i < numStripes; i++)
 	{
-        children.push_back(m_partnerList->getChildrenWithCount(stripe));
+		const std::set<IPvXAddress> &curChildren = m_partnerList->getChildren(i);
+
+		for(std::set<IPvXAddress>::iterator it = curChildren.begin(); it != curChildren.end(); ++it)
+		{
+			childCosts.push_back(ChildCost(i, getCosts(i, (IPvXAddress)*it), (IPvXAddress)*it));
+		}
 	}
 
-	int stripe = 0;
-	std::set<int> noGainIn;
-	while(noGainIn.size() < numStripes)
+	sort(childCosts.begin(), childCosts.end());
+
+	unsigned int lookedAt = 0;
+	bool gain = true;
+	//for(std::vector<ChildCost>::iterator it = childCosts.begin(); it != childCosts.end(); ++it)
+	while(gain || lookedAt <= childCosts.size())
 	{
-		// Get stripe with most children
-		int maxChildren = INT_MIN;
-		int overallMax = INT_MIN;
-		for (size_t i = 0; i < numStripes; i++)
-		{
-			int currentNumChildren = children[i].size();
+		gain = false;
 
-			if(currentNumChildren > overallMax)
-				overallMax = currentNumChildren;
-
-			if(noGainIn.find(i) != noGainIn.end())
-				continue;
-
-			if(currentNumChildren > maxChildren || (currentNumChildren == maxChildren && intrand(2) == 0))
-			{
-				maxChildren = currentNumChildren;
-				stripe = i;
-			}
-		}
-
-		if(maxChildren < overallMax)
+		if(childCosts.size() < 1)
 			break;
 
-		EV << "---------------------------------------------- OPTIMIZE, STRIPE: " << stripe << endl;
-
-		bool gain = false;
-		if(children[stripe].size() > 1)
+		for(std::vector<ChildCost>::iterator it = childCosts.begin(); it != childCosts.end(); ++it)
 		{
-			IPvXAddress linkToDrop;	
-			getCostliestChild(children[stripe], stripe, linkToDrop);
+			double newCost = getCosts(it->stripe, it->child);
+			it->cost = newCost;
+		}
+		sort(childCosts.begin(), childCosts.end());
 
-			IPvXAddress alternativeParent;	
-			getCheapestChild(children[stripe], stripe, alternativeParent, linkToDrop);
+		//for(std::vector<ChildCost>::iterator it = childCosts.begin(); it != childCosts.end(); ++it)
+		//{
+		//	EV << it->child << " (stripe " << it->stripe << ") " << it->cost << endl;
+		//}
 
-			EV << "COSTLIEST CHILD: " << linkToDrop << endl;
-			EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+		ChildCost linkToDrop = childCosts[0];
+		IPvXAddress child = linkToDrop.child;
+		int stripe = linkToDrop.stripe;
 
-			if(!linkToDrop.isUnspecified() && !alternativeParent.isUnspecified())
+		lookedAt++;
+
+		unsigned int asd = 1;
+		while((m_partnerList->getNumOutgoingConnections(stripe) <= 1 || haveMoreChildrenInOtherStripe(stripe))
+				&& asd < childCosts.size())
+		{
+			linkToDrop = childCosts[asd++];
+			child = linkToDrop.child;
+			stripe = linkToDrop.stripe;
+		}
+
+		if(m_partnerList->getNumOutgoingConnections(stripe) <= 1 || haveMoreChildrenInOtherStripe(stripe))
+			break;
+
+		IPvXAddress alternativeParent;	
+		getCheapestChild(stripe, alternativeParent, child);
+
+		EV << "COSTLIEST CHILD: " << child << " (stripe " << stripe << ")" << endl;
+		EV << "CHEAPEST CHILD: " << alternativeParent << endl;
+		if(!child.isUnspecified() && !alternativeParent.isUnspecified())
+		{
+			double gainIf = getGain(stripe, alternativeParent, &child);
+			EV << "GAIN: " << gainIf << endl;
+			EV << "OLD_GAIN: " << getGain(stripe, alternativeParent) << endl;
+			gainThreshold = getGainThreshold();
+			EV << "THRESHOLD: " << gainThreshold << endl;
+
+			if(gainIf >= gainThreshold)
 			{
-				double gainIf = getGain(children[stripe], stripe, alternativeParent);
-				//double gainIf = getGain(children[stripe], stripe, linkToDrop);
-			
-				EV << "GAIN: " << gainIf << endl;
-				EV << "THRESHOLD: " << gainThreshold << endl;
+				// Drop costliest to cheapest
+				dropNode(stripe, child, alternativeParent);
 
-				if(gainIf >= gainThreshold)
-				{
-					// Drop costliest to cheapest
-					dropNode(stripe, linkToDrop, alternativeParent);
+				skipNodes[stripe].insert(child);
+				skipNodes[stripe].insert(alternativeParent);
 
-					int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
-					int succDrop = m_partnerList->getNumChildsSuccessors(stripe, linkToDrop);
-					m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
+				gain = true;
 
-					children[stripe][alternativeParent][stripe] += 1 + children[stripe][linkToDrop][stripe];
-					children[stripe].erase(children[stripe].find(linkToDrop));
-					gain = true;
-				}
+				int succParent = m_partnerList->getNumChildsSuccessors(stripe, alternativeParent);
+				int succDrop = m_partnerList->getNumChildsSuccessors(stripe, child);
+				m_partnerList->updateNumChildsSuccessors(stripe, alternativeParent, succParent + 1 + succDrop);
+
+				gainThreshold = getGainThreshold();
 			}
 		}
 
-		if(!gain)
-			noGainIn.insert(stripe);
+		EV << "--------------------------------------------" << endl;
 
-	}			
+		childCosts.erase(std::find(childCosts.begin(), childCosts.end(), linkToDrop));
+
+	}
+
+	int remainingBW = getMaxOutConnections() - (m_partnerList->getNumOutgoingConnections() - getNumDisconnectChildren());
 
 	EV << "Currently have " << m_partnerList->getNumOutgoingConnections() <<
 		" outgoing connections. Max: " << getMaxOutConnections() << " remaining: " << remainingBW << endl;
@@ -306,9 +321,9 @@ void MultitreeSource::optimize(void)
 	// <node, <stripe, remainingBW> >
 	std::map<IPvXAddress, std::map<int ,int> > requestNodes;
 	std::set<int> treesWithNoMoreChildren;
+	int stripe = 0;
 	while(remainingBW > 0 && treesWithNoMoreChildren.size() < numStripes)
 	{
-
 		// Get stripe with least children...
 		int minIndex = 0;
 		int minChildren = INT_MAX;
@@ -317,10 +332,10 @@ void MultitreeSource::optimize(void)
 			if(treesWithNoMoreChildren.find(i) != treesWithNoMoreChildren.end())
 				continue;
 
-			int currentNumChildren = children[i].size();
+			int currentNumChildren = m_partnerList->getNumOutgoingConnections(i) - disconnectingChildren[i].size();
 			if(currentNumChildren < minChildren
 				|| (currentNumChildren == minChildren && intrand(2) == 0)
-					)
+				)
 			{
 				minChildren = currentNumChildren;
 				minIndex = i;
@@ -328,43 +343,13 @@ void MultitreeSource::optimize(void)
 		}
 		stripe = minIndex;
 
-		int maxSucc = 0;
-		int maxActiveTrees = 0;
-		IPvXAddress child;
+		//IPvXAddress child = m_partnerList->getLaziestForwardingChild(stripe, skipNodes[stripe]);
+		IPvXAddress child = m_partnerList->getBusiestLazyChild(stripe, skipNodes[stripe]);
+		int childsSucc = m_partnerList->getNumChildsSuccessors(stripe, child);
 
-		// ... and the node that should be requested from...
-		for (std::map<IPvXAddress, std::vector<int> >::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
-		{
+		//EV << "stripe: " << stripe << " child: " << child << " succ: " << childsSucc << endl;
 
-			int numActiveTrees = m_partnerList->getNumActiveTrees(it->first);
-
-			if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-				//&& numActiveTrees > maxActiveTrees
-				//&& m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, it->first)
-				&& m_partnerList->nodeForwardingInOtherStripe(stripe, it->first) 
-				&& (it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0))
-				)
-			{
-				maxSucc = it->second[stripe];
-				child = it->first;
-				maxActiveTrees = numActiveTrees;
-			}
-		}
-
-		if(child.isUnspecified() || maxSucc <= 0)
-		{
-			for (std::map<IPvXAddress, std::vector<int> >::iterator it = children[stripe].begin() ; it != children[stripe].end(); ++it)
-			{
-				if( disconnectingChildren[stripe].find(it->first) == disconnectingChildren[stripe].end() 
-					&& ( it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0)) )
-				{
-					maxSucc = it->second[stripe];
-					child = it->first;
-				}
-			}
-		}
-
-		if(child.isUnspecified() || maxSucc <= 0)
+		if(child.isUnspecified() || childsSucc <= 0)
 		{
 			treesWithNoMoreChildren.insert(stripe);
 			continue;
@@ -372,34 +357,31 @@ void MultitreeSource::optimize(void)
 
 		// ... and request a node from that child
 
-		remainingBW--;
-		requestNodes[child][stripe]++;
-		children[stripe][child][stripe]--;
-	}
-
-	for (std::map<IPvXAddress, std::map<int, int> >::iterator it = requestNodes.begin() ; it != requestNodes.end(); ++it)
-	{
 		TreePassNodeRequestPacket *reqPkt = new TreePassNodeRequestPacket("TREE_PASS_NODE_REQUEST");
 
-		for (std::map<int, int>::iterator stripes = it->second.begin() ; stripes != it->second.end(); ++stripes)
-		{
-			double depFactor = (double)(m_partnerList->getNumSuccessors(stripes->first) / 
-								((double)m_partnerList->getNumOutgoingConnections(stripes->first) )) - 1;
+		PassNodeRequest request;
+		request.stripe = stripe;
+		request.threshold = gainThreshold;
+		request.dependencyFactor = (double)(m_partnerList->getNumSuccessors(stripe) / 
+					((double)m_partnerList->getNumOutgoingConnections(stripe) )) - 1;
 
-			PassNodeRequest request;
-			request.stripe = stripes->first;
-			request.remainingBW = stripes->second;
-			request.threshold = gainThreshold;
-			request.dependencyFactor = depFactor;
+		EV << "depFactor: " << request.dependencyFactor << endl;
 
-			reqPkt->getRequests().push_back(request);
+		if(remainingBW >= childsSucc)
+			request.remainingBW = childsSucc;
+		else
+			request.remainingBW = remainingBW;
+		remainingBW -= request.remainingBW;
 
-			EV << "Request " << request.remainingBW << " from " << it->first << ", stripe " << stripes->first << endl;
-		}
+		reqPkt->getRequests().push_back(request);
 
-		m_gstat->reportMessagePNR();
+		EV << "Request " << request.remainingBW << " from " << child << ", stripe " << stripe << endl;
+
 		numPNR++;
-		sendToDispatcher(reqPkt, m_localPort, it->first, m_localPort);
+		m_gstat->reportMessagePNR();
+		sendToDispatcher(reqPkt, m_localPort, child, m_localPort);
+
+		skipNodes[stripe].insert(child);
 	}
 }
 
