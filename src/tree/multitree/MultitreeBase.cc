@@ -167,7 +167,6 @@ void MultitreeBase::processConnectRequest(cPacket *pkt)
 			const ConnectRequest request = (ConnectRequest)*it;
 			int stripe = request.stripe;
 
-			
 			if( (onlyPreferredStripes && !isPreferredStripe(stripe))
 					|| (!onlyPreferredStripes && isPreferredStripe(stripe)) )
 				continue;
@@ -340,7 +339,6 @@ void MultitreeBase::rejectConnectRequests(const std::vector<ConnectRequest> &req
 
 		pkt->getRequests().push_back(dRequest);
 
-
 		// Update successors of the alternative parent
 		if(!alternativeParent.equals(getNodeAddress()))
 		{
@@ -504,40 +502,46 @@ void MultitreeBase::scheduleOptimization(void)
     scheduleAt(simTime() + param_delayOptimization, timer_optimization);
 }
 
-void MultitreeBase::getCheapestChild(successorList childList, int stripe, IPvXAddress &address, IPvXAddress skipAddress)
+void MultitreeBase::getCheapestChild(int stripe, IPvXAddress &address, IPvXAddress skipAddress)
 {
-    IPvXAddress curMaxAddress;
-	double curMaxGain = INT_MIN;
+    IPvXAddress maxAddress;
+	double maxGain = INT_MIN;
+	int minActiveTrees = INT_MAX;
 
-	for(successorList::iterator it = childList.begin() ; it != childList.end(); ++it)
+	std::set<IPvXAddress> children = m_partnerList->getChildren(stripe);
+
+	for(std::set<IPvXAddress>::iterator it = children.begin() ; it != children.end(); ++it)
 	{
-		IPvXAddress curAddress = it->first;
+		IPvXAddress curAddress = (IPvXAddress)*it;
 
-		if(m_partnerList->hasParent(curAddress))
-			continue;
-
-		if(curAddress.equals(skipAddress) 
+		if(m_partnerList->hasParent(curAddress)
+				|| curAddress.equals(skipAddress) 
 				|| disconnectingChildren[stripe].find(curAddress) != disconnectingChildren[stripe].end()
-				|| m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, curAddress)
+				//|| m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, curAddress)
 			)
 		{
 			continue;
 		}
 
-		double curGain = getGain(childList, stripe, curAddress);
+		double curGain = getGain(stripe, curAddress);
+		int curActiveTrees = m_partnerList->getNumActiveTrees(curAddress);
 
 		//EV << "checking: " << curAddress << ", gain: " << curGain << endl;
 
-		if(curMaxGain < curGain || (curMaxGain == curGain && intrand(2) == 0))
+		if(maxGain < curGain 
+				|| (maxGain == curGain && minActiveTrees < curActiveTrees)
+				|| (maxGain == curGain && minActiveTrees == curActiveTrees && intrand(2) == 0)
+			)
 		{
-			curMaxGain = curGain;
-			curMaxAddress = curAddress;
+			maxGain = curGain;
+			maxAddress = curAddress;
+			minActiveTrees = curActiveTrees;
 		}
 	}
-	address = curMaxAddress;
+	address = maxAddress;
 }
 
-double MultitreeBase::getGain(successorList childList, int stripe, IPvXAddress child)
+double MultitreeBase::getGain(int stripe, IPvXAddress child)
 {
 	//EV << "*************** GAIN *******************" << endl;
 	//EV << " Child: " << child << ": ";
@@ -547,57 +551,33 @@ double MultitreeBase::getGain(successorList childList, int stripe, IPvXAddress c
 	//   	- (param_weightK2 * getForwardingCosts(stripe, child));
 
 	// K_3 - K_2
-	return (getBalanceCosts(childList, stripe, child))
+	return (getBalanceCosts(stripe, child))
 		- (getForwardingCosts(stripe, child));
 }
 
-void MultitreeBase::getCostliestChild(successorList childList, int stripe, IPvXAddress &address)
-{
-    IPvXAddress curMaxAddress;
-	double curMaxCosts = INT_MIN;
-
-	for(successorList::iterator it = childList.begin() ; it != childList.end(); ++it)
-	{
-		IPvXAddress curAddress = it->first;
-		if ( disconnectingChildren[stripe].find(curAddress) == disconnectingChildren[stripe].end() )
-		{
-			double curCosts = getCosts(childList, stripe, curAddress);
-
-			//EV << "checking: " << curAddress << ", costs: " << curCosts << endl;
-
-			if(curMaxCosts < curCosts || (curMaxCosts == curCosts && intrand(2) == 0))
-			{
-				curMaxCosts = curCosts;
-				curMaxAddress = curAddress;
-			}
-		}
-	}
-	address = curMaxAddress;
-}
-
-double MultitreeBase::getCosts(successorList childList, int stripe, IPvXAddress child)
+double MultitreeBase::getCosts(int stripe, IPvXAddress child)
 {
 	EV << child << ": ";
-	EV << "K1: " << getStripeDensityCosts(childList, stripe);
+	EV << "K1: " << getStripeDensityCosts(stripe);
 	EV << ", K2: " << getForwardingCosts(stripe, child);
-	EV << ", K3: " << getBalanceCosts(childList, stripe, child);
+	EV << ", K3: " << getBalanceCosts(stripe, child);
 	EV << ", K4: " << getDependencyCosts(child);
-	EV << ", Total: " << param_weightK1 * getStripeDensityCosts(childList, stripe)
+	EV << ", Total: " << param_weightK1 * getStripeDensityCosts(stripe)
 		+ param_weightK2 * getForwardingCosts(stripe, child)
-		+ param_weightK3 * getBalanceCosts(childList, stripe, child)
+		+ param_weightK3 * getBalanceCosts(stripe, child)
 		+ param_weightK4 * getDependencyCosts(child) << endl;
 	EV << "****************************************" << endl;
 
 	// K_1 + 2 * K_2 + 3 * K_3 + 4 * K_4
-	return param_weightK1 * getStripeDensityCosts(childList, stripe)
+	return param_weightK1 * getStripeDensityCosts(stripe)
 		+ param_weightK2 * getForwardingCosts(stripe, child)
-		+ param_weightK3 * getBalanceCosts(childList, stripe, child)
+		+ param_weightK3 * getBalanceCosts(stripe, child)
 		+ param_weightK4 * getDependencyCosts(child);
 }
 
-double MultitreeBase::getStripeDensityCosts(successorList childList, int stripe) // K_sel ,K_1
+double MultitreeBase::getStripeDensityCosts(unsigned int stripe) // K_sel ,K_1
 {
-	int fanout = childList.size();
+	int fanout = m_partnerList->getNumOutgoingConnections(stripe);
 	double outCapacity = (bwCapacity * numStripes);
 	//EV << "K1: " << fanout << " " << outCapacity << endl;
 	return 1 - (fanout / outCapacity);
@@ -615,21 +595,17 @@ int MultitreeBase::getForwardingCosts(int stripe, IPvXAddress child) // K_forw, 
 	return 0;
 }
 
-double MultitreeBase::getBalanceCosts(successorList childList, int stripe, IPvXAddress child) // K_bal, K_3
+double MultitreeBase::getBalanceCosts(unsigned int stripe, IPvXAddress child) // K_bal, K_3
 {
-    double numChildren = childList.size();
+    double numChildren = m_partnerList->getNumOutgoingConnections(stripe);
 
-	double numSucc = numChildren;
-	for (successorList::iterator it = childList.begin() ; it != childList.end(); ++it)
-	{
-		numSucc += it->second[stripe];
-	}
+	double numSucc = m_partnerList->getNumSuccessors(stripe);
 
 	if(numChildren == numSucc)
 		// None of my children has children themself
 		return 1;
 
-    int childsSuccessors = childList[child][stripe];
+    int childsSuccessors = m_partnerList->getNumChildsSuccessors(stripe, child);
 
 	//EV << "fanout: " << numChildren << " mySucc: " << numSucc << " childsSucc: " << childsSuccessors << endl; 
 

@@ -30,23 +30,23 @@ void MultitreeStatistic::initialize(int stage)
 {
     if (stage == 0)
     {
-        sig_chunkArrival		 = registerSignal("Signal_Chunk_Arrival");
-        sig_packetLoss   		 = registerSignal("Signal_Packet_Loss");
-        sig_numTrees             = registerSignal("Signal_Mean_Num_Trees");
-        sig_BWUtil               = registerSignal("Signal_BW_Utilization");
-        sig_connTime             = registerSignal("Signal_Connection_Time");
-        sig_retrys               = registerSignal("Signal_Retrys");
-        sig_meanOutDegree        = registerSignal("Signal_Mean_Out_Degree");
-        sig_meanHopcount         = registerSignal("Signal_Mean_Hopcount");
+        sig_chunkArrival		  = registerSignal("Signal_Chunk_Arrival");
+        sig_packetLoss   		  = registerSignal("Signal_Packet_Loss");
+        sig_numTrees              = registerSignal("Signal_Mean_Num_Trees");
+        sig_BWUtil                = registerSignal("Signal_BW_Utilization");
+        sig_connTime              = registerSignal("Signal_Connection_Time");
+        sig_retrys                = registerSignal("Signal_Retrys");
+        sig_meanOutDegree         = registerSignal("Signal_Mean_Out_Degree");
+        sig_meanHopcount          = registerSignal("Signal_Mean_Hopcount");
 
-        sig_forwardingOne        = registerSignal("Signal_Forwarding_In_One");
+        sig_forwardingOne         = registerSignal("Signal_Forwarding_In_One");
         sig_forwardingMoreThanOne = registerSignal("Signal_Forwarding_In_More_Than_One");
 
-        sig_messageCountCR       = registerSignal("Signal_Message_Count_CR");
-        sig_messageCountDR       = registerSignal("Signal_Message_Count_DR");
-        sig_messageCountCC       = registerSignal("Signal_Message_Count_CC");
-        sig_messageCountPNR      = registerSignal("Signal_Message_Count_PNR");
-        sig_messageCountSI       = registerSignal("Signal_Message_Count_SI");
+        sig_messageCountCR        = registerSignal("Signal_Message_Count_CR");
+        sig_messageCountDR        = registerSignal("Signal_Message_Count_DR");
+        sig_messageCountCC        = registerSignal("Signal_Message_Count_CC");
+        sig_messageCountPNR       = registerSignal("Signal_Message_Count_PNR");
+        sig_messageCountSI        = registerSignal("Signal_Message_Count_SI");
 	}
 
     if (stage != 3)
@@ -436,14 +436,19 @@ void MultitreeStatistic::reportHopcounts()
 		}
 
 		double mean = (double)totalPerTree / (double)hopcounts[i].size();
-		oVMeanHopcount[i].record(mean);
-		meanHopcounts[i] = mean;
+		if(mean > 0)
+		{
+			oVMeanHopcount[i].record(mean);
+			meanHopcounts[i] = mean;
+		}
 
 		hopcounts[i].clear();
 	}
 
-
 	meanMaxTreeheight = totalMaxHeights / numStripes;
-	meanHopcount = total / (double)totalSamples;
-	emit(sig_meanHopcount, meanHopcount);
+	if(totalSamples > 0 && total > 0)
+	{
+		meanHopcount = total / (double)totalSamples;
+		emit(sig_meanHopcount, meanHopcount);
+	}
 }

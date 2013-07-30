@@ -26,6 +26,20 @@ enum TreeJoinState
 
 typedef std::map<IPvXAddress, std::vector<int> > successorList;
 
+struct ChildCost
+{
+    int stripe;
+	double cost;
+    IPvXAddress child;
+
+    ChildCost(int stripe, double cost, const IPvXAddress &child) : stripe(stripe), cost(cost), child(child) {}
+
+    bool operator < (const ChildCost& other) const
+    {
+        return (cost > other.cost);
+    }
+};
+
 class MultitreeBase : public CommBase, public VideoBufferListener
 {
 public:
@@ -104,13 +118,13 @@ protected:
     int getMaxOutConnections(void);
 
 	// Optimization functions
-	double getCosts(successorList childList, int stripe, IPvXAddress child);
-	double getGain(successorList childList, int stripe, IPvXAddress child);
+	double getCosts(int stripe, IPvXAddress child);
+	double getGain(int stripe, IPvXAddress child);
 	double getGainThreshold(void);
 	double gainThreshold;
 
-	void getCostliestChild(successorList childList, int fromStripe, IPvXAddress &address);
-	void getCheapestChild(successorList childList, int fromStripe, IPvXAddress &address, IPvXAddress skipAddress);
+	void getCostliestChild(int &stripe, IPvXAddress &address);
+	void getCheapestChild(int stripe, IPvXAddress &address, IPvXAddress skipAddress);
 
 	virtual void optimize(void) = 0;
 
@@ -142,8 +156,8 @@ private:
 
 	virtual bool isPreferredStripe(unsigned int stripe) = 0;
 
-	double getStripeDensityCosts(successorList childList, int stripe); // K_sel, K_1
-    double getBalanceCosts(successorList childList, int stripe, IPvXAddress child); //K_bal, K_3
+	double getStripeDensityCosts(unsigned int stripe); // K_sel, K_1
+    double getBalanceCosts(unsigned int stripe, IPvXAddress child); //K_bal, K_3
     double getDependencyCosts(IPvXAddress child); //K_4
 
 	double param_delayOptimization;

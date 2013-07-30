@@ -14,6 +14,7 @@ simple MultitreeStatistic like IStreamingStatistic
 
         @statistic[meanOutDegree](source="Signal_Mean_Out_Degree"; record=vector, mean);
 		@statistic[hopCount](source="Signal_Chunk_Arrival"; record=vector, mean;);
+		@statistic[meanHopcount](source="Signal_Mean_Hopcount"; record=vector, mean;);
         @statistic[meanNumTrees](source="Signal_Mean_Num_Trees"; record=vector, mean);
 
 		@statistic[forwardingInOne](source="Signal_Forwarding_In_One"; record=vector, last;);

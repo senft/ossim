@@ -403,8 +403,6 @@ void MultitreeSource::optimize(void)
 	}
 }
 
-//bool MultitreeSource::canAccept(ConnectRequest request) { return true; }
-
 bool MultitreeSource::canAccept(ConnectRequest request)
 {
 	return true;

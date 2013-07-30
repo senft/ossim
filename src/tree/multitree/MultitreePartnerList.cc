@@ -190,7 +190,8 @@ IPvXAddress MultitreePartnerList::getRandomChild(unsigned int stripe, const std:
 
 IPvXAddress MultitreePartnerList::getChildWithMostChildren(unsigned int stripe, const std::set<IPvXAddress> &skipNodes)
 {
-	int maxSucc = -1;
+	int maxSucc = INT_MIN;
+	int maxActiveTrees = INT_MIN;
 	IPvXAddress busiestChild;
 	std::map<IPvXAddress, std::vector<int> > curChildren = mChildren[stripe];
 
@@ -199,11 +200,16 @@ IPvXAddress MultitreePartnerList::getChildWithMostChildren(unsigned int stripe, 
 		bool skipNode = skipNodes.find(it->first) != skipNodes.end();
 		if(!skipNode)
 		{
-			if(it->second[stripe] > maxSucc || (it->second[stripe] == maxSucc && intrand(2) == 0))
-			//if(it->second > maxSucc)
+			int numActiveTrees = getNumActiveTrees(it->first);
+
+			if(it->second[stripe] > maxSucc 
+				|| (it->second[stripe] == maxSucc && maxActiveTrees < numActiveTrees)
+				|| (it->second[stripe] == maxSucc && maxActiveTrees == numActiveTrees && intrand(2) == 0)
+				)
 			{
 				maxSucc = it->second[stripe];
 				busiestChild = it->first;
+				maxActiveTrees = numActiveTrees;
 			}
 		}
 	}

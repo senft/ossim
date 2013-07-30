@@ -777,7 +777,7 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 	{
 
 		PassNodeRequest request = (PassNodeRequest)*it;
-		int stripe = request.stripe;
+		unsigned int stripe = request.stripe;
 
 		IPvXAddress senderAddress;
 		getSender(pkt, senderAddress);
@@ -1204,7 +1204,7 @@ bool MultitreePeer::isPreferredStripe(unsigned int stripe)
 
 bool MultitreePeer::canAccept(ConnectRequest request)
 {
-	//return true;
+	return true;
 	return m_partnerList->getNumActiveTrees() < (numStripes / 4)
 		|| isPreferredStripe(request.stripe)
 		//|| request.currentParent.isUnspecified()
