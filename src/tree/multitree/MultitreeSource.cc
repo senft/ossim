@@ -195,8 +195,8 @@ IPvXAddress MultitreeSource::getAlternativeNode(int stripe, IPvXAddress forNode,
 			skipNodes.insert( lastRequests.back() );
 
 		//address = m_partnerList->getRandomChild(stripe, skipNodes);
-		//address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
-		address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+		address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
+		//address = m_partnerList->getBestLazyChild(stripe, skipNodes);
 		//address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 	}
 
