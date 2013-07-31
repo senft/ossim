@@ -403,8 +403,6 @@ void MultitreeBase::acceptConnectRequests(const std::vector<ConnectRequest> &req
 	}
 
 	gainThreshold = getGainThreshold();
-
-	//printStatus();
 }
 
 void MultitreeBase::processSuccessorUpdate(cPacket *pkt)
@@ -663,7 +661,6 @@ double MultitreeBase::getBalanceCosts(unsigned int stripe, IPvXAddress child, IP
     return  (meanNumSucc - childsSuccessors) / meanNumSucc;
 }
 
-// TODO rename...
 double MultitreeBase::getDependencyCosts(IPvXAddress child) // K_4
 {
 	int numConnections = 0;

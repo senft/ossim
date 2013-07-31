@@ -466,8 +466,6 @@ void MultitreePeer::connectVia(IPvXAddress address, const std::vector<int> &stri
 					sAddr, m_state[stripe], stripe);
 		}
 
-
-		//int numSucc = m_partnerList->getNumSuccessors(stripe);
 		IPvXAddress currentParent = m_partnerList->getParent(stripe);
 		long lastReceivedChunk = lastSeqNumber[stripe];
 
@@ -571,7 +569,6 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 	{
 		for (size_t i = 0; i < numStripes; i++)
 		{
-			// TODO Make sure this only happens when switching from no parent at all to a parent
 			if(m_partnerList->getParent(i).isUnspecified())
 			{
 				return;
@@ -610,9 +607,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			// my PartnerList it.. regardless of state
 			removeChild(stripe, senderAddress);
 
-			// TODO if the node knew, that the DRQ came from a child I dropped because of a PNR I
-			// could omit the update
-			//scheduleSuccessorInfo(stripe);
 			continue;
 		}
 

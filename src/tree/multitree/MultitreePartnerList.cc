@@ -398,21 +398,16 @@ int MultitreePartnerList::getNumChildsSuccessors(unsigned int stripe, IPvXAddres
 
 bool MultitreePartnerList::updateNumChildsSuccessors(unsigned int stripe, IPvXAddress address, int numSuccessors)
 {
-	if(hasChild(address))
+	bool changed = false;
+	for (size_t i = 0; i < numStripes; i++)
 	{
-		for (size_t i = 0; i < numStripes; i++)
+		if(hasChild(i, address))
 		{
-			if(hasChild(i, address))
-			{
-				mChildren[i][address][stripe] = numSuccessors;
-			}
+			mChildren[i][address][stripe] = numSuccessors;
+			changed = true;
 		}
-		return true;
 	}
-	else
-	{
-		return false;
-	}
+	return changed;
 }
 
 void MultitreePartnerList::printPartnerList(void)
