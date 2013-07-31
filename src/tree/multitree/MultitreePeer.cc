@@ -218,8 +218,8 @@ void MultitreePeer::handleTimerLeave()
 				skipNodes.insert((IPvXAddress)*it);
 			}
 			// Choose one specific child...
-			IPvXAddress child = m_partnerList->getBestLazyChild(i, skipNodes);
-			//IPvXAddress child = m_partnerList->getChildWithMostChildren(i, skipNodes);
+			//IPvXAddress child = m_partnerList->getBestLazyChild(i, skipNodes);
+			IPvXAddress child = m_partnerList->getChildWithMostChildren(i, skipNodes);
 
 			if(!child.isUnspecified())
 			{
@@ -989,14 +989,15 @@ IPvXAddress MultitreePeer::getAlternativeNode(int stripe, IPvXAddress forNode, I
 		skipNodes.insert( (IPvXAddress)*it );
 	}
 
-	IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
-	//IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
+	//IPvXAddress address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+	IPvXAddress address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 	//IPvXAddress address = m_partnerList->getChildWithLeastChildren(stripe, skipNodes);
 
 	while(m_partnerList->nodeHasMoreChildrenInOtherStripe(stripe, address) && !address.isUnspecified())
 	{
 		skipNodes.insert(address);
-		address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+		//address = m_partnerList->getBestLazyChild(stripe, skipNodes);
+		address = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 	}
 
 	if( address.isUnspecified() ||
