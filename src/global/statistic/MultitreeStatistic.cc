@@ -463,7 +463,6 @@ void MultitreeStatistic::reportHopcounts()
 		{
 			oVMaxHopcount[i].record(max);
 			treeHeights[i] = max;
-			sumTreeHeights += max;
 		}
 
 		double mean = (double)totalPerTree / (double)hopcounts[i].size();
@@ -472,6 +471,8 @@ void MultitreeStatistic::reportHopcounts()
 			oVMeanHopcount[i].record(mean);
 			meanHopcounts[i] = mean;
 		}
+
+		sumTreeHeights += treeHeights[i];
 
 		hopcounts[i].clear();
 	}
@@ -483,7 +484,7 @@ void MultitreeStatistic::reportHopcounts()
 
 	minTreeHeight = *std::min_element(treeHeights.begin(), treeHeights.end());
 	maxTreeHeight = *std::max_element(treeHeights.begin(), treeHeights.end());
-	meanTreeHeight = sumTreeHeights / numStripes;
+	meanTreeHeight = (double)sumTreeHeights / (double)numStripes;
 	if(numStripes % 2 == 0)
 		medianTreeHeight = sortedTreeHeights[numStripes / 2];
 	else

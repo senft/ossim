@@ -143,7 +143,7 @@ private:
 
 	int minTreeHeight;
 	int maxTreeHeight;
-	int meanTreeHeight;
+	double meanTreeHeight;
 	int medianTreeHeight;
 
 };
