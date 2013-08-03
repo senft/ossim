@@ -65,12 +65,19 @@ private:
 	ActivePeerTable			*m_apTable;
     AppSettingMultitree   	*m_appSetting;
 
+	simsignal_t sig_maxTreeHeight;
+	simsignal_t sig_minTreeHeight;
+	simsignal_t sig_meanTreeHeight;
+	simsignal_t sig_medianTreeHeight;
+
+	simsignal_t sig_messageCount;
 	simsignal_t sig_messageCountCR;
 	simsignal_t sig_messageCountDR;
 	simsignal_t sig_messageCountCC;
 	simsignal_t sig_messageCountPNR;
 	simsignal_t sig_messageCountSI;
 
+	simsignal_t sig_forwardingNone;
 	simsignal_t sig_forwardingOne;
 	simsignal_t sig_forwardingMoreThanOne;
 
@@ -79,7 +86,9 @@ private:
 	simsignal_t sig_chunkArrival;
 	simsignal_t sig_numTrees;
 	simsignal_t sig_connTime;
-	simsignal_t sig_retrys;
+	simsignal_t sig_max_retrys;
+	simsignal_t sig_total_retrys;
+	simsignal_t sig_mean_retrys;
 	simsignal_t sig_meanOutDegree;
 	simsignal_t sig_meanHopcount;
 
@@ -94,7 +103,7 @@ private:
 	std::vector<int> retrys;
 	std::vector<int> nodesForwardingInITrees;
 
-	std::vector<int> maxHopcounts;
+	std::vector<int> treeHeights;
 	std::vector<double> meanHopcounts;
 	std::vector<std::vector<int> > hopcounts;
 	double meanHopcount;
@@ -109,6 +118,7 @@ private:
 	int joinedNodes;
 	int awakeNodes;
 
+	double forwardingInNone;
 	double forwardingInOne;
 	double forwardingInMoreThanOne;
 
@@ -124,12 +134,18 @@ private:
 	long messageCountSI;
 
 	int maxRetrys;
-	double overallOutDegree;
+	int totalRetrys;
 	double meanRetrys;
+	double overallOutDegree;
 	double meanBWUtil;
 	double meanConnectionTime;
 	double meanNumTrees;
-	double meanMaxTreeheight;
+
+	int minTreeHeight;
+	int maxTreeHeight;
+	int meanTreeHeight;
+	int medianTreeHeight;
+
 };
 
 #endif /* MULTITREE_STATISTIC_H_ */

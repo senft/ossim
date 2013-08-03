@@ -1,5 +1,7 @@
 #include "MultitreeStatistic.h"
 
+#include <algorithm>
+
 Define_Module(MultitreeStatistic)
 
 MultitreeStatistic::MultitreeStatistic(){}
@@ -10,8 +12,8 @@ void MultitreeStatistic::finish()
 	char name[24];
 	for (int i = 0; i < numStripes; i++)
 	{
-		sprintf(name, "maxHopcountInTree%d", i);
-		recordScalar(name, maxHopcounts[i]);
+		sprintf(name, "treeHeight%d", i);
+		recordScalar(name, treeHeights[i]);
 
 		sprintf(name, "meanHopcountInTree%d", i);
 		recordScalar(name, meanHopcounts[i]);
@@ -30,18 +32,27 @@ void MultitreeStatistic::initialize(int stage)
 {
     if (stage == 0)
     {
+        sig_minTreeHeight		  = registerSignal("Signal_Min_Tree_Height");
+        sig_maxTreeHeight		  = registerSignal("Signal_Max_Tree_Height");
+        sig_meanTreeHeight		  = registerSignal("Signal_Mean_Tree_Height");
+        sig_medianTreeHeight	  = registerSignal("Signal_Median_Tree_Height");
+
         sig_chunkArrival		  = registerSignal("Signal_Chunk_Arrival");
         sig_packetLoss   		  = registerSignal("Signal_Packet_Loss");
         sig_numTrees              = registerSignal("Signal_Mean_Num_Trees");
         sig_BWUtil                = registerSignal("Signal_BW_Utilization");
         sig_connTime              = registerSignal("Signal_Connection_Time");
-        sig_retrys                = registerSignal("Signal_Retrys");
+        sig_mean_retrys           = registerSignal("Signal_Mean_Retrys");
+        sig_max_retrys            = registerSignal("Signal_Max_Retrys");
+        sig_total_retrys          = registerSignal("Signal_Total_Retrys");
         sig_meanOutDegree         = registerSignal("Signal_Mean_Out_Degree");
         sig_meanHopcount          = registerSignal("Signal_Mean_Hopcount");
 
+        sig_forwardingNone        = registerSignal("Signal_Forwarding_In_None");
         sig_forwardingOne         = registerSignal("Signal_Forwarding_In_One");
         sig_forwardingMoreThanOne = registerSignal("Signal_Forwarding_In_More_Than_One");
 
+        sig_messageCount          = registerSignal("Signal_Message_Count");
         sig_messageCountCR        = registerSignal("Signal_Message_Count_CR");
         sig_messageCountDR        = registerSignal("Signal_Message_Count_DR");
         sig_messageCountCC        = registerSignal("Signal_Message_Count_CC");
@@ -84,8 +95,14 @@ void MultitreeStatistic::initialize(int stage)
 	meanRetrys = 0;
 	maxRetrys = 0;
 
+	forwardingInNone = 0;
 	forwardingInOne = 0;
 	forwardingInMoreThanOne = 0;
+
+	minTreeHeight = 0;
+	maxTreeHeight = 0;
+	meanTreeHeight = 0;
+	medianTreeHeight = 0;
 
 	oVNumTrees = new cOutVector[numStripes + 1];
 	oVMaxHopcount = new cOutVector[numStripes];
@@ -103,7 +120,7 @@ void MultitreeStatistic::initialize(int stage)
 
 	for (int i = 0; i < numStripes; i++)
 	{
-		maxHopcounts.push_back(0);
+		treeHeights.push_back(0);
 		meanHopcounts.push_back(0);
 		hopcounts.push_back(std::vector<int>());
 
@@ -140,6 +157,7 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(messageCountPNR);
 	WATCH(messageCountSI);
 
+	WATCH(forwardingInNone);
 	WATCH(forwardingInOne);
 	WATCH(forwardingInMoreThanOne);
 
@@ -147,7 +165,7 @@ void MultitreeStatistic::initialize(int stage)
 
 	WATCH_VECTOR(nodesForwardingInITrees);
 	WATCH_VECTOR(meanOutDegree);
-	WATCH_VECTOR(maxHopcounts);
+	WATCH_VECTOR(treeHeights);
 	WATCH_VECTOR(meanHopcounts);
 
 	scheduleAt(simTime() + param_interval_reportGlobal, timer_reportGlobal);
@@ -193,19 +211,24 @@ void MultitreeStatistic::gatherRetrys(int numRetrys)
 {
 	retrys.push_back(numRetrys);
 }
+
 void MultitreeStatistic::reportRetrys()
 {
-	int sum = 0;
+	int total = 0;
 	for(std::vector<int>::iterator it = retrys.begin(); it != retrys.end(); ++it)
 	{
 		int numRetrys = (int)*it;
-		sum += numRetrys;
+		total += numRetrys;
 
 		if(numRetrys > maxRetrys)
 			maxRetrys = numRetrys;
 	}
-	meanRetrys = (double)sum / (double)retrys.size();
-	emit(sig_retrys, meanRetrys);
+
+	meanRetrys = (double)total / (double)m_apTable->getNumActivePeer();
+
+	emit(sig_mean_retrys, meanRetrys);
+	emit(sig_total_retrys, total);
+	emit(sig_max_retrys, maxRetrys);
 }
 
 void MultitreeStatistic::reportAwakeNode(void)
@@ -245,6 +268,8 @@ void MultitreeStatistic::handleTimerMessage(cMessage *msg)
 		reportOutDegree();
 		reportHopcounts();
 
+
+		emit(sig_messageCount, messageCount);
 		emit(sig_messageCountCR, messageCountCR);
 		emit(sig_messageCountDR, messageCountDR);
 		emit(sig_messageCountCC, messageCountCC);
@@ -321,7 +346,8 @@ void MultitreeStatistic::reportOutDegree()
 	}
 
 	overallOutDegree = (double)overallDegree / (double)outDegreeSamples[0].size();
-	emit(sig_meanOutDegree, overallOutDegree);
+	if(overallOutDegree > 0)
+		emit(sig_meanOutDegree, overallOutDegree);
 }
 
 void MultitreeStatistic::gatherBWUtilization(const IPvXAddress node, int curNumConn, int maxNumConn)
@@ -342,6 +368,7 @@ void MultitreeStatistic::reportNumTreesForwarding()
 	if(totalNumTreesForwarding.size() > 0)
 	{
 		int totalTrees = 0;
+		forwardingInNone = 0;
 		forwardingInOne = 0;
 		forwardingInMoreThanOne = 0;
 
@@ -364,7 +391,9 @@ void MultitreeStatistic::reportNumTreesForwarding()
 
 		forwardingInMoreThanOne /= (double)totalNumTreesForwarding.size();
 		forwardingInOne = num[1] / (double)totalNumTreesForwarding.size();
+		forwardingInNone = num[0] / (double)totalNumTreesForwarding.size();
 		
+		emit(sig_forwardingNone, forwardingInNone);
 		emit(sig_forwardingOne, forwardingInOne);
 		emit(sig_forwardingMoreThanOne, forwardingInMoreThanOne);
 
@@ -411,11 +440,13 @@ void MultitreeStatistic::reportHopcounts()
 {
 	int total = 0;
 	int totalSamples = 0;
-	int totalMaxHeights = 0;
+	int sumTreeHeights = 0;
+
 	for (int i = 0; i < numStripes; ++i)
 	{
 		int max = 0;
 		int totalPerTree = 0;
+
 		for(std::vector<int>::iterator it = hopcounts[i].begin(); it != hopcounts[i].end(); ++it)
 		{
 			int currentHopcount = (int)*it;
@@ -431,8 +462,8 @@ void MultitreeStatistic::reportHopcounts()
 		if(max > 0)
 		{
 			oVMaxHopcount[i].record(max);
-			maxHopcounts[i] = max;
-			totalMaxHeights += max;
+			treeHeights[i] = max;
+			sumTreeHeights += max;
 		}
 
 		double mean = (double)totalPerTree / (double)hopcounts[i].size();
@@ -445,7 +476,28 @@ void MultitreeStatistic::reportHopcounts()
 		hopcounts[i].clear();
 	}
 
-	meanMaxTreeheight = totalMaxHeights / numStripes;
+	// Sort the tree heights in order to get the median
+	int sortedTreeHeights[numStripes];
+	std::copy(treeHeights.begin(), treeHeights.end(), sortedTreeHeights);
+	std::sort(sortedTreeHeights, sortedTreeHeights + numStripes);
+
+	minTreeHeight = *std::min_element(treeHeights.begin(), treeHeights.end());
+	maxTreeHeight = *std::max_element(treeHeights.begin(), treeHeights.end());
+	meanTreeHeight = sumTreeHeights / numStripes;
+	if(numStripes % 2 == 0)
+		medianTreeHeight = sortedTreeHeights[numStripes / 2];
+	else
+		medianTreeHeight = sortedTreeHeights[(numStripes + 1) / 2];
+
+	emit(sig_minTreeHeight, minTreeHeight);
+	emit(sig_maxTreeHeight, maxTreeHeight);
+	emit(sig_meanTreeHeight, meanTreeHeight);
+	emit(sig_medianTreeHeight, medianTreeHeight);
+
+	for (int i = 0; i < numStripes; ++i)
+	{
+	}
+
 	if(totalSamples > 0 && total > 0)
 	{
 		meanHopcount = total / (double)totalSamples;

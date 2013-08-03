@@ -554,7 +554,8 @@ void MultitreePeer::processConnectConfirm(cPacket* pkt)
 			    << " requests." << endl;
 
 		m_gstat->gatherConnectionTime(stripe, time);
-		m_gstat->gatherRetrys(requestedChildship[stripe].size());
+		if(!requestedChildship.empty())
+			m_gstat->gatherRetrys(requestedChildship[stripe].size());
 
 		fallbackParent[stripe] = alternativeParent;
 		requestedChildship[stripe].clear();
