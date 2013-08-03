@@ -21,49 +21,13 @@ network Multitree_Network extends BasicNetwork
         int nNodePerRouter;
 
     types:
-		channel Source_up extends ned.DatarateChannel
+		channel Channel_100M_up extends ned.DatarateChannel
         {
-            datarate = 1000kbps;
+            datarate = 100Mbps;
         }
-        channel Source_down extends ned.DatarateChannel
+        channel Channel_100M_down extends ned.DatarateChannel
         {
-            datarate = 10Mbps;
-        }
-
-		channel DSL2k_up extends ned.DatarateChannel
-        {
-            datarate = 256kbps;
-        }
-        channel DSL2k_down extends ned.DatarateChannel
-        {
-            datarate = 2048kbps;
-        }
-
-		channel DSL6k_up extends ned.DatarateChannel
-        {
-            datarate = 576kbps;
-        }
-        channel DSL6k_down extends ned.DatarateChannel
-        {
-            datarate = 6016kbps;
-        }
-
-		channel DSL16k_up extends ned.DatarateChannel
-        {
-            datarate = 1024kbps;
-        }
-        channel DSL16k_down extends ned.DatarateChannel
-        {
-            datarate = 16000kbps;
-        }
-
-		channel Channel_50M_up extends ned.DatarateChannel
-        {
-            datarate = 50Mbps;
-        }
-        channel Channel_50M_down extends ned.DatarateChannel
-        {
-            datarate = 50Mbps;
+            datarate = 100Mbps;
         }
 
     submodules:
@@ -94,12 +58,12 @@ network Multitree_Network extends BasicNetwork
 
     connections:
         // -- Connect source
-        sourceNode.pppg$o++ --> Channel_50M_up --> router.pppg$i++;
-        sourceNode.pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
+        sourceNode.pppg$o++ --> Channel_100M_up --> router.pppg$i++;
+        sourceNode.pppg$i++ <-- Channel_100M_down <-- router.pppg$o++;
 
         // -- Connect peers
 		for i=0..(nNodePerRouter-1) {
-            peerNode[i].pppg$o++ --> Channel_50M_up --> router.pppg$i++;
-            peerNode[i].pppg$i++ <-- Channel_50M_down <-- router.pppg$o++;
+            peerNode[i].pppg$o++ --> Channel_100M_up --> router.pppg$i++;
+            peerNode[i].pppg$i++ <-- Channel_100M_down <-- router.pppg$o++;
         }
 }
