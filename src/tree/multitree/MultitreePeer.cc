@@ -617,10 +617,6 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 			{
 				if( !requestedChildship.empty() && senderAddress.equals(requestedChildship[stripe].back()) )
 				{
-					//if(requestedChildship[stripe].size() > 100)
-					//	throw cException("staaaawp");
-					// The last node I sent a ConnectRequest to rejected my request
-					
 					stat_retrys[stripe]++;
 
 					m_state[stripe] = TREE_JOIN_STATE_IDLE;
@@ -655,7 +651,8 @@ void MultitreePeer::processDisconnectRequest(cPacket* pkt)
 				else
 				{
 					const char *sAddr = senderAddress.str().c_str();
-					throw cException("Received DisconnectRequets (stripe %d) from %s, which is neither child nor parent.", stripe, sAddr);
+					throw cException("Received DisconnectRequets (stripe %d) from %s, which is neither child nor parent.",
+							stripe, sAddr);
 				}
 
 				break;
@@ -1216,9 +1213,7 @@ bool MultitreePeer::isPreferredStripe(unsigned int stripe)
 
 bool MultitreePeer::canAccept(ConnectRequest request)
 {
+	// I experimented with stricter conditions for accepting a request, but it wasn't really needed.
+	// I left this in case it might become necessary later...
 	return true;
-	return m_partnerList->getNumActiveTrees() < (numStripes / 4)
-		|| isPreferredStripe(request.stripe)
-		//|| request.currentParent.isUnspecified()
-		;
 }
