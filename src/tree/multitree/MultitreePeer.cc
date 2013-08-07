@@ -1081,16 +1081,14 @@ void MultitreePeer::optimize(void)
 		lookedAt++;
 
 		unsigned int asd = 1;
-		while((m_partnerList->getNumOutgoingConnections(stripe) <= 1 || haveMoreChildrenInOtherStripe(stripe))
-				&& asd < childCosts.size())
+		while(m_partnerList->getNumOutgoingConnections(stripe) <= 1 && asd < childCosts.size())
 		{
-			//continue;
 			linkToDrop = childCosts[asd++];
 			child = linkToDrop.child;
 			stripe = linkToDrop.stripe;
 		}
 
-		if(m_partnerList->getNumOutgoingConnections(stripe) <= 1 || haveMoreChildrenInOtherStripe(stripe))
+		if(m_partnerList->getNumOutgoingConnections(stripe) <= 1)
 			break;
 
 		IPvXAddress alternativeParent;	
