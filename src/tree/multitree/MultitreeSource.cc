@@ -303,7 +303,8 @@ void MultitreeSource::optimize(void)
 				dropNode(stripe, child, alternativeParent);
 
 				skipNodes[stripe].insert(child);
-				skipNodes[stripe].insert(alternativeParent);
+				if(m_partnerList->getNumChildsSuccessors(stripe, alternativeParent) == 0)
+					skipNodes[stripe].insert(alternativeParent);
 
 				gain = true;
 
@@ -351,8 +352,6 @@ void MultitreeSource::optimize(void)
 		}
 		stripe = minIndex;
 
-		//IPvXAddress child = m_partnerList->getLaziestForwardingChild(stripe, skipNodes[stripe]);
-		//IPvXAddress child = m_partnerList->getBusiestLazyChild(stripe, skipNodes[stripe]);
 		IPvXAddress child = m_partnerList->getChildWithMostChildren(stripe, skipNodes[stripe]);
 		int childsSucc = m_partnerList->getNumChildsSuccessors(stripe, child);
 
@@ -396,7 +395,7 @@ void MultitreeSource::optimize(void)
 
 bool MultitreeSource::canAccept(ConnectRequest request)
 {
-	return true;
+	//return true;
 
 	unsigned int stripe = request.stripe;
 	bool moreSuccInOther = true;

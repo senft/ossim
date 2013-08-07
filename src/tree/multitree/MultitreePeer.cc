@@ -1112,7 +1112,8 @@ void MultitreePeer::optimize(void)
 				dropNode(stripe, child, alternativeParent);
 
 				skipNodes[stripe].insert(child);
-				skipNodes[stripe].insert(alternativeParent);
+				if(m_partnerList->getNumChildsSuccessors(stripe, alternativeParent) == 0)
+					skipNodes[stripe].insert(alternativeParent);
 
 				gain = true;
 
