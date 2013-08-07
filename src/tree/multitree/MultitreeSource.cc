@@ -45,6 +45,13 @@ void MultitreeSource::initialize(int stage)
 
 void MultitreeSource::finish(void)
 {
+	char name[24];
+	for (int i = 0; i < numStripes; i++)
+	{
+		sprintf(name, "numChildren%d", i);
+		recordScalar(name, m_partnerList->getNumOutgoingConnections(i));
+	}
+
 	MultitreeBase::finish();
 
 	cancelAndDeleteTimer();
