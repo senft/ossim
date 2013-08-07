@@ -123,19 +123,19 @@ private:
 	double forwardingInOne;
 	double forwardingInMoreThanOne;
 
-	long m_count_chunkHit;
-	long m_count_chunkMiss;
-	long m_count_allChunk;
+	unsigned long m_count_chunkHit;
+	unsigned long m_count_chunkMiss;
+	unsigned long m_count_allChunk;
 
-	long messageCount;
-	long messageCountCR;
-	long messageCountDR;
-	long messageCountCC;
-	long messageCountPNR;
-	long messageCountSI;
+	unsigned long messageCount;
+	unsigned long messageCountCR;
+	unsigned long messageCountDR;
+	unsigned long messageCountCC;
+	unsigned long messageCountPNR;
+	unsigned long messageCountSI;
 
 	int maxRetrys;
-	int totalRetrys;
+	unsigned long totalRetrys;
 	double meanRetrysPerNode;
 	double meanRetrysPerStripe;
 	double overallOutDegree;
