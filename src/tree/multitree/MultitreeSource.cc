@@ -345,7 +345,8 @@ void MultitreeSource::optimize(void)
 		stripe = minIndex;
 
 		//IPvXAddress child = m_partnerList->getLaziestForwardingChild(stripe, skipNodes[stripe]);
-		IPvXAddress child = m_partnerList->getBusiestLazyChild(stripe, skipNodes[stripe]);
+		//IPvXAddress child = m_partnerList->getBusiestLazyChild(stripe, skipNodes[stripe]);
+		IPvXAddress child = m_partnerList->getChildWithMostChildren(stripe, skipNodes[stripe]);
 		int childsSucc = m_partnerList->getNumChildsSuccessors(stripe, child);
 
 		//EV << "stripe: " << stripe << " child: " << child << " succ: " << childsSucc << endl;
