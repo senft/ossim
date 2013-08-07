@@ -88,7 +88,8 @@ private:
 	simsignal_t sig_connTime;
 	simsignal_t sig_max_retrys;
 	simsignal_t sig_total_retrys;
-	simsignal_t sig_mean_retrys;
+	simsignal_t sig_mean_retrys_per_node;
+	simsignal_t sig_mean_retrys_per_stripe;
 	simsignal_t sig_meanOutDegree;
 	simsignal_t sig_meanHopcount;
 
@@ -135,7 +136,8 @@ private:
 
 	int maxRetrys;
 	int totalRetrys;
-	double meanRetrys;
+	double meanRetrysPerNode;
+	double meanRetrysPerStripe;
 	double overallOutDegree;
 	double meanBWUtil;
 	double meanConnectionTime;

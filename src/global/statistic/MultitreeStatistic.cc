@@ -42,7 +42,8 @@ void MultitreeStatistic::initialize(int stage)
         sig_numTrees              = registerSignal("Signal_Mean_Num_Trees");
         sig_BWUtil                = registerSignal("Signal_BW_Utilization");
         sig_connTime              = registerSignal("Signal_Connection_Time");
-        sig_mean_retrys           = registerSignal("Signal_Mean_Retrys");
+        sig_mean_retrys_per_stripe= registerSignal("Signal_Mean_Retrys_Per_Stripe");
+        sig_mean_retrys_per_node  = registerSignal("Signal_Mean_Retrys_Per_Node");
         sig_max_retrys            = registerSignal("Signal_Max_Retrys");
         sig_total_retrys          = registerSignal("Signal_Total_Retrys");
         sig_meanOutDegree         = registerSignal("Signal_Mean_Out_Degree");
@@ -92,7 +93,7 @@ void MultitreeStatistic::initialize(int stage)
 	meanBWUtil = 0;
 	meanConnectionTime = 0;
 	meanNumTrees = 0;
-	meanRetrys = 0;
+	meanRetrysPerNode = 0;
 	maxRetrys = 0;
 
 	forwardingInNone = 0;
@@ -146,7 +147,7 @@ void MultitreeStatistic::initialize(int stage)
 	WATCH(meanBWUtil);
 	WATCH(meanConnectionTime);
 	WATCH(meanNumTrees);
-	WATCH(meanRetrys);
+	WATCH(meanRetrysPerNode);
 	WATCH(maxRetrys);
 	WATCH(meanHopcount);
 
@@ -224,9 +225,11 @@ void MultitreeStatistic::reportRetrys()
 			maxRetrys = numRetrys;
 	}
 
-	meanRetrys = (double)total / (double)m_apTable->getNumActivePeer();
+	meanRetrysPerNode = (double)total / (double)m_apTable->getNumActivePeer();
+	meanRetrysPerStripe = (double)total / (double)numStripes;
 
-	emit(sig_mean_retrys, meanRetrys);
+	emit(sig_mean_retrys_per_node, meanRetrysPerNode);
+	emit(sig_mean_retrys_per_stripe, meanRetrysPerStripe);
 	emit(sig_total_retrys, total);
 	emit(sig_max_retrys, maxRetrys);
 }
