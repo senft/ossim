@@ -44,6 +44,7 @@ public:
 	void addChild(unsigned int stripe, IPvXAddress address, int successors);
 	void removeChild(IPvXAddress address);
 	void removeChild(unsigned int stripe, IPvXAddress address);
+	std::set<IPvXAddress> getChildren();
 	std::set<IPvXAddress> &getChildren(unsigned int stripe);
 	std::map<IPvXAddress, std::vector<int> > getChildrenWithCount(unsigned int stripe);
 

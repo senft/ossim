@@ -272,6 +272,21 @@ std::set<IPvXAddress> &MultitreePartnerList::getChildren(unsigned int stripe)
 	return vChildren[stripe];
 }
 
+std::set<IPvXAddress> MultitreePartnerList::getChildren()
+{
+	std::set<IPvXAddress> distinctiveChildren;
+	for (size_t i = 0; i < numStripes; ++i)
+	{
+		std::set<IPvXAddress> curChildren = vChildren[i];
+
+		for(std::set<IPvXAddress>::iterator it = curChildren.begin(); it != curChildren.end(); ++it)
+		{
+			distinctiveChildren.insert((IPvXAddress)*it);
+		}
+	}
+	return distinctiveChildren;
+}
+
 /** 
  * Return all children (incl. number of successors) of the given stripe
 */
