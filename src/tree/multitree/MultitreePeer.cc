@@ -84,6 +84,18 @@ void MultitreePeer::initialize(int stage)
 
 void MultitreePeer::finish(void)
 {
+	char name[24];
+	for (int i = 0; i < numStripes; i++)
+	{
+		if(m_partnerList->getParent(i).equals(IPvXAddress("192.168.0.1")))
+		{
+			sprintf(name, "headStripe%dNumChildren", i);
+			recordScalar(name, m_partnerList->getNumOutgoingConnections(i));
+			sprintf(name, "headStripe%dNumSuccessors", i);
+			recordScalar(name, m_partnerList->getNumSuccessors(i));
+		}
+	}
+
 	MultitreeBase::finish();
 
 	cancelAndDeleteTimer();
@@ -809,7 +821,10 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 			IPvXAddress child = m_partnerList->getChildWithMostChildren(stripe, skipNodes);
 
 			if(child.isUnspecified())
+			{
+				EV << "No more cildren to give." << endl;
 				break;
+			}
 
 			double k3;
 			if(meanNumSucc != 0)
@@ -818,8 +833,6 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 				k3 = 0;
 
 			int k2 = getForwardingCosts(stripe, child);
-			//int k2 = (m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1;
-			//int k2 = 1 - ((m_partnerList->getNumChildsSuccessors(stripe, child) > 0) ? 0 : 1);
 			double gain = k3 - (double)k2;
 
 			EV << "k3: " << k3 << " k2: " << k2 << " gain: " << gain << endl;
@@ -841,9 +854,9 @@ void MultitreePeer::processPassNodeRequest(cPacket* pkt)
 			{
 				EV << "Not giving child: " << child << endl;
 			}
+
 			skipNodes.insert(child);
 		}
-
 	}
 }
 

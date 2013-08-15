@@ -36,6 +36,7 @@ private:
 	void cancelAndDeleteTimer(void);
 
 	virtual bool canAccept(ConnectRequest request);
+
 };
 
 #endif

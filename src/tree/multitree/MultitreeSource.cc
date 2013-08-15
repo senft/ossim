@@ -52,6 +52,8 @@ void MultitreeSource::finish(void)
 		recordScalar(name, m_partnerList->getNumOutgoingConnections(i));
 	}
 
+	recordScalar("distinctiveChildren", m_partnerList->getChildren().size());
+
 	MultitreeBase::finish();
 
 	cancelAndDeleteTimer();
@@ -261,10 +263,10 @@ void MultitreeSource::optimize(void)
 		}
 		sort(childCosts.begin(), childCosts.end());
 
-		//for(std::vector<ChildCost>::iterator it = childCosts.begin(); it != childCosts.end(); ++it)
-		//{
-		//	EV << it->child << " (stripe " << it->stripe << ") " << it->cost << endl;
-		//}
+		for(std::vector<ChildCost>::iterator it = childCosts.begin(); it != childCosts.end(); ++it)
+		{
+			EV << it->child << " (stripe " << it->stripe << ") " << it->cost << endl;
+		}
 
 		ChildCost linkToDrop = childCosts[0];
 		IPvXAddress child = linkToDrop.child;
@@ -273,7 +275,9 @@ void MultitreeSource::optimize(void)
 		lookedAt++;
 
 		unsigned int asd = 1;
-		while((m_partnerList->getNumOutgoingConnections(stripe) <= 1 || haveMoreChildrenInOtherStripe(stripe))
+		while((
+					m_partnerList->getNumOutgoingConnections(stripe) <= 1 || 
+					haveMoreChildrenInOtherStripe(stripe))
 				&& asd < childCosts.size())
 		{
 			linkToDrop = childCosts[asd++];
@@ -293,7 +297,6 @@ void MultitreeSource::optimize(void)
 		{
 			double gainIf = getGain(stripe, alternativeParent, &child);
 			EV << "GAIN: " << gainIf << endl;
-			EV << "OLD_GAIN: " << getGain(stripe, alternativeParent) << endl;
 			gainThreshold = getGainThreshold();
 			EV << "THRESHOLD: " << gainThreshold << endl;
 
